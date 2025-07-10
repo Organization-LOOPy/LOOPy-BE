@@ -1,0 +1,49 @@
+model User {
+  id                BigInt   @id @default(autoincrement())
+  email             String?  @unique
+  password          String?  // bcrypt 해시
+  nickname          String
+  phone_number      String   @unique
+  role              Role
+  allow_kakao_alert Boolean
+  status            UserStatus
+  fcm_token         String?
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  kakao_account     KakaoAccount?
+  agreements        UserAgreement?
+  // 관계형 필드 (추가 가능)
+}
+
+model KakaoAccount {
+  id         BigInt  @id @default(autoincrement())
+  user_id    BigInt  @unique
+  provider   String
+  social_id  String
+  created_at DateTime @default(now())
+
+  user       User    @relation(fields: [user_id], references: [id])
+}
+
+model UserAgreement {
+  id                   BigInt   @id @default(autoincrement())
+  user_id              BigInt   @unique
+  terms_agreed         Boolean
+  privacy_policy_agreed Boolean
+  marketing_agreed     Boolean
+  location_permission  Boolean
+  agreed_at            DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+}
+
+enum Role {
+  CUSTOMER
+  OWNER
+}
+
+enum UserStatus {
+  active
+  inactive
+}
