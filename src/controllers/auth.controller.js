@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
 import prisma from '../../prisma/client.js';
-import express from 'express';
+
 
 export const signup = async (req, res, next) => {
   try {
@@ -67,6 +68,53 @@ export const signup = async (req, res, next) => {
       nickname: user.nickname
     });
   } catch (err) {
-    next(err); // errorHandler에서 처리됨
+    next(err); 
+  }
+};
+
+
+export const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    // 1. 유저 찾기
+    const user = await prisma.user.findUnique({
+      where: { email },
+    });
+
+    if (!user) {
+      return res.error({
+        errorCode: 'USER_NOT_FOUND',
+        reason: '등록되지 않은 이메일입니다.',
+      });
+    }
+
+    // 2. 비밀번호 일치 확인
+    const isPasswordValid = await bcrypt.compare(password, user.password_hash || '');
+    if (!isPasswordValid) {
+      return res.error({
+        errorCode: 'INVALID_PASSWORD',
+        reason: '비밀번호가 일치하지 않습니다.',
+      });
+    }
+
+    // 3. 토큰 발급
+    const token = jwt.sign(
+  { userId: user.id.toString(), role: user.role },
+  process.env.JWT_SECRET,
+  { expiresIn: '7d' }
+);
+
+    return res.success({
+      message: '로그인 성공',
+      token,
+      user: {
+        id: user.id.toString(), 
+        email: user.email,
+        nickname: user.nickname,
+      },
+    });
+  } catch (err) {
+    next(err);
   }
 };
