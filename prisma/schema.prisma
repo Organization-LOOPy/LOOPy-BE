@@ -1,29 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  OWNER
+}
+
+enum UserStatus {
+  active
+  inactive
+}
+
 model User {
   id                BigInt   @id @default(autoincrement())
   email             String?  @unique
-  password          String?  // bcrypt 해시
-  nickname          String
+  kakao_id          BigInt?
+  password_hash     String?
   phone_number      String   @unique
+  nickname          String
   role              Role
   allow_kakao_alert Boolean
   status            UserStatus
   fcm_token         String?
+  profile_image_url String?
   created_at        DateTime @default(now())
   updated_at        DateTime @updatedAt
 
-  kakao_account     KakaoAccount?
-  agreements        UserAgreement?
-  // 관계형 필드 (추가 가능)
+  kakao_accounts      KakaoAccount[]
+  user_agreements     UserAgreement?
+  user_preferences    UserPreference[]
+  verification_codes  VerificationCode[]
+  challenge_participants ChallengeParticipant[]
+  badges              Badge[]
+  stamp_books         StampBook[]
+  point_transactions  PointTransaction[]
+  reviews             Review[]
+  notifications       Notification[]
+  coupons             Coupon[]
 }
 
 model KakaoAccount {
-  id         BigInt  @id @default(autoincrement())
-  user_id    BigInt  @unique
-  provider   String
+  id         BigInt   @id @default(autoincrement())
+  user_id    BigInt   @unique
   social_id  String
   created_at DateTime @default(now())
 
-  user       User    @relation(fields: [user_id], references: [id])
+  user       User     @relation(fields: [user_id], references: [id])
+}
+
+model UserPreference {
+  id                BigInt   @id @default(autoincrement())
+  user_id           BigInt
+  preferred_area    String
+  preferred_keywords Json
+  created_at        DateTime @default(now())
+
+  user              User     @relation(fields: [user_id], references: [id])
+}
+
+model VerificationCode {
+  id          BigInt   @id @default(autoincrement())
+  user_id     BigInt?
+  phone_number String
+  code        String
+  expires_at  DateTime
+  verified    Boolean
+  created_at  DateTime @default(now())
+
+  user        User?    @relation(fields: [user_id], references: [id])
 }
 
 model UserAgreement {
@@ -35,15 +85,221 @@ model UserAgreement {
   location_permission  Boolean
   agreed_at            DateTime @default(now())
 
-  user User @relation(fields: [user_id], references: [id])
+  user                 User     @relation(fields: [user_id], references: [id])
 }
 
-enum Role {
-  CUSTOMER
-  OWNER
+model Challenge {
+  id            Int      @id @default(autoincrement())
+  title         String
+  description   String
+  thumbnail_url String
+  start_date    DateTime
+  end_date      DateTime
+  is_active     Boolean
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  participants         ChallengeParticipant[]
+  available_cafes      ChallengeAvailableCafe[]
+  badges               Badge[]
 }
 
-enum UserStatus {
+model ChallengeParticipant {
+  id            Int      @id @default(autoincrement())
+  user_id       BigInt
+  challenge_id  Int
+  status        String
+  joined_at     DateTime
+  completed_at  DateTime
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  user          User     @relation(fields: [user_id], references: [id])
+  challenge     Challenge @relation(fields: [challenge_id], references: [id])
+}
+
+model ChallengeAvailableCafe {
+  id            Int      @id @default(autoincrement())
+  challenge_id  Int
+  cafe_id       BigInt
+  created_at    DateTime @default(now())
+
+  challenge     Challenge @relation(fields: [challenge_id], references: [id])
+  cafe          Cafe      @relation(fields: [cafe_id], references: [id])
+}
+
+model BadgeType {
+  id         Int      @id @default(autoincrement())
+  title      String
+  image_url  String
+  created_at DateTime @default(now())
+
+  badges     Badge[]
+}
+
+model Badge {
+  id             Int      @id @default(autoincrement())
+  user_id        BigInt
+  challenge_id   Int
+  badge_type_id  Int
+  earned_at      DateTime @default(now())
+
+  user           User     @relation(fields: [user_id], references: [id])
+  challenge      Challenge @relation(fields: [challenge_id], references: [id])
+  badge_type     BadgeType @relation(fields: [badge_type_id], references: [id])
+}
+
+model StampBook {
+  id              Int      @id @default(autoincrement())
+  user_id         BigInt
+  cafe_id         BigInt
+  current_count   Int
+  goal_count      Int
+  reward_detail   String
+  started_at      DateTime
+  last_visited_at DateTime
+  expires_at      DateTime
+  extended_at     DateTime
+  expired_at      DateTime
+  completed_at    DateTime
+  converted_at    DateTime
+  status          String
+  is_completed    Boolean
+  is_converted    Boolean
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  user            User     @relation(fields: [user_id], references: [id])
+  cafe            Cafe     @relation(fields: [cafe_id], references: [id])
+  stamps          Stamp[]
+  point_transactions PointTransaction[]
+}
+
+model Stamp {
+  id              Int      @id @default(autoincrement())
+  stamp_book_id   Int
+  stamp_image_url String
+  stamped_at      DateTime @default(now())
+  source          String
+  note            String
+  latitude        Float
+  longitude       Float
+
+  stamp_book      StampBook @relation(fields: [stamp_book_id], references: [id])
+}
+
+model PointTransaction {
+  id              Int      @id @default(autoincrement())
+  user_id         BigInt
+  stamp_book_id   Int
+  point           Int
+  type            String
+  description     String
+  created_at      DateTime  @default(now())
+
+  user            User     @relation(fields: [user_id], references: [id])
+  stamp_book      StampBook @relation(fields: [stamp_book_id], references: [id])
+}
+
+enum CafeStatus {
   active
   inactive
+  deleted
+}
+
+model Cafe {
+  id               BigInt   @id @default(autoincrement())
+  name             String
+  address          String
+  region           String
+  latitude         Float
+  longitude        Float
+  owner_name       String
+  business_hours   String
+  phone            String
+  website_url      String
+  description      String
+  store_filters    Json
+  take_out_filters Json
+  menu_filters     Json
+  keywords         Json
+  status           CafeStatus
+  created_at       DateTime  @default(now())
+  updated_at       DateTime @updatedAt
+
+  menu             CafeMenu[]
+  photos           CafePhoto[]
+  available_challenges ChallengeAvailableCafe[]
+  stamp_books      StampBook[]
+  reviews          Review[]
+  notifications    Notification[]
+  coupons          Coupon[]
+}
+
+model CafeMenu {
+  id           BigInt   @id @default(autoincrement())
+  cafe_id      BigInt
+  category     String
+  name         String
+  description  String
+  price        Int
+  is_sold_out  Boolean
+  photo_url    String
+  created_at   DateTime @default(now())
+  updated_at   DateTime @updatedAt
+
+  cafe         Cafe     @relation(fields: [cafe_id], references: [id])
+}
+
+model CafePhoto {
+  id            BigInt   @id @default(autoincrement())
+  cafe_id       BigInt
+  photo_url     String
+  display_order Int
+  created_at    DateTime @default(now())
+
+  cafe          Cafe     @relation(fields: [cafe_id], references: [id])
+}
+
+model Review {
+  id         Int      @id @default(autoincrement())
+  user_id    BigInt
+  cafe_id    BigInt
+  title      String
+  content    String
+  images     Json
+  created_at DateTime @default(now())
+  updated_at DateTime  @updatedAt
+
+  user       User     @relation(fields: [user_id], references: [id])
+  cafe       Cafe     @relation(fields: [cafe_id], references: [id])
+}
+
+model Notification {
+  id         Int      @id @default(autoincrement())
+  user_id    BigInt
+  cafe_id    BigInt
+  type       String
+  title      String
+  content    String
+  is_read    Boolean
+  created_at DateTime @default(now())
+
+  user       User     @relation(fields: [user_id], references: [id])
+  cafe       Cafe     @relation(fields: [cafe_id], references: [id])
+}
+
+model Coupon {
+  id         Int      @id @default(autoincrement())
+  user_id    BigInt
+  cafe_id    BigInt
+  type       String
+  name       String
+  status     String
+  issued_at  DateTime
+  expired_at DateTime
+  used_at    DateTime
+
+  user       User     @relation(fields: [user_id], references: [id])
+  cafe       Cafe     @relation(fields: [cafe_id], references: [id])
 }

@@ -2,16 +2,20 @@ import express from 'express';
 import { responseHandler } from "./middlewares/responseHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { setupSwagger } from "./config/swagger.js";
-setupSwagger(app);  
+import authRouter from './routes/auth.routes.js';
+
 
 const app = express();
 
+setupSwagger(app);  
 app.use(express.json());
 
 app.get('/', (req, res) => res.send('루피 백엔드 작동 중!'));
 
+
 app.use(responseHandler);
+app.use(errorHandler);
+
+app.use('/api/auth', authRouter);
 
 export default app;
-
-app.use(errorHandler);

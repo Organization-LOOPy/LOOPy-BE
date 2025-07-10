@@ -3,9 +3,11 @@
   "version": "1.0.0",
   "description": "고객의 루틴에 나의 커피를 더하다",
   "main": "index.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js"
+    "dev": "nodemon index.js",
+    "start": "node index.js"
   },
   "repository": {
     "type": "git",
@@ -14,15 +16,17 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/Organization-LOOPy/LOOPy-BE/issues"
   },
   "homepage": "https://github.com/Organization-LOOPy/LOOPy-BE#readme",
   "dependencies": {
     "@prisma/client": "^6.11.1",
-    "dotenv": "^17.0.1",
-    "express": "^5.1.0"
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.0",
+    "express": "^5.1.0",
+    "swagger-ui-express": "^5.0.1",
+    "yamljs": "^0.3.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
