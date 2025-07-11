@@ -1,13 +1,23 @@
-export const errorHandler = (err, req, res, next) => {
-    if (res.headersSent) return next(err);
-  
-    res.status(err.statusCode || 500).json({
-      resultType: "FAIL",
-      error: {
-        errorCode: err.errorCode || "unknown",
-        reason: err.reason || err.message || null,
-        data: err.data || null,
-      },
-      success: null,
+const { CustomError } = require("../errors/customErrors");
+
+const errorHandler = (err, req, res, next) => {
+  if (res.headersSent) return next(err);
+
+  if (err instanceof CustomError) {
+    return res.status(400).error({
+      errorCode: err.errorCode,
+      reason: err.message,
+      data: err.data || null,
     });
-  };
+  }
+
+  console.error("🔥 Unhandled Error:", err);
+
+  return res.status(500).error({
+    errorCode: "UNKNOWN",
+    reason: err.message || "서버 내부 오류가 발생했습니다.",
+    data: null,
+  });
+};
+
+module.exports = { errorHandler };

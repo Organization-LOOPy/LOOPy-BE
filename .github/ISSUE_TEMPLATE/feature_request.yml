@@ -1,0 +1,29 @@
+name: 기능 개발 요청
+description: 새로운 기능 개발이나 개선 요청을 위한 이슈
+title: "[Feat] "
+labels: ["feature"]
+
+body:
+  - type: textarea
+    attributes:
+      label: 🧩 기능 설명
+      placeholder: ex) 사용자 로그인 API 구현
+
+  - type: textarea
+    attributes:
+      label: 📁 관련 경로
+      placeholder: ex) routes/auth.js, services/authService.js
+
+  - type: textarea
+    attributes:
+      label: ✅ 작업 항목 (Checklist)
+      placeholder: |
+        - [ ] 라우터 추가
+        - [ ] 컨트롤러 구현
+        - [ ] 서비스 로직 작성
+        - [ ] 테스트 코드 작성
+
+  - type: input
+    attributes:
+      label: 🔗 관련 이슈 or PR
+      placeholder: ex) #23
