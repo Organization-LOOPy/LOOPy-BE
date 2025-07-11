@@ -1,7 +1,19 @@
-import { successResponse, errorResponse } from "../utils/response.js";
+module.exports.responseHelper = (req, res, next) => {
+  res.success = (data) => {
+    return res.json({
+      resultType: "SUCCESS",
+      error: null,
+      success: data,
+    });
+  };
 
-export const responseHandler = (req, res, next) => {
-  res.success = (data) => res.json(successResponse(data));
-  res.error = (args) => res.json(errorResponse(args.errorCode, args.reason, args.data));
+  res.error = ({ errorCode = "UNKNOWN", reason = "알 수 없는 오류", data = null }) => {
+    return res.json({
+      resultType: "FAIL",
+      error: { errorCode, reason, data },
+      success: null,
+    });
+  };
+
   next();
 };
