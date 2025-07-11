@@ -2,10 +2,11 @@
   "name": "loopy-be",
   "version": "1.0.0",
   "description": "고객의 루틴에 나의 커피를 더하다",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon index.js"
+    "dev": "cross-env NODE_ENV=dev nodemon server.js",
+    "prod": "cross-env NODE_ENV=prod node server.js"
   },
   "repository": {
     "type": "git",
@@ -14,18 +15,31 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "commonjs",
+  "type": "module",
   "bugs": {
     "url": "https://github.com/Organization-LOOPy/LOOPy-BE/issues"
   },
   "homepage": "https://github.com/Organization-LOOPy/LOOPy-BE#readme",
   "dependencies": {
     "@prisma/client": "^6.11.1",
+    "app-root-path": "^3.1.0",
     "dotenv": "^17.0.1",
-    "express": "^5.1.0"
+    "express": "^5.1.0",
+    "morgan": "^1.10.0",
+    "swagger-ui-express": "^5.0.1",
+    "winston": "^3.17.0",
+    "winston-daily-rotate-file": "^5.0.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10",
     "prisma": "^6.11.1"
+  },
+  "pnpm": {
+    "ignoredBuiltDependencies": [
+      "@prisma/client",
+      "@prisma/engines",
+      "@scarf/scarf",
+      "prisma"
+    ]
   }
 }
