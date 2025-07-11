@@ -1,11 +1,34 @@
 openapi: 3.0.0
 info:
   title: LOOPy API
+  description: 루피 프로젝트 백엔드 API 문서입니다.
   version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: 로컬 개발 서버
+
 paths:
   /health:
     get:
       summary: 헬스 체크
+      description: 서버가 정상 작동 중인지 확인하기 위한 API
+      tags:
+        - Health
       responses:
         '200':
-          description: OK
+          description: 서버 작동 정상
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: "null"
+                    example: null
+                  success:
+                    type: string
+                    example: 루피 백엔드 작동 중!
