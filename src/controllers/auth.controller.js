@@ -9,10 +9,18 @@ export const signup = async (req, res, next) => {
       email,
       password,
       nickname,
-      phone_number,
+      phoneNumber,
       agreements
     } = req.body;
     console.log('body:', req.body);
+
+    if (!email || !password || !nickname || !phoneNumber) {
+  return res.error({
+    errorCode: 'MISSING_FIELDS',
+    reason: '필수 입력 항목이 누락되었습니다.'
+  });
+}
+
 
 
     // 중복 확인
@@ -20,7 +28,7 @@ export const signup = async (req, res, next) => {
       where: {
         OR: [
           { email },
-          { phone_number: phone_number }
+          { phoneNumber: phoneNumber }
         ]
       }
     });
@@ -40,22 +48,23 @@ export const signup = async (req, res, next) => {
       const createdUser = await tx.user.create({
         data: {
           email,
-          password_hash: hashedPassword,
+          passwordHash: hashedPassword,
           nickname,
-          phone_number: phone_number,
+          phoneNumber: phoneNumber,
           role: 'CUSTOMER',
-          allow_kakao_alert: false,
+          allowKakaoAlert: false,
           status: 'active'
         }
       });
 
       await tx.userAgreement.create({
         data: {
-          user_id: createdUser.id,
-          terms_agreed: agreements.terms_agreed,
-          privacy_policy_agreed: agreements.privacy_policy_agreed,
-          marketing_agreed: agreements.marketing_agreed,
-          location_permission: agreements.location_permission
+          userId: createdUser.id,
+          termsAgreed: agreements.termsAgreed,
+          privacyPolicyAgreed: agreements.privacyPolicyAgreed,
+          marketingAgreed: agreements.marketingAgreed,
+          locationPermission: agreements.locationPermission,
+          agreedAt: new Date()
         }
       });
 
@@ -90,7 +99,7 @@ export const login = async (req, res, next) => {
     }
 
     // 2. 비밀번호 일치 확인
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash || '');
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash || '');
     if (!isPasswordValid) {
       return res.error({
         errorCode: 'INVALID_PASSWORD',

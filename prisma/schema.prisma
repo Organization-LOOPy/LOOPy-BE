@@ -84,10 +84,10 @@ model VerificationCode {
 model UserAgreement {
   id                    BigInt   @id @default(autoincrement())
   userId                BigInt   @unique @map("user_id")
-  termsAgreed           Boolean  @map("terms_agreed")
-  privacyPolicyAgreed   Boolean  @map("privacy_policy_agreed")
-  marketingAgreed       Boolean  @map("marketing_agreed")
-  locationPermission    Boolean  @map("location_permission")
+  termsAgreed           Boolean  @map("termsAgreed")
+  privacyPolicyAgreed   Boolean  @map("privacyPolicyAgreed")
+  marketingAgreed       Boolean  @map("marketingAgreed")
+  locationPermission    Boolean  @map("locationPermission")
   agreedAt              DateTime @map("agreed_at")
 
   // Relations
