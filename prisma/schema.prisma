@@ -1,44 +1,372 @@
-model User {
-  id                BigInt   @id @default(autoincrement())
-  email             String?  @unique
-  password          String?  // bcrypt 해시
-  nickname          String
-  phone_number      String   @unique
-  role              Role
-  allow_kakao_alert Boolean
-  status            UserStatus
-  fcm_token         String?
-  created_at        DateTime @default(now())
-  updated_at        DateTime @updatedAt
+generator client {
+  provider = "prisma-client-js"
+}
 
-  kakao_account     KakaoAccount?
-  agreements        UserAgreement?
-  // 관계형 필드 (추가 가능)
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ================================
+// 1. 인증 & 사용자 도메인
+// ================================
+
+model User {
+  id                   BigInt                   @id @default(autoincrement())
+  email                String?                  @unique @db.VarChar(255)
+  passwordHash         String?                  @map("password_hash") @db.VarChar(255)
+  phoneNumber          String                   @unique @map("phone_number") @db.VarChar(20)
+  nickname             String                   @db.VarChar(50)
+  role                 UserRole
+  allowKakaoAlert      Boolean                  @default(false) @map("allow_kakao_alert")
+  status               UserStatus               @default(active)
+  fcmToken             String?                  @map("fcm_token") @db.VarChar(255)
+  profileImageUrl      String?                  @map("profile_image_url") @db.Text
+  createdAt            DateTime                 @default(now()) @map("created_at")
+  updatedAt            DateTime                 @updatedAt @map("updated_at")
+
+  // Relations
+  kakaoAccount         KakaoAccount?
+  userPreferences      UserPreference?
+  verificationCodes    VerificationCode[]
+  userAgreements       UserAgreement?
+  challengeParticipants ChallengeParticipant[]
+  badges               Badge[]
+  stampBooks           StampBook[]
+  pointTransactions    PointTransaction[]
+  reviews              Review[]
+  notifications        Notification[]
+  coupons              Coupon[]
+
+  @@map("users")
 }
 
 model KakaoAccount {
-  id         BigInt  @id @default(autoincrement())
-  user_id    BigInt  @unique
-  provider   String
-  social_id  String
-  created_at DateTime @default(now())
+  id        BigInt   @id @default(autoincrement())
+  userId    BigInt   @unique @map("user_id")
+  socialId  String   @map("social_id") @db.VarChar(255)
+  createdAt DateTime @default(now()) @map("created_at")
 
-  user       User    @relation(fields: [user_id], references: [id])
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("kakao_accounts")
+}
+
+model UserPreference {
+  id                BigInt   @id @default(autoincrement())
+  userId            BigInt   @unique @map("user_id")
+  preferredArea     String?  @map("preferred_area") @db.VarChar(100)
+  preferredKeywords Json?    @map("preferred_keywords")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_preferences")
+}
+
+model VerificationCode {
+  id          BigInt   @id @default(autoincrement())
+  userId      BigInt?  @map("user_id")
+  phoneNumber String   @map("phone_number") @db.VarChar(20)
+  code        String   @db.VarChar(10)
+  expiresAt   DateTime @map("expires_at")
+  verified    Boolean  @default(false)
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("verification_codes")
 }
 
 model UserAgreement {
-  id                   BigInt   @id @default(autoincrement())
-  user_id              BigInt   @unique
-  terms_agreed         Boolean
-  privacy_policy_agreed Boolean
-  marketing_agreed     Boolean
-  location_permission  Boolean
-  agreed_at            DateTime @default(now())
+  id                    BigInt   @id @default(autoincrement())
+  userId                BigInt   @unique @map("user_id")
+  termsAgreed           Boolean  @map("terms_agreed")
+  privacyPolicyAgreed   Boolean  @map("privacy_policy_agreed")
+  marketingAgreed       Boolean  @map("marketing_agreed")
+  locationPermission    Boolean  @map("location_permission")
+  agreedAt              DateTime @map("agreed_at")
 
-  user User @relation(fields: [user_id], references: [id])
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_agreements")
 }
 
-enum Role {
+// ================================
+// 2. 챌린지 & 스탬프 도메인
+// ================================
+
+model Challenge {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(255)
+  description  String   @db.Text
+  thumbnailUrl String   @map("thumbnail_url") @db.Text
+  startDate    DateTime @map("start_date") @db.Date
+  endDate      DateTime @map("end_date") @db.Date
+  isActive     Boolean  @default(true) @map("is_active")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  participants        ChallengeParticipant[]
+  availableCafes      ChallengeAvailableCafe[]
+  badges              Badge[]
+
+  @@map("challenges")
+}
+
+model ChallengeParticipant {
+  id          Int                        @id @default(autoincrement())
+  userId      BigInt                     @map("user_id")
+  challengeId Int                        @map("challenge_id")
+  status      ChallengeParticipantStatus @default(in_progress)
+  joinedAt    DateTime                   @map("joined_at")
+  completedAt DateTime?                  @map("completed_at")
+  createdAt   DateTime                   @default(now()) @map("created_at")
+  updatedAt   DateTime                   @updatedAt @map("updated_at")
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, challengeId])
+  @@map("challenge_participants")
+}
+
+model ChallengeAvailableCafe {
+  id          Int      @id @default(autoincrement())
+  challengeId Int      @map("challenge_id")
+  cafeId      BigInt   @map("cafe_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  // Relations
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  cafe      Cafe      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, cafeId])
+  @@map("challenge_available_cafes")
+}
+
+model BadgeType {
+  id        Int      @id @default(autoincrement())
+  title     String   @db.VarChar(255)
+  imageUrl  String   @map("image_url") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  badges Badge[]
+
+  @@map("badge_types")
+}
+
+model Badge {
+  id          Int      @id @default(autoincrement())
+  userId      BigInt   @map("user_id")
+  challengeId Int      @map("challenge_id")
+  badgeTypeId Int      @map("badge_type_id")
+  earnedAt    DateTime @map("earned_at")
+
+  // Relations
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  badgeType BadgeType @relation(fields: [badgeTypeId], references: [id], onDelete: Cascade)
+
+  @@map("badges")
+}
+
+model StampBook {
+  id            Int            @id @default(autoincrement())
+  userId        BigInt         @map("user_id")
+  cafeId        BigInt         @map("cafe_id")
+  currentCount  Int            @default(0) @map("current_count")
+  goalCount     Int            @map("goal_count")
+  rewardDetail  String         @map("reward_detail") @db.VarChar(255)
+  startedAt     DateTime       @map("started_at")
+  lastVisitedAt DateTime?      @map("last_visited_at")
+  expiresAt     DateTime       @map("expires_at")
+  extendedAt    DateTime?      @map("extended_at")
+  expiredAt     DateTime?      @map("expired_at")
+  completedAt   DateTime?      @map("completed_at")
+  convertedAt   DateTime?      @map("converted_at")
+  status        StampBookStatus
+  isCompleted   Boolean        @default(false) @map("is_completed")
+  isConverted   Boolean        @default(false) @map("is_converted")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  // Relations
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe              Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  stamps            Stamp[]
+  pointTransactions PointTransaction[]
+
+  @@map("stamp_books")
+}
+
+model Stamp {
+  id           Int      @id @default(autoincrement())
+  stampBookId  Int      @map("stamp_book_id")
+  stampImageUrl String? @map("stamp_image_url") @db.Text
+  stampedAt    DateTime @map("stamped_at")
+  source       String   @db.VarChar(100)
+  note         String?  @db.Text
+  latitude     Float?
+  longitude    Float?
+
+  // Relations
+  stampBook StampBook @relation(fields: [stampBookId], references: [id], onDelete: Cascade)
+
+  @@map("stamps")
+}
+
+model PointTransaction {
+  id          Int                   @id @default(autoincrement())
+  userId      BigInt                @map("user_id")
+  stampBookId Int?                  @map("stamp_book_id")
+  point       Int
+  type        PointTransactionType
+  description String                @db.VarChar(255)
+  createdAt   DateTime              @default(now()) @map("created_at")
+
+  // Relations
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stampBook StampBook? @relation(fields: [stampBookId], references: [id], onDelete: SetNull)
+
+  @@map("point_transactions")
+}
+
+// ================================
+// 3. 카페 & 탐색 도메인
+// ================================
+
+model Cafe {
+  id              BigInt     @id @default(autoincrement())
+  name            String     @db.VarChar(255)
+  address         String     @db.VarChar(500)
+  region          String     @db.VarChar(100)
+  latitude        Float
+  longitude       Float
+  ownerName       String     @map("owner_name") @db.VarChar(100)
+  businessHours   String?    @map("business_hours") @db.Text
+  phone           String?    @db.VarChar(20)
+  websiteUrl      String?    @map("website_url") @db.Text
+  description     String?    @db.Text
+  storeFilters    Json?      @map("store_filters")
+  takeOutFilters  Json?      @map("take_out_filters")
+  menuFilters     Json?      @map("menu_filters")
+  keywords        Json?
+  status          CafeStatus @default(active)
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  // Relations
+  menu               CafeMenu[]
+  photos             CafePhoto[]
+  challengeAvailable ChallengeAvailableCafe[]
+  stampBooks         StampBook[]
+  reviews            Review[]
+  notifications      Notification[]
+  coupons            Coupon[]
+
+  @@map("cafes")
+}
+
+model CafeMenu {
+  id          BigInt   @id @default(autoincrement())
+  cafeId      BigInt   @map("cafe_id")
+  category    String   @db.VarChar(100)
+  name        String   @db.VarChar(255)
+  description String?  @db.Text
+  price       Int
+  isSoldOut   Boolean  @default(false) @map("is_sold_out")
+  photoUrl    String?  @map("photo_url") @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@map("cafe_menu")
+}
+
+model CafePhoto {
+  id           BigInt   @id @default(autoincrement())
+  cafeId       BigInt   @map("cafe_id")
+  photoUrl     String   @map("photo_url") @db.Text
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  // Relations
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@map("cafe_photo")
+}
+
+// ================================
+// 4. 리뷰 & 쿠폰 & 알림 도메인
+// ================================
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    BigInt   @map("user_id")
+  cafeId    BigInt   @map("cafe_id")
+  title     String   @db.VarChar(255)
+  content   String   @db.Text
+  images    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@map("reviews")
+}
+
+model Notification {
+  id        Int              @id @default(autoincrement())
+  userId    BigInt           @map("user_id")
+  cafeId    BigInt?          @map("cafe_id")
+  type      NotificationType
+  title     String           @db.VarChar(255)
+  content   String           @db.Text
+  isRead    Boolean          @default(false) @map("is_read")
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  // Relations
+  user User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe Cafe? @relation(fields: [cafeId], references: [id], onDelete: SetNull)
+
+  @@map("notifications")
+}
+
+model Coupon {
+  id        Int          @id @default(autoincrement())
+  userId    BigInt       @map("user_id")
+  cafeId    BigInt       @map("cafe_id")
+  type      CouponType
+  name      String       @db.VarChar(255)
+  status    CouponStatus @default(active)
+  issuedAt  DateTime     @map("issued_at")
+  expiredAt DateTime     @map("expired_at")
+  usedAt    DateTime?    @map("used_at")
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@map("coupons")
+}
+
+// ================================
+// Enums
+// ================================
+
+enum UserRole {
   CUSTOMER
   OWNER
 }
@@ -46,4 +374,50 @@ enum Role {
 enum UserStatus {
   active
   inactive
+}
+
+enum ChallengeParticipantStatus {
+  in_progress
+  completed
+  failed
+}
+
+enum StampBookStatus {
+  active
+  expired
+  completed
+  converted
+}
+
+enum PointTransactionType {
+  earned
+  spent
+  refunded
+}
+
+enum CafeStatus {
+  active
+  inactive
+  deleted
+}
+
+enum NotificationType {
+  system
+  challenge
+  stamp
+  coupon
+  review
+}
+
+enum CouponType {
+  discount
+  free_drink
+  free_dessert
+  special_offer
+}
+
+enum CouponStatus {
+  active
+  used
+  expired
 }
