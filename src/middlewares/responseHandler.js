@@ -1,4 +1,4 @@
-export const responseHelper = (req, res, next) => {
+export const responseHandler = (req, res, next) => {
   res.success = (data) => {
     return res.json({
       resultType: "SUCCESS",
