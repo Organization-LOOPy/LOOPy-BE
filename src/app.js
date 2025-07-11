@@ -2,6 +2,7 @@ import express from "express";
 import { responseHandler } from "./middlewares/responseHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { setupSwagger } from "./config/swagger.js";
+import authRouter from "./routes/auth.routes.js";
 import passport from "./config/passport.js";
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(responseHandler); // 응답 포맷 통일 미들웨어
 app.use(errorHandler); // 전역 예외 처리 미들웨어
 app.use(passport.initialize());
 
+app.use("/api/auth", authRouter);
 export default app;
 
 //백업용 커밋
