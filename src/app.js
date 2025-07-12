@@ -7,15 +7,18 @@ import passport from "./config/passport.js"
 
 const app = express();
 
-setupSwagger(app);            // Swagger UI 등록
-app.use(express.json());      // JSON 파싱
+setupSwagger(app); // Swagger UI 등록
+app.use(express.json()); // JSON 파싱
 
 
 app.get("/", (req, res) => res.send("루피 백엔드 작동 중!"));
 
-app.use(responseHandler);     // 응답 포맷 통일 미들웨어
-app.use(errorHandler);        // 전역 예외 처리 미들웨어
+app.use(responseHandler); // 응답 포맷 통일 미들웨어
+app.use(errorHandler); // 전역 예외 처리 미들웨어
 app.use(passport.initialize());
 
 app.use('/api/auth', authRouter);
+
 export default app;
+
+//백업용 커밋

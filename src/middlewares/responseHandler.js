@@ -21,3 +21,5 @@ export const responseHandler = (req, res, next) => {
 
   next();
 };
+
+export default responseHandler;
