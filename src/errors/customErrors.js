@@ -35,5 +35,10 @@ export class CouponNotFoundError extends CustomError {
   }
 }
 
+export class MissingUserObjectError extends CustomError {
+  constructor() {
+    super("유저 객체가 누락되었습니다.", "C004");
+  }
+}
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;

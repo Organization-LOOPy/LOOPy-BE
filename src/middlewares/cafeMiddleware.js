@@ -4,9 +4,10 @@ import {
   MissingCafeIdError,
   CafeNotFoundError,
   CouponNotFoundError,
+  MissingUserObjectError,
 } from "../errors/customErrors.js";
 
-export const isCorectCafeId = async (req, res, next) => {
+export const isCorrectCafeId = async (req, res, next) => {
   try {
     const { cafeId } = req.params;
 
@@ -17,6 +18,16 @@ export const isCorectCafeId = async (req, res, next) => {
 
     const cafe = await prisma.cafe.findUnique({
       where: { id: cafeId },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        ownerName: true,
+        phone: true,
+        website: true,
+        description: true,
+        keywords: true,
+      },
     });
 
     if (!cafe) {
@@ -29,6 +40,7 @@ export const isCorectCafeId = async (req, res, next) => {
 
     next();
   } catch (err) {
+    logger.error(`카페 ID 확인 중 오류 발생: ${err.message}`);
     next(err);
   }
 };
@@ -38,7 +50,7 @@ export const isMyCoupon = async (req, res, next) => {
     const { cafeId } = req.params;
 
     if (!req.user.id) {
-      //throw new auth 커스텀 에러 나오면 추가
+      throw new MissingUserObjectError();
     }
     logger.debug(`유저 ${req.user.id} 확인`);
 
@@ -53,14 +65,18 @@ export const isMyCoupon = async (req, res, next) => {
       },
     });
 
-    if (!coupons) {
-      throw new CouponNotFoundError(cafeId, userId);
+    if (coupons.length === 0) {
+      throw new CouponNotFoundError(cafeId, req.user.id);
     }
-    logger.debug(`쿠폰 ${coupon.id} 확인 완료`);
+    logger.debug(
+      `사용자 ${req.user.id}의 사용가능 쿠폰 ${coupons.length}개 확인:`,
+      JSON.stringify(coupons, null, 2)
+    );
     req.coupons = coupons;
 
     next();
   } catch (err) {
+    logger.error(`쿠폰 확인 중 오류 발생: ${err.message}`);
     next(err);
   }
 };
