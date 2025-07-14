@@ -12,4 +12,28 @@ export class DuplicateEmailError extends CustomError {
   }
 }
 
+//카페 조회
+export class MissingCafeIdError extends CustomError {
+  constructor() {
+    super("카페 ID가 누락되었습니다.", "C001");
+  }
+}
+
+export class CafeNotFoundError extends CustomError {
+  constructor(cafeId) {
+    super(`카페 ID: ${cafeId}를 찾을 수 없습니다.`, "C002", { cafeId });
+  }
+}
+
+export class CouponNotFoundError extends CustomError {
+  constructor(cafeId, userId) {
+    super(
+      `카페 ID: ${cafeId}와 유저 ID: ${userId}에 해당하는 쿠폰을 찾을 수 없습니다.`,
+      "C003",
+      { cafeId, userId }
+    );
+  }
+}
+
+//url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
