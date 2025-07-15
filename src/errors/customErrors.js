@@ -40,5 +40,17 @@ export class MissingUserObjectError extends CustomError {
     super("유저 객체가 누락되었습니다.", "C004");
   }
 }
+
+export class CafePhotosNotFoundError extends CustomError {
+  constructor(cafeId) {
+    super(`카페 ID: ${cafeId}에 대한 사진이 없습니다.`, "C005", { cafeId });
+  }
+}
+
+export class MenuNotFoundError extends CustomError {
+  constructor(cafeId) {
+    super(`카페 ID: ${cafeId}에 대한 메뉴가 없습니다.`, "C006", { cafeId });
+  }
+}
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;

@@ -1,5 +1,8 @@
 import { logger } from "../utils/logger.js";
-import { cafeRepository } from "../repositories/cafeRepository.js";
+import {
+  cafeRepository,
+  stampBookRepository,
+} from "../repositories/cafeRepository.js";
 
 export const cafeService = {
   async getCafeDetails(cafe, cafeId) {
@@ -25,5 +28,14 @@ export const cafeService = {
     };
     logger.debug(`카페 정보 조회 성공: ${cafeDetails.name}`);
     return cafeDetails;
+  },
+};
+
+export const stampBookService = {
+  async getStampBook(userId, cafeId) {
+    const stampBook = await stampBookRepository.findStampBook(userId, cafeId);
+
+    logger.debug(`스탬프북 조회 성공: ${stampBook}`);
+    return stampBook;
   },
 };
