@@ -7,8 +7,8 @@ import passport from "./config/passport.js"
 
 const app = express();
 
-setupSwagger(app);          
-app.use(express.json());  
+setupSwagger(app);
+app.use(express.json());
 
 
 app.get("/", (req, res) => res.send("루피 백엔드 작동 중!"));
@@ -18,4 +18,5 @@ app.use(errorHandler);
 app.use(passport.initialize());
 
 app.use('/api/auth', authRouter);
+
 export default app;

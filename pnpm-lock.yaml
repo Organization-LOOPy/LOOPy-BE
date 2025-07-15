@@ -20,6 +20,9 @@ importers:
       bcrypt:
         specifier: ^6.0.0
         version: 6.0.0
+      cross-env:
+        specifier: ^7.0.3
+        version: 7.0.3
       dotenv:
         specifier: ^17.0.1
         version: 17.2.0
@@ -51,9 +54,6 @@ importers:
         specifier: ^0.3.0
         version: 0.3.0
     devDependencies:
-      cross-env:
-        specifier: ^7.0.3
-        version: 7.0.3
       nodemon:
         specifier: ^3.1.10
         version: 3.1.10
