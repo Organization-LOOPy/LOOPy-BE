@@ -36,7 +36,7 @@ model User {
   pointTransactions    PointTransaction[]
   reviews              Review[]
   notifications        Notification[]
-  coupons              Coupon[]
+  coupons              UserCoupon[]
 
   @@map("users")
 }
@@ -270,7 +270,7 @@ model Cafe {
   stampBooks         StampBook[]
   reviews            Review[]
   notifications      Notification[]
-  coupons            Coupon[]
+  coupons            UserCoupon[]
 
   @@map("cafes")
 }
