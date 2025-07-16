@@ -17,6 +17,6 @@ app.use(responseHandler);
 app.use(errorHandler);       
 app.use(passport.initialize());
 
-app.use('/api/auth', authRouter);
+app.use('/api/v1/auth', authRouter);
 
 export default app;
