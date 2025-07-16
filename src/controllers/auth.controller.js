@@ -127,3 +127,27 @@ export const login = async (req, res, next) => {
     next(err);
   }
 };
+
+// 로그아웃
+export const logout = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    console.log('로그아웃 요청 받은 유저:', req.user);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    await prisma.user.update({
+      where: { id: BigInt(userId) },
+      data: {
+        fcmToken: null,
+      },
+    });
+
+    return res.json({ message: '로그아웃 완료' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({ error: '서버 오류' });
+  }
+};
