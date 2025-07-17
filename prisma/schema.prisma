@@ -12,31 +12,32 @@ datasource db {
 // ================================
 
 model User {
-  id                   BigInt                   @id @default(autoincrement())
-  email                String?                  @unique @db.VarChar(255)
-  passwordHash         String?                  @map("password_hash") @db.VarChar(255)
-  phoneNumber          String                   @unique @map("phone_number") @db.VarChar(20)
-  nickname             String                   @db.VarChar(50)
-  role                 UserRole
-  allowKakaoAlert      Boolean                  @default(false) @map("allow_kakao_alert")
-  status               UserStatus               @default(active)
-  fcmToken             String?                  @map("fcm_token") @db.VarChar(255)
-  profileImageUrl      String?                  @map("profile_image_url") @db.Text
-  createdAt            DateTime                 @default(now()) @map("created_at")
-  updatedAt            DateTime                 @updatedAt @map("updated_at")
+  id              BigInt     @id @default(autoincrement())
+  email           String?    @unique @db.VarChar(255)
+  passwordHash    String?    @map("password_hash") @db.VarChar(255)
+  phoneNumber     String     @unique @map("phone_number") @db.VarChar(20)
+  nickname        String     @db.VarChar(50)
+  role            UserRole
+  allowKakaoAlert Boolean    @default(false) @map("allow_kakao_alert")
+  status          UserStatus @default(active)
+  fcmToken        String?    @map("fcm_token") @db.VarChar(255)
+  profileImageUrl String?    @map("profile_image_url") @db.Text
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+  inactivedAt     DateTime?  @map("inactived_at")
 
   // Relations
-  kakaoAccount         KakaoAccount?
-  userPreferences      UserPreference?
-  verificationCodes    VerificationCode[]
-  userAgreements       UserAgreement?
+  kakaoAccount          KakaoAccount?
+  userPreferences       UserPreference?
+  verificationCodes     VerificationCode[]
+  userAgreements        UserAgreement?
   challengeParticipants ChallengeParticipant[]
-  badges               Badge[]
-  stampBooks           StampBook[]
-  pointTransactions    PointTransaction[]
-  reviews              Review[]
-  notifications        Notification[]
-  coupons              UserCoupon[]
+  badges                Badge[]
+  stampBooks            StampBook[]
+  pointTransactions     PointTransaction[]
+  reviews               Review[]
+  notifications         Notification[]
+  coupons               UserCoupon[]
 
   @@map("users")
 }
@@ -44,7 +45,7 @@ model User {
 model KakaoAccount {
   id        BigInt   @id @default(autoincrement())
   userId    BigInt   @unique @map("user_id")
-  socialId  String   @map("social_id") @db.VarChar(255)  @unique
+  socialId  String   @unique @map("social_id") @db.VarChar(255)
   createdAt DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -82,13 +83,13 @@ model VerificationCode {
 }
 
 model UserAgreement {
-  id                    BigInt   @id @default(autoincrement())
-  userId                BigInt   @unique @map("user_id")
-  termsAgreed           Boolean  @map("termsAgreed")
-  privacyPolicyAgreed   Boolean  @map("privacyPolicyAgreed")
-  marketingAgreed       Boolean  @map("marketingAgreed")
-  locationPermission    Boolean  @map("locationPermission")
-  agreedAt              DateTime @map("agreed_at")
+  id                  BigInt   @id @default(autoincrement())
+  userId              BigInt   @unique @map("user_id")
+  termsAgreed         Boolean  @map("termsAgreed")
+  privacyPolicyAgreed Boolean  @map("privacyPolicyAgreed")
+  marketingAgreed     Boolean  @map("marketingAgreed")
+  locationPermission  Boolean  @map("locationPermission")
+  agreedAt            DateTime @map("agreed_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -112,9 +113,9 @@ model Challenge {
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   // Relations
-  participants        ChallengeParticipant[]
-  availableCafes      ChallengeAvailableCafe[]
-  badges              Badge[]
+  participants   ChallengeParticipant[]
+  availableCafes ChallengeAvailableCafe[]
+  badges         Badge[]
 
   @@map("challenges")
 }
@@ -179,24 +180,24 @@ model Badge {
 }
 
 model StampBook {
-  id            Int            @id @default(autoincrement())
-  userId        BigInt         @map("user_id")
-  cafeId        BigInt         @map("cafe_id")
-  currentCount  Int            @default(0) @map("current_count")
-  goalCount     Int            @map("goal_count")
-  rewardDetail  String         @map("reward_detail") @db.VarChar(255)
-  startedAt     DateTime       @map("started_at")
-  lastVisitedAt DateTime?      @map("last_visited_at")
-  expiresAt     DateTime       @map("expires_at")
-  extendedAt    DateTime?      @map("extended_at")
-  expiredAt     DateTime?      @map("expired_at")
-  completedAt   DateTime?      @map("completed_at")
-  convertedAt   DateTime?      @map("converted_at")
+  id            Int             @id @default(autoincrement())
+  userId        BigInt          @map("user_id")
+  cafeId        BigInt          @map("cafe_id")
+  currentCount  Int             @default(0) @map("current_count")
+  goalCount     Int             @map("goal_count")
+  rewardDetail  String          @map("reward_detail") @db.VarChar(255)
+  startedAt     DateTime        @map("started_at")
+  lastVisitedAt DateTime?       @map("last_visited_at")
+  expiresAt     DateTime        @map("expires_at")
+  extendedAt    DateTime?       @map("extended_at")
+  expiredAt     DateTime?       @map("expired_at")
+  completedAt   DateTime?       @map("completed_at")
+  convertedAt   DateTime?       @map("converted_at")
   status        StampBookStatus
-  isCompleted   Boolean        @default(false) @map("is_completed")
-  isConverted   Boolean        @default(false) @map("is_converted")
-  createdAt     DateTime       @default(now()) @map("created_at")
-  updatedAt     DateTime       @updatedAt @map("updated_at")
+  isCompleted   Boolean         @default(false) @map("is_completed")
+  isConverted   Boolean         @default(false) @map("is_converted")
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
 
   // Relations
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -208,14 +209,14 @@ model StampBook {
 }
 
 model Stamp {
-  id           Int      @id @default(autoincrement())
-  stampBookId  Int      @map("stamp_book_id")
-  stampImageUrl String? @map("stamp_image_url") @db.Text
-  stampedAt    DateTime @map("stamped_at")
-  source       String   @db.VarChar(100)
-  note         String?  @db.Text
-  latitude     Float?
-  longitude    Float?
+  id            Int      @id @default(autoincrement())
+  stampBookId   Int      @map("stamp_book_id")
+  stampImageUrl String?  @map("stamp_image_url") @db.Text
+  stampedAt     DateTime @map("stamped_at")
+  source        String   @db.VarChar(100)
+  note          String?  @db.Text
+  latitude      Float?
+  longitude     Float?
 
   // Relations
   stampBook StampBook @relation(fields: [stampBookId], references: [id], onDelete: Cascade)
@@ -224,13 +225,13 @@ model Stamp {
 }
 
 model PointTransaction {
-  id          Int                   @id @default(autoincrement())
-  userId      BigInt                @map("user_id")
-  stampBookId Int?                  @map("stamp_book_id")
+  id          Int                  @id @default(autoincrement())
+  userId      BigInt               @map("user_id")
+  stampBookId Int?                 @map("stamp_book_id")
   point       Int
   type        PointTransactionType
-  description String                @db.VarChar(255)
-  createdAt   DateTime              @default(now()) @map("created_at")
+  description String               @db.VarChar(255)
+  createdAt   DateTime             @default(now()) @map("created_at")
 
   // Relations
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -244,24 +245,24 @@ model PointTransaction {
 // ================================
 
 model Cafe {
-  id              BigInt     @id @default(autoincrement())
-  name            String     @db.VarChar(255)
-  address         String     @db.VarChar(500)
-  region          String     @db.VarChar(100)
-  latitude        Float
-  longitude       Float
-  ownerName       String     @map("owner_name") @db.VarChar(100)
-  businessHours   String?    @map("business_hours") @db.Text
-  phone           String?    @db.VarChar(20)
-  websiteUrl      String?    @map("website_url") @db.Text
-  description     String?    @db.Text
-  storeFilters    Json?      @map("store_filters")
-  takeOutFilters  Json?      @map("take_out_filters")
-  menuFilters     Json?      @map("menu_filters")
-  keywords        Json?
-  status          CafeStatus @default(active)
-  createdAt       DateTime   @default(now()) @map("created_at")
-  updatedAt       DateTime   @updatedAt @map("updated_at")
+  id             BigInt     @id @default(autoincrement())
+  name           String     @db.VarChar(255)
+  address        String     @db.VarChar(500)
+  region         String     @db.VarChar(100)
+  latitude       Float
+  longitude      Float
+  ownerName      String     @map("owner_name") @db.VarChar(100)
+  businessHours  String?    @map("business_hours") @db.Text
+  phone          String?    @db.VarChar(20)
+  websiteUrl     String?    @map("website_url") @db.Text
+  description    String?    @db.Text
+  storeFilters   Json?      @map("store_filters")
+  takeOutFilters Json?      @map("take_out_filters")
+  menuFilters    Json?      @map("menu_filters")
+  keywords       Json?
+  status         CafeStatus @default(active)
+  createdAt      DateTime   @default(now()) @map("created_at")
+  updatedAt      DateTime   @updatedAt @map("updated_at")
 
   // Relations
   menu               CafeMenu[]
@@ -271,6 +272,7 @@ model Cafe {
   reviews            Review[]
   notifications      Notification[]
   coupons            UserCoupon[]
+  CouponTemplate     CouponTemplate[]
 
   @@map("cafes")
 }
@@ -350,31 +352,33 @@ model CouponTemplate {
   type        CouponType
   name        String     @db.VarChar(255)
   description String?    @db.Text
-  validDays   Int        @map("valid_days")  
+  validDays   Int        @map("valid_days")
   isActive    Boolean    @default(true) @map("is_active")
   createdAt   DateTime   @default(now()) @map("created_at")
-  
+
   // Relations
-  cafe         Cafe           @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  userCoupons  UserCoupon[]  
-  
+  cafe        Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  userCoupons UserCoupon[]
+
   @@map("coupon_templates")
 }
 
 model UserCoupon {
-  id                  Int                    @id @default(autoincrement())
-  userId              BigInt                 @map("user_id")
-  couponTemplateId    Int                    @map("coupon_template_id")
-  acquisitionType     CouponAcquisitionType  @map("acquisition_type")  // 획득 방법 
-  status              CouponStatus           @default(active)
-  issuedAt            DateTime               @default(now()) @map("issued_at")
-  expiredAt           DateTime               @map("expired_at")
-  usedAt              DateTime?              @map("used_at")
-  
+  id               Int                   @id @default(autoincrement())
+  userId           BigInt                @map("user_id")
+  couponTemplateId Int                   @map("coupon_template_id")
+  acquisitionType  CouponAcquisitionType @map("acquisition_type") // 획득 방법 
+  status           CouponStatus          @default(active)
+  issuedAt         DateTime              @default(now()) @map("issued_at")
+  expiredAt        DateTime              @map("expired_at")
+  usedAt           DateTime?             @map("used_at")
+
   // Relations
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   couponTemplate CouponTemplate @relation(fields: [couponTemplateId], references: [id], onDelete: Cascade)
-  
+  Cafe           Cafe?          @relation(fields: [cafeId], references: [id])
+  cafeId         BigInt?
+
   @@map("user_coupons")
 }
 
@@ -439,6 +443,6 @@ enum CouponStatus {
 }
 
 enum CouponAcquisitionType {
-  promotion  // 프로모션으로 획득
-  stamp      // 스탬프로 획득
+  promotion // 프로모션으로 획득
+  stamp // 스탬프로 획득
 }
