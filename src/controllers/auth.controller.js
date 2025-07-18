@@ -21,8 +21,6 @@ export const signup = async (req, res, next) => {
   });
 }
 
-
-
     // 중복 확인
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -65,6 +63,12 @@ export const signup = async (req, res, next) => {
           marketingAgreed: agreements.marketingAgreed,
           locationPermission: agreements.locationPermission,
           agreedAt: new Date()
+        }
+      });
+
+       await tx.userPreference.create({
+        data: {
+          userId: createdUser.id 
         }
       });
 
