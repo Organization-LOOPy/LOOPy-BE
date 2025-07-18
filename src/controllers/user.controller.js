@@ -49,3 +49,41 @@ export const reactivateUser = async (req, res) => {
     return res.status(500).json({ error: '계정 복구에 실패했습니다.' });
   }
 };
+
+export const getMyInfo = async (req, res) => {
+  console.log('req.user:', req.user);
+  
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        email: true,
+        phoneNumber: true,
+        nickname: true,
+        role: true,
+        status: true,
+        allowKakaoAlert: true,
+        profileImageUrl: true,
+        fcmToken: true,
+        createdAt: true,
+        updatedAt: true,
+        inactivedAt: true,
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+    }
+
+    return res.status(200).json({
+      user: {
+        ...user,
+        id: user.id.toString(), // BigInt → string 변환
+      },
+    });
+  } catch (error) {
+    console.error('내 정보 조회 오류:', error);
+    return res.status(500).json({ error: '사용자 정보 조회 실패' });
+  }
+};

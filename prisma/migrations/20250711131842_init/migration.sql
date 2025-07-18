@@ -9,7 +9,6 @@ CREATE TABLE `users` (
     `allow_kakao_alert` BOOLEAN NOT NULL DEFAULT false,
     `status` ENUM('active', 'inactive') NOT NULL DEFAULT 'active',
     `fcm_token` VARCHAR(255) NULL,
-    `profile_image_url` TEXT NULL,
     `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
     `updated_at` DATETIME(3) NOT NULL,
 
