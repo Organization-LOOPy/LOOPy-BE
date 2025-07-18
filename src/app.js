@@ -4,6 +4,7 @@ import { errorHandler } from "./middlewares/errorHandler.js";
 import { setupSwagger } from "./config/swagger.js";
 import authRouter from './routes/auth.routes.js';
 import passport from "./config/passport.js"
+import userRouter from './routes/user.routes.js';
 
 const app = express();
 
@@ -18,5 +19,6 @@ app.use(errorHandler);
 app.use(passport.initialize());
 
 app.use('/api/v1/auth', authRouter);
+app.use('/api/v1/users', userRouter);
 
 export default app;

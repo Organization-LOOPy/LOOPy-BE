@@ -91,7 +91,7 @@ export const handleKakaoRedirect = async (req, res) => {
       return res.redirect(`${process.env.FRONT_PROFILE_URI}?linked=kakao`);
     }
 
-    // 아무런 로그인 정보도 없고, 기존 연동도 없음 → 신규 가입
+    // 아무런 로그인 정보도 없고 기존 연동도 없으면 신규 가입으로 
     const dummyPhone = 'kakao_' + Math.floor(Math.random() * 1e10).toString().padStart(10, '0');
     const user = await prisma.user.create({
       data: {
