@@ -5,6 +5,7 @@ import { setupSwagger } from "./config/swagger.js";
 import authRouter from './routes/auth.routes.js';
 import passport from "./config/passport.js"
 import userRouter from './routes/user.routes.js';
+import reviewRouter from './routes/review.routes.js';
 
 const app = express();
 
@@ -20,5 +21,6 @@ app.use(passport.initialize());
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 
 export default app;
