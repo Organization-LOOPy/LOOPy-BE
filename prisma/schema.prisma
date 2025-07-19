@@ -270,7 +270,6 @@ model Cafe {
   stampBooks         StampBook[]
   reviews            Review[]
   notifications      Notification[]
-  coupons            UserCoupon[]
   CouponTemplate     CouponTemplate[]
 
   @@map("cafes")
