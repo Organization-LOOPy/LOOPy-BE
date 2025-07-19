@@ -4,7 +4,7 @@ export const errorHandler = (err, req, res, next) => {
   if (res.headersSent) return next(err);
 
   if (err instanceof CustomError) {
-    return res.status(400).error({
+    return res.status(err.statusCode).error({
       errorCode: err.errorCode,
       reason: err.message,
       data: err.data || null,
