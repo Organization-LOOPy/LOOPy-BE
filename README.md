@@ -45,15 +45,15 @@ pnpm prod
 
 ```bash
 # Prisma를 사용하기 위한 초기 설정 생성
-pnpm prisma init
+npx prisma init
 
 # schema.prisma 파일의 설정을 실제 데이터베이스에 반영
 # (데이터베이스 구조 변경 또는 새로운 테이블 생성)
-pnpm prisma db push
+npx prisma db push
 
 # Prisma Client를 생성하거나 업데이트
 # schema.prisma 파일 변경 시 실행하여 최신 상태로 유지
-pnpm prisma generate
+npx prisma generate
 ```
 
 ---
