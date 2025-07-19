@@ -21,8 +21,6 @@ export const signup = async (req, res, next) => {
   });
 }
 
-
-
     // 중복 확인
     const existingUser = await prisma.user.findFirst({
       where: {
@@ -65,6 +63,12 @@ export const signup = async (req, res, next) => {
           marketingAgreed: agreements.marketingAgreed,
           locationPermission: agreements.locationPermission,
           agreedAt: new Date()
+        }
+      });
+
+       await tx.userPreference.create({
+        data: {
+          userId: createdUser.id 
         }
       });
 
@@ -125,5 +129,29 @@ export const login = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+// 로그아웃
+export const logout = async (req, res) => {
+  try {
+    const userId = req.user?.id;
+
+    console.log('로그아웃 요청 받은 유저:', req.user);
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    await prisma.user.update({
+      where: { id: BigInt(userId) },
+      data: {
+        fcmToken: null,
+      },
+    });
+
+    return res.json({ message: '로그아웃 완료' });
+  } catch (error) {
+    console.error('Logout error:', error);
+    return res.status(500).json({ error: '서버 오류' });
   }
 };

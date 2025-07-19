@@ -9,8 +9,8 @@ import passport from "./config/passport.js";
 
 const app = express();
 
-setupSwagger(app); // Swagger UI 등록
-app.use(express.json()); // JSON 파싱
+setupSwagger(app);
+app.use(express.json());
 
 app.use(passport.initialize());
 app.use(responseHandler); // 응답 포맷 통일 미들웨어
@@ -24,5 +24,3 @@ app.use("/api/cafe/:cafeId", cafeRouter);
 app.use(errorHandler); // 전역 예외 처리 미들웨어
 
 export default app;
-
-//백업용 커밋

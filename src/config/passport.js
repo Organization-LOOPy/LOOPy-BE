@@ -1,27 +1,30 @@
 import passport from "passport";
 import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
+import { PrismaClient } from '@prisma/client';
 
-// 임시 비밀키 (나중에 .env로 분리)
-const JWT_SECRET = process.env.JWT_SECRET || "loopy-secret";
+const prisma = new PrismaClient();
+
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const opts = {
   jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
   secretOrKey: JWT_SECRET,
 };
 
-const mockUser = {
-  id: 1,
-  email: "loopy@example.com",
-  name: "루피",
-};
-
 passport.use(
-  new JwtStrategy(opts, (jwtPayload, done) => {
-    // 실제로는 DB에서 유저 검증
-    if (jwtPayload && jwtPayload.id === mockUser.id) {
-      return done(null, mockUser);
-    } else {
-      return done(null, false);
+  new JwtStrategy(opts, async (jwtPayload, done) => {
+    try {
+      const user = await prisma.user.findUnique({
+        where: { id: parseInt(jwtPayload.userId, 10) },
+      });
+
+      if (user) {
+        return done(null, { id: user.id }); 
+      } else {
+        return done(null, false);
+      }
+    } catch (err) {
+      return done(err, false);
     }
   })
 );
