@@ -2,9 +2,9 @@ import logger from "../utils/logger.js";
 import prisma from "../../prisma/client.js";
 import {
   MissingCafeIdError,
-  CafeNotFoundError,
   CouponNotFoundError,
-  MissingUserObjectError,
+  NotAuthenticatedError,
+  InvalidParameterError,
 } from "../errors/customErrors.js";
 
 export const isCorrectCafeId = async (req, res, next) => {
@@ -31,7 +31,7 @@ export const isCorrectCafeId = async (req, res, next) => {
     });
 
     if (!cafe) {
-      throw new CafeNotFoundError(cafeId);
+      throw new InvalidParameterError(cafeId);
     }
 
     logger.debug(`카페 ${cafe.name} 확인 완료`);
@@ -50,7 +50,7 @@ export const isMyCoupon = async (req, res, next) => {
     const { cafeId } = req.params;
 
     if (!req.user.id) {
-      throw new MissingUserObjectError();
+      throw new NotAuthenticatedError();
     }
     logger.debug(`유저 ${req.user.id} 확인`);
 

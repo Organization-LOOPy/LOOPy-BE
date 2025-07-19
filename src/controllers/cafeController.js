@@ -1,6 +1,11 @@
 import logger from "../utils/logger.js";
-import { MissingUserObjectError } from "../errors/customErrors.js";
-import { cafeService, stampBookService } from "../services/cafeService.js";
+import { NotAuthenticatedError } from "../errors/customErrors.js";
+import {
+  cafeService,
+  cafeReviewService,
+  stampBookService,
+  cafeCouponService,
+} from "../services/cafeService.js";
 
 export const getCafe = async (req, res, next) => {
   try {
@@ -22,24 +27,62 @@ export const getCafeStamp = async (req, res, next) => {
     const userId = req.user.id;
 
     if (!userId) {
-      throw new MissingUserObjectError();
+      throw new NotAuthenticatedError();
     }
 
     const stampBook = await stampBookService.getStampBook(userId, cafeId);
 
     logger.debug(`스탬프북 조회 성공: ${stampBook.id}`);
     res.success(stampBook);
-    // 스탬프북 있으면 객체, 없으면 null 반환
-  } catch (error) {
+    // 스탬프북 있으면 객체, 없으면 빈 배열 반환
+  } catch (err) {
     logger.error(`스탬프북 조회 중 오류 발생: ${error.message}`);
-    next(error);
+    next(err);
   }
 };
 
-export const getCafeCoupon = async (req, res) => {};
+export const getCafeCoupon = async (req, res) => {
+  try {
+    const cafeId = req.cafe.id;
 
-export const addCafeCoupon = async (req, res) => {};
+    const coupons = await cafeCouponService.getCoupons(cafeId, req.user.id);
+    res.success(coupons);
+    // 쿠폰이 없으면 빈 배열 반환
+  } catch (err) {
+    logger.error(`쿠폰 조회 중 오류 발생: ${err.message}`);
+    next(err);
+  }
+};
 
-export const getCafeReview = async (req, res) => {};
+export const issueCafeCouponToUser = async (req, res) => {
+  try {
+    const { couponInfo } = req.body;
+    const userId = req.user.id;
 
-export const addCafeBookmark = async (req, res) => {};
+    if (!userId) {
+      throw new NotAuthenticatedError();
+    }
+
+    const coupon = await cafeCouponService.issueCouponToUser(
+      couponInfo,
+      userId
+    );
+    res.success(coupon);
+  } catch (err) {
+    logger.error(`쿠폰 추가 중 오류 발생: ${err.message}`);
+    next(err);
+  }
+};
+
+export const getCafeReviews = async (req, res) => {
+  try {
+    const cafeId = req.cafe.id;
+
+    const reviews = await cafeReviewService.getCafeReviews(cafeId);
+    res.success(reviews);
+    // 리뷰가 없으면 빈 배열 반환
+  } catch (err) {
+    logger.error(`카페 리뷰 조회 중 오류 발생: ${err.message}`);
+    next(err);
+  }
+};

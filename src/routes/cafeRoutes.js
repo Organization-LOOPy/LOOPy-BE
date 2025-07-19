@@ -3,18 +3,15 @@ import {
   getCafe,
   getCafeStamp,
   getCafeCoupon,
-  addCafeCoupon,
-  getCafeReview,
-  addCafeBookmark,
+  issueCafeCouponToUser,
+  getCafeReviews,
 } from "../controllers/cafeController.js";
 
 import { isCorrectCafeId, isMyCoupon } from "../middlewares/cafeMiddleware.js";
 
 const router = express.Router();
 
-router.get("/review", getCafeReview);
-
-router.post("/bookmark", addCafeBookmark);
+router.get("/review", getCafeReviews);
 
 router.use(isCorrectCafeId); // 카페 ID 유효성 검사
 
@@ -24,4 +21,4 @@ router.get("/mystamp", getCafeStamp);
 
 router.get("/coupon", getCafeCoupon);
 
-router.post("/coupon", isMyCoupon, addCafeCoupon);
+router.post("/coupon", isMyCoupon, issueCafeCouponToUser);

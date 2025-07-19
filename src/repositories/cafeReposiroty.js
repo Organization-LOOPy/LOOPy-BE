@@ -1,8 +1,9 @@
 import { logger } from "../utils/logger.js";
 import prisma from "../../prisma/client.js";
 import {
-  CafePhotosNotFoundError,
   MenuNotFoundError,
+  FailedIssuingCouponError,
+  InvalidParameterError,
 } from "../errors/customErrors.js";
 
 export const cafeRepository = {
@@ -16,12 +17,7 @@ export const cafeRepository = {
         displayOrder: true,
       },
     });
-    if (!photos || photos.length === 0) {
-      logger.error(`카페 ID: ${cafeId}에 대한 사진이 없습니다.`);
-      throw new CafePhotosNotFoundError(cafeId);
-    }
 
-    logger.debug(`카페 ID: ${cafeId}의 사진 조회 성공: ${photos.length}개`);
     return photos;
   },
 
@@ -34,6 +30,7 @@ export const cafeRepository = {
         price: true,
         description: true,
         photoUrl: true,
+        isSoldOut: true,
       },
     });
     if (!menu || menu.length === 0) {
@@ -41,7 +38,6 @@ export const cafeRepository = {
       throw new MenuNotFoundError(cafeId);
     }
 
-    logger.debug(`카페 ID: ${cafeId}의 메뉴 조회 성공: ${menu.length}개`);
     return menu;
   },
 };
@@ -65,7 +61,62 @@ export const stampBookRepository = {
       return null;
     }
 
-    logger.debug(`유저 ID: ${userId}의 카페 ID: ${cafeId} 스탬프북 조회 성공`);
     return stampBook;
+  },
+};
+
+export const cafeCouponRepository = {
+  async findCafeCoupons(cafeId) {
+    const coupons = await prisma.couponTemplate.findMany({
+      where: { cafeId, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        validDays: true,
+        discountType: true,
+        discountValue: true,
+        applicableMenu: true,
+        expiredAt: true,
+      },
+    });
+
+    return coupons;
+  },
+
+  async issueCoupon(couponInfo, userId) {
+    if (!couponInfo?.couponTemplateId || !userId) {
+      throw new InvalidParameterError(
+        "쿠폰 정보 또는 사용자 ID가 누락되었습니다."
+      );
+    }
+
+    const coupon = await prisma.userCoupon.create({
+      data: {
+        userId: userId,
+        couponTempateId: couponInfo.couponTemplateId,
+        expiredAt: new Date(
+          Date.now() + couponInfo.validDays * 24 * 60 * 60 * 1000
+        ), //사장님이 설정한 유효기간 후 만료
+        acquisitionType: "promotion",
+      },
+    });
+
+    if (!coupon) {
+      throw new FailedIssuingCouponError(couponInfo.couponTemplateId, userId);
+    }
+
+    return coupon;
+  },
+
+  async findUserCoupon(couponTemplateId, userId) {
+    const coupon = await prisma.userCoupon.findFirst({
+      where: {
+        couponTempateId: couponTemplateId,
+        userId: userId,
+        status: "active",
+      },
+    });
+
+    return coupon;
   },
 };

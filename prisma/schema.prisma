@@ -289,6 +289,7 @@ model CafeMenu {
 
   // Relations
   cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  couponTemplates CouponTemplate[]
 
   @@map("cafe_menu")
 }
@@ -314,6 +315,7 @@ model Review {
   id        Int      @id @default(autoincrement())
   userId    BigInt   @map("user_id")
   cafeId    BigInt   @map("cafe_id")
+  title     String   @db.VarChar(255)
   content   String   @db.Text
   images    Json?
   createdAt DateTime @default(now()) @map("created_at")
@@ -344,18 +346,21 @@ model Notification {
 }
 
 model CouponTemplate {
-  id          Int        @id @default(autoincrement())
-  cafeId      BigInt     @map("cafe_id")
-  type        CouponType
-  name        String     @db.VarChar(255)
-  description String?    @db.Text
-  validDays   Int        @map("valid_days") 
-  isActive    Boolean    @default(true) @map("is_active")
-  createdAt   DateTime   @default(now()) @map("created_at")
+  id            Int        @id @default(autoincrement())
+  cafeId        BigInt     @map("cafe_id")
+  name          String     @db.VarChar(255)
+  validDays     Int        @map("valid_days")
+  
+  discountType  String     @map("discount_type") @db.VarChar(20) // "AMOUNT" | "PERCENTAGE"
+  discountValue Int        @map("discount_value") // 금액(원) 또는 퍼센트
+  applicableMenuId BigInt? @map("applicable_menu_id")
+  isActive      Boolean    @default(true) @map("is_active")
+  createdAt     DateTime   @default(now()) @map("created_at")
   
   // Relations
-  cafe         Cafe           @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  userCoupons  UserCoupon[]   
+  cafe            Cafe           @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  applicableMenu  CafeMenu?      @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
+  userCoupons     UserCoupon[]
   
   @@map("coupon_templates")
 }
@@ -422,13 +427,6 @@ enum NotificationType {
   stamp
   coupon
   review
-}
-
-enum CouponType {
-  discount
-  free_drink
-  free_dessert
-  special_offer
 }
 
 enum CouponStatus {
