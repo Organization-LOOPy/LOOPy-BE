@@ -8,6 +8,7 @@ import {
 } from "../controllers/cafeController.js";
 
 import { isCorrectCafeId, isMyCoupon } from "../middlewares/cafeMiddleware.js";
+import e from "express";
 
 const router = express.Router();
 
@@ -22,3 +23,5 @@ router.get("/mystamp", getCafeStamp);
 router.get("/coupon", getCafeCoupon);
 
 router.post("/coupon", isMyCoupon, issueCafeCouponToUser);
+
+export default router;
