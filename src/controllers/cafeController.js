@@ -1,4 +1,4 @@
-import logger from "../utils/logger.js";
+import { logger } from "../utils/logger.js";
 import { NotAuthenticatedError } from "../errors/customErrors.js";
 import {
   cafeService,

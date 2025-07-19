@@ -4,7 +4,7 @@ import {
   stampBookRepository,
   cafeCouponRepository,
   cafeReviewRepository,
-} from "../repositories/cafeRepository.js";
+} from "../repositories/cafeReposiroty.js";
 import {
   InvalidParameterError,
   DuplicateCouponError,

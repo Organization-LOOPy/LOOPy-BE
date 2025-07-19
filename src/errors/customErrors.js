@@ -71,12 +71,8 @@ export class InvalidParameterError extends CustomError {
 }
 
 export class DuplicateCouponError extends CustomError {
-  super(
-    reason = "이미 발급받은 쿠폰입니다.",
-    errorCode = "C009",
-    statusCode = 400
-  ) {
-    super(reason, errorCode, statusCode);
+  constructor(message) {
+    super(message || "이미 발급받은 쿠폰입니다.", "C009", 409);
   }
 }
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)

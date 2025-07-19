@@ -120,3 +120,27 @@ export const cafeCouponRepository = {
     return coupon;
   },
 };
+
+//cursor기반으로 수정해야함
+export const cafeReviewRepository = {
+  async getCafeReview(cafeId) {
+    const reviews = await prisma.review.findMany({
+      where: { cafeId: cafeId },
+      select: {
+        id: true,
+        title: true,
+        content: true,
+        createdAt: true,
+        user: {
+          select: {
+            nickname: true,
+            profileImageUrl: true,
+          },
+        },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return reviews;
+  },
+};
