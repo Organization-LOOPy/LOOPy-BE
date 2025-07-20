@@ -121,16 +121,23 @@ export const cafeCouponRepository = {
   },
 };
 
-//cursor기반으로 수정해야함
 export const cafeReviewRepository = {
-  async getCafeReview(cafeId) {
+  async getCafeReviews(cafeId, cursor, take = 5) {
+    const whereClause = { cafeId };
+
+    // cursor 조건 추가
+    if (cursor) {
+      whereClause.id = { lt: cursor }; // createdAt desc 기준으로 cursor보다 이전 항목들
+    }
+
     const reviews = await prisma.review.findMany({
-      where: { cafeId: cafeId },
+      where: whereClause,
       select: {
         id: true,
         title: true,
         content: true,
         createdAt: true,
+        images: true,
         user: {
           select: {
             nickname: true,
@@ -139,6 +146,7 @@ export const cafeReviewRepository = {
         },
       },
       orderBy: { createdAt: "desc" },
+      take: take + 1, // 다음 페이지 존재 확인을 위한 take + 1
     });
 
     return reviews;

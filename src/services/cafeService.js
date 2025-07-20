@@ -77,27 +77,48 @@ export const cafeCouponService = {
 };
 
 export const cafeReviewService = {
-  async getCafeReview(cafeId) {
-    const reviews = await cafeReviewRepository.getCafeReview(cafeId);
+  async getCafeReviews(cafeId, cursor, take = 5) {
+    const reviews = await cafeReviewRepository.getCafeReviews(
+      cafeId,
+      cursor,
+      take
+    );
 
     if (!reviews || reviews.length === 0) {
       logger.debug(`카페 ID: ${cafeId}에 대한 리뷰가 없습니다.`);
-      return [];
+      return {
+        reviews: [],
+        nextCursor: null,
+        hasNextPage: false,
+      };
     }
 
-    const reviewDetails = reviews.map((review) => ({
+    // Repository에서 take + 1개를 가져왔으므로 데이터 재가공
+    const hasNextPage = reviews.length > take; //다음 페이지가 있을 경우에만 상수 생성
+    const actualReviews = hasNextPage ? reviews.slice(0, take) : reviews;
+
+    const reviewDetails = actualReviews.map((review) => ({
       id: review.id,
       title: review.title,
       content: review.content,
       nickname: review.user.nickname,
       userProfileImage: review.user.profileImageUrl,
       createdAt: review.createdAt,
-      images: review.images ? JSON.parse(review.images) : [],
+      images: review.images || "", // string 그대로 전달
     }));
+
+    const nextCursor = hasNextPage
+      ? actualReviews[actualReviews.length - 1].id
+      : null;
 
     logger.debug(
       `카페 ID: ${cafeId}의 리뷰 조회 성공: ${reviewDetails.length}개`
     );
-    return reviewDetails;
+
+    return {
+      reviews: reviewDetails,
+      nextCursor,
+      hasNextPage,
+    };
   },
 };

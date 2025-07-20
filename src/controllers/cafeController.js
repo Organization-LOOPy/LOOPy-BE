@@ -74,15 +74,22 @@ export const issueCafeCouponToUser = async (req, res) => {
   }
 };
 
-export const getCafeReviews = async (req, res) => {
+export const getCafeReviews = async (req, res, next) => {
   try {
     const cafeId = req.cafe.id;
+    const { cursor } = req.query;
+    const take = 5; // 리뷰 5개씩 기본 조회 (필요시 수정)
 
-    const reviews = await cafeReviewService.getCafeReviews(cafeId);
-    res.success(reviews);
-    // 리뷰가 없으면 빈 배열 반환
+    /* 클라이언트에서 페이지 크기 조절이 필요한 경우
+    const { cursor, take = 5 } = req.query;
+    const limit = Math.min(parseInt(take) || 5, 20); */
+
+    const result = await cafeReviewService.getCafeReviews(cafeId, cursor, take);
+    res.success(result);
   } catch (err) {
-    logger.error(`카페 리뷰 조회 중 오류 발생: ${err.message}`);
+    logger.error(`카페 리뷰 조회 중 오류 발생: ${err.message}`, {
+      cafeId: req.cafe?.id,
+    });
     next(err);
   }
 };
