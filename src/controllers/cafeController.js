@@ -32,8 +32,11 @@ export const getCafeStamp = async (req, res, next) => {
 
     const stampBook = await stampBookService.getStampBook(userId, cafeId);
 
+    console.log(stampBook);
+
     logger.debug(`스탬프북 조회 성공: ${stampBook.id}`);
     res.success(stampBook);
+
     // 스탬프북 있으면 객체, 없으면 빈 배열 반환
   } catch (err) {
     logger.error(`스탬프북 조회 중 오류 발생: ${error.message}`);
@@ -56,7 +59,7 @@ export const getCafeCoupon = async (req, res) => {
 
 export const issueCafeCouponToUser = async (req, res) => {
   try {
-    const { couponInfo } = req.body;
+    const couponInfo = req.couponInfo;
     const userId = req.user.id;
 
     if (!userId) {
@@ -76,7 +79,7 @@ export const issueCafeCouponToUser = async (req, res) => {
 
 export const getCafeReviews = async (req, res, next) => {
   try {
-    const cafeId = req.cafe.id;
+    const { cafeId } = req.params;
     const { cursor } = req.query;
     const take = 5; // 리뷰 5개씩 기본 조회 (필요시 수정)
 

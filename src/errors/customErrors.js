@@ -20,13 +20,13 @@ export class MissingCafeIdError extends CustomError {
   }
 }
 
-export class CouponNotFoundError extends CustomError {
-  constructor(cafeId, userId) {
+export class AlreadyIssuedCouponError extends CustomError {
+  constructor(couponTemplateId, userId) {
     super(
-      `카페 ID: ${cafeId}와 유저 ID: ${userId}에 해당하는 쿠폰을 찾을 수 없습니다.`,
-      "C003",
-      404,
-      { cafeId, userId }
+      `이미 발급받은 쿠폰입니다. 쿠폰 템플릿 ID: ${couponTemplateId}, 사용자 ID: ${userId}`,
+      "C002",
+      409,
+      { couponTemplateId, userId }
     );
   }
 }

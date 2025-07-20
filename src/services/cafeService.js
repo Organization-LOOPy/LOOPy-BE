@@ -19,13 +19,14 @@ export const cafeService = {
 
     const cafeDetails = {
       ...cafe,
+      id: cafe.id.toString(),
       photos: photos.map((photo) => ({
-        id: photo.id,
-        url: photo.url,
+        id: photo.id.toString(),
+        url: photo.photoUrl,
         displayOrder: photo.displayOrder,
       })),
       menu: menu.map((item) => ({
-        id: item.id,
+        id: item.id.toString(),
         name: item.name,
         price: item.price,
         description: item.description,
@@ -33,6 +34,7 @@ export const cafeService = {
         isSoldOut: item.isSoldOut,
       })),
     };
+
     logger.debug(`카페 정보 조회 성공: ${cafeDetails.name}`);
     return cafeDetails;
   },
@@ -41,9 +43,12 @@ export const cafeService = {
 export const stampBookService = {
   async getStampBook(userId, cafeId) {
     const stampBook = await stampBookRepository.findStampBook(userId, cafeId);
-
-    logger.debug(`스탬프북 조회 성공: ${stampBook}`);
-    return stampBook;
+    const stampBookDetails = {
+      ...stampBook,
+      id: stampBook.id.toString(),
+    };
+    logger.debug(`스탬프북 조회 성공:`, stampBook);
+    return stampBookDetails;
   },
 };
 
@@ -51,28 +56,30 @@ export const cafeCouponService = {
   async getCoupons(cafeId) {
     const coupons = await cafeCouponRepository.findCafeCoupons(cafeId);
 
+    const couponDetails = coupons.map((coupon) => ({
+      ...coupon,
+      id: coupon.id.toString(),
+    }));
+
     logger.debug(`카페 ID: ${cafeId}의 쿠폰 조회 성공: ${coupons.length}개`);
-    return coupons;
+    return couponDetails;
   },
   async issueCouponToUser(couponInfo, userId) {
-    if (!couponInfo || !userId) {
-      throw new InvalidParameterError(
-        "쿠폰 정보 또는 사용자 ID가 누락되었습니다."
-      );
-    }
-    const existingCoupon = await cafeCouponRepository.findUserCoupon(
-      couponInfo.couponTemplateId,
-      userId
-    );
-
-    if (existingCoupon) {
-      throw new DuplicateCouponError("이미 발급받은 쿠폰입니다.");
-    }
-
     const coupon = await cafeCouponRepository.issueCoupon(couponInfo, userId);
 
-    logger.debug(`카페 ID: ${cafeId}의 쿠폰 발급 성공: ${coupon.id}`);
-    return coupon;
+    const couponDetail = {
+      ...coupon,
+      id: coupon.id.toString(),
+      couponTemplateId: coupon.couponTemplate.id.toString(),
+
+      // 추가로 필요한 것들:
+      couponTemplate: {
+        ...coupon.couponTemplate,
+        id: coupon.couponTemplate.id.toString(),
+      },
+    };
+    logger.debug(`쿠폰 발급 성공: 쿠폰id: ${coupon.id}`);
+    return couponDetail;
   },
 };
 
@@ -98,7 +105,7 @@ export const cafeReviewService = {
     const actualReviews = hasNextPage ? reviews.slice(0, take) : reviews;
 
     const reviewDetails = actualReviews.map((review) => ({
-      id: review.id,
+      id: review.id.toString(),
       title: review.title,
       content: review.content,
       nickname: review.user.nickname,
@@ -108,7 +115,7 @@ export const cafeReviewService = {
     }));
 
     const nextCursor = hasNextPage
-      ? actualReviews[actualReviews.length - 1].id
+      ? actualReviews[actualReviews.length - 1].id.toString()
       : null;
 
     logger.debug(

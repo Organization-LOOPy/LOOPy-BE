@@ -8,12 +8,12 @@ import {
 
 export const cafeRepository = {
   async findPhotos(cafeId) {
-    const photos = await prisma.photo.findMany({
+    const photos = await prisma.CafePhoto.findMany({
       where: { cafeId },
       orderBy: { displayOrder: "asc" },
       select: {
         id: true,
-        url: true,
+        photoUrl: true,
         displayOrder: true,
       },
     });
@@ -22,7 +22,7 @@ export const cafeRepository = {
   },
 
   async findMenu(cafeId) {
-    const menu = await prisma.menu.findMany({
+    const menu = await prisma.CafeMenu.findMany({
       where: { cafeId },
       select: {
         id: true,
@@ -45,12 +45,19 @@ export const cafeRepository = {
 export const stampBookRepository = {
   async findStampBook(userId, cafeId) {
     const stampBook = await prisma.stampBook.findUnique({
-      where: { userId: userId, cafeId: cafeId },
+      where: {
+        userId_cafeId: {
+          // 자동 생성된 복합 유니크 필드
+          userId: userId,
+          cafeId: cafeId,
+        },
+      },
       select: {
+        id: true,
         stamps: true,
         currentCount: true,
         goalCount: true,
-        expiredAt: true,
+        expiresAt: true,
       },
     });
 
@@ -84,7 +91,7 @@ export const cafeCouponRepository = {
   },
 
   async issueCoupon(couponInfo, userId) {
-    if (!couponInfo?.couponTemplateId || !userId) {
+    if (!couponInfo?.id || !userId) {
       throw new InvalidParameterError(
         "쿠폰 정보 또는 사용자 ID가 누락되었습니다."
       );
@@ -93,11 +100,27 @@ export const cafeCouponRepository = {
     const coupon = await prisma.userCoupon.create({
       data: {
         userId: userId,
-        couponTemplateId: couponInfo.couponTemplateId,
+        couponTemplateId: couponInfo.id,
         expiredAt: new Date(
           Date.now() + couponInfo.validDays * 24 * 60 * 60 * 1000
         ), //사장님이 설정한 유효기간 후 만료
         acquisitionType: "promotion",
+      },
+      select: {
+        id: true,
+        expiredAt: true,
+        acquisitionType: true,
+        couponTemplate: {
+          select: {
+            id: true,
+            name: true,
+            validDays: true,
+            discountType: true,
+            discountValue: true,
+            applicableMenu: true,
+            expiredAt: true,
+          },
+        },
       },
     });
 
@@ -123,11 +146,13 @@ export const cafeCouponRepository = {
 
 export const cafeReviewRepository = {
   async getCafeReviews(cafeId, cursor, take = 5) {
-    const whereClause = { cafeId };
+    const whereClause = {
+      cafeId: BigInt(cafeId),
+    };
 
     // cursor 조건 추가
     if (cursor) {
-      whereClause.id = { lt: cursor }; // createdAt desc 기준으로 cursor보다 이전 항목들
+      whereClause.id = { lt: BigInt(cursor) }; // cursor도 BigInt로 변환
     }
 
     const reviews = await prisma.review.findMany({
@@ -141,7 +166,7 @@ export const cafeReviewRepository = {
         user: {
           select: {
             nickname: true,
-            profileImageUrl: true,
+            profileUrl: true,
           },
         },
       },
