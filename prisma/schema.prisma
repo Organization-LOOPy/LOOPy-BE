@@ -16,6 +16,7 @@ model User {
   email           String?    @unique @db.VarChar(255)
   passwordHash    String?    @map("password_hash") @db.VarChar(255)
   phoneNumber     String     @unique @map("phone_number") @db.VarChar(20)
+  profileUrl    String?      @map("profile_url") @db.Text 
   nickname        String     @db.VarChar(50)
   role            UserRole
   allowKakaoAlert Boolean    @default(false) @map("allow_kakao_alert")
@@ -101,7 +102,7 @@ model UserAgreement {
 // ================================
 
 model Challenge {
-  id           Int      @id @default(autoincrement())
+  id           BigInt      @id @default(autoincrement())
   title        String   @db.VarChar(255)
   description  String   @db.Text
   thumbnailUrl String   @map("thumbnail_url") @db.Text
@@ -120,9 +121,9 @@ model Challenge {
 }
 
 model ChallengeParticipant {
-  id          Int                        @id @default(autoincrement())
+  id          BigInt                        @id @default(autoincrement())
   userId      BigInt                     @map("user_id")
-  challengeId Int                        @map("challenge_id")
+  challengeId BigInt                        @map("challenge_id")
   status      ChallengeParticipantStatus @default(in_progress)
   joinedAt    DateTime                   @map("joined_at")
   completedAt DateTime?                  @map("completed_at")
@@ -138,8 +139,8 @@ model ChallengeParticipant {
 }
 
 model ChallengeAvailableCafe {
-  id          Int      @id @default(autoincrement())
-  challengeId Int      @map("challenge_id")
+  id          BigInt      @id @default(autoincrement())
+  challengeId BigInt      @map("challenge_id")
   cafeId      BigInt   @map("cafe_id")
   createdAt   DateTime @default(now()) @map("created_at")
 
@@ -152,7 +153,7 @@ model ChallengeAvailableCafe {
 }
 
 model BadgeType {
-  id        Int      @id @default(autoincrement())
+  id        BigInt      @id @default(autoincrement())
   title     String   @db.VarChar(255)
   imageUrl  String   @map("image_url") @db.Text
   createdAt DateTime @default(now()) @map("created_at")
@@ -164,10 +165,10 @@ model BadgeType {
 }
 
 model Badge {
-  id          Int      @id @default(autoincrement())
+  id          BigInt      @id @default(autoincrement())
   userId      BigInt   @map("user_id")
-  challengeId Int      @map("challenge_id")
-  badgeTypeId Int      @map("badge_type_id")
+  challengeId BigInt      @map("challenge_id")
+  badgeTypeId BigInt      @map("badge_type_id")
   earnedAt    DateTime @map("earned_at")
 
   // Relations
@@ -179,7 +180,7 @@ model Badge {
 }
 
 model StampBook {
-  id            Int             @id @default(autoincrement())
+  id            BigInt             @id @default(autoincrement())
   userId        BigInt          @map("user_id")
   cafeId        BigInt          @map("cafe_id")
   currentCount  Int             @default(0) @map("current_count")
@@ -208,8 +209,8 @@ model StampBook {
 }
 
 model Stamp {
-  id            Int      @id @default(autoincrement())
-  stampBookId   Int      @map("stamp_book_id")
+  id            BigInt      @id @default(autoincrement())
+  stampBookId   BigInt      @map("stamp_book_id")
   stampImageUrl String?  @map("stamp_image_url") @db.Text
   stampedAt     DateTime @map("stamped_at")
   source        String   @db.VarChar(100)
@@ -224,9 +225,9 @@ model Stamp {
 }
 
 model PointTransaction {
-  id          Int                  @id @default(autoincrement())
+  id          BigInt                  @id @default(autoincrement())
   userId      BigInt               @map("user_id")
-  stampBookId Int?                 @map("stamp_book_id")
+  stampBookId BigInt?                 @map("stamp_book_id")
   point       Int
   type        PointTransactionType
   description String               @db.VarChar(255)
@@ -312,14 +313,14 @@ model CafePhoto {
 // ================================
 
 model Review {
-  id        Int      @id @default(autoincrement())
+  id        BigInt      @id @default(autoincrement())
   userId    BigInt   @map("user_id")
   cafeId    BigInt   @map("cafe_id")
   title     String   @db.VarChar(255)
   content   String   @db.Text
   images    Json?
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
+  updatedAt DateTime? @updatedAt @map("updated_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -329,7 +330,7 @@ model Review {
 }
 
 model Notification {
-  id        Int              @id @default(autoincrement())
+  id        BigInt              @id @default(autoincrement())
   userId    BigInt           @map("user_id")
   cafeId    BigInt?          @map("cafe_id")
   type      NotificationType
@@ -346,7 +347,7 @@ model Notification {
 }
 
 model CouponTemplate {
-  id            Int        @id @default(autoincrement())
+  id            BigInt        @id @default(autoincrement())
   cafeId        BigInt     @map("cafe_id")
   name          String     @db.VarChar(255)
   validDays     Int        @map("valid_days")
@@ -367,9 +368,9 @@ model CouponTemplate {
 }
 
 model UserCoupon {
-  id                  Int                    @id @default(autoincrement())
+  id                  BigInt                    @id @default(autoincrement())
   userId              BigInt                 @map("user_id")
-  couponTemplateId    Int                    @map("coupon_template_id")
+  couponTemplateId    BigInt                    @map("coupon_template_id")
   acquisitionType     CouponAcquisitionType  @map("acquisition_type")  // 획득 방법
   status              CouponStatus           @default(active)
   issuedAt            DateTime               @default(now()) @map("issued_at")
@@ -377,7 +378,7 @@ model UserCoupon {
   usedAt              DateTime?              @map("used_at")
   createdAt     DateTime   @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
-  
+
   
   // Relations
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
