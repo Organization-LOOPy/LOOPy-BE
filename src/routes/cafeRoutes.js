@@ -12,7 +12,11 @@ import {
   isMyCoupon,
   test,
 } from "../middlewares/cafeMiddleware.js";
+import { authenticateJWT } from "../middlewares/authMiddleware.js";
+
 const router = express.Router({ mergeParams: true });
+
+router.use(authenticateJWT);
 
 //router.use(test); // 테스트용 미들웨어, 실제 배포 시 제거
 
