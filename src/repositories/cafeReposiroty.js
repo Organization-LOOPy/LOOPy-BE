@@ -54,13 +54,11 @@ export const stampBookRepository = {
       },
       select: {
         id: true,
-        stamps: true,
         currentCount: true,
         goalCount: true,
         expiresAt: true,
       },
     });
-
     if (!stampBook) {
       logger.debug(
         `유저 ID: ${userId}의 카페 ID: ${cafeId}에 대한 스탬프북이 없습니다.`
