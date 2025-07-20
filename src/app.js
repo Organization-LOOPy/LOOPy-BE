@@ -17,6 +17,7 @@ app.use(morganMiddleware);
 const corsOptions = {
   origin: [
     "http://localhost:5173", // 프론트엔드 로컬 환경
+    "https://loo-py.xyz", // 프론트엔드 배포 환경
   ],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
