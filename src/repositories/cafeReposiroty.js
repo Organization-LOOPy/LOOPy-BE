@@ -93,7 +93,7 @@ export const cafeCouponRepository = {
     const coupon = await prisma.userCoupon.create({
       data: {
         userId: userId,
-        couponTempateId: couponInfo.couponTemplateId,
+        couponTemplateId: couponInfo.couponTemplateId,
         expiredAt: new Date(
           Date.now() + couponInfo.validDays * 24 * 60 * 60 * 1000
         ), //사장님이 설정한 유효기간 후 만료
