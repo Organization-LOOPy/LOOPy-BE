@@ -55,4 +55,4 @@ const morganMiddleware =
     ? morgan("tiny", { stream })
     : (req, res, next) => next();
 
-export { logger, specificLogger, morganMiddleware };
+export { logger, morganMiddleware };
