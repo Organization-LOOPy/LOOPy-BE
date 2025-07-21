@@ -3,7 +3,7 @@ import { MissingUserCoordinate } from "../errors/customErrors.js";
 import { searchCafeService } from "../services/searchService.js";
 export const cafeSearch = async (res, req, next) => {};
 
-export const getCafeMapData = async (req, req, next) => {};
+export const getCafeMapData = async (res, req, next) => {};
 
 export const getRegion = async (res, req, next) => {};
 

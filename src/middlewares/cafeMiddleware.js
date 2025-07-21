@@ -55,7 +55,7 @@ export const isCorrectCafeId = async (req, res, next) => {
         menuFilters: true,
         keywords: true,
         latitude: true,
-        longtitude: true,
+        longitude: true,
       },
     });
 
