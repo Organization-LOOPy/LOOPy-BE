@@ -40,6 +40,10 @@ export const cafeRepository = {
 
     return menu;
   },
+  /* <- main pull 하고 수정하기 
+  async isBookmared(cafeId, userId) {
+    const bookmark = await prisma
+  } */
 };
 
 export const stampBookRepository = {

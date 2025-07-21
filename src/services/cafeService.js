@@ -11,60 +11,66 @@ import {
 } from "../errors/customErrors.js";
 
 export const cafeService = {
-  async getCafeDetails(cafe, cafeId) {
-    const [photos, menu] = await Promise.all([
+  async getCafeDetails(cafe, cafeId, userId) {
+    const [photos, menu, stampBook, coupons] = await Promise.all([
       cafeRepository.findPhotos(cafeId),
       cafeRepository.findMenu(cafeId),
+      stampBookRepository.findStampBook(userId, cafeId),
+      cafeCouponRepository.findCafeCoupons(cafeId),
+      //cafeRepository.isBookmarked(cafeId, userId), 여기도 수정 필요
     ]);
     delete cafe.latitude;
     delete cafe.longitude;
 
-    const cafeDetails = {
-      ...cafe,
+    const plainCafe = JSON.parse(
+      JSON.stringify(cafe, (key, value) =>
+        typeof value === "bigint" ? String(value) : value
+      )
+    );
 
-      id: cafe.id.toString(),
-      photos: photos.map((photo) => ({
-        id: photo.id.toString(),
-        url: photo.photoUrl,
-        displayOrder: photo.displayOrder,
-      })),
-      menu: menu.map((item) => ({
-        id: item.id.toString(),
-        name: item.name,
-        price: item.price,
-        description: item.description,
-        imgUrl: item.photoUrl,
-        isSoldOut: item.isSoldOut,
-      })),
+    const photoData = photos.map((photo) => ({
+      id: String(photo.id),
+      url: photo.photoUrl,
+      displayOrder: photo.displayOrder,
+    }));
+
+    const menuData = menu.map((item) => ({
+      id: String(item.id),
+      name: item.name,
+      price: item.price,
+      description: item.description,
+      imgUrl: item.photoUrl,
+      isSoldOut: item.isSoldOut,
+    }));
+
+    const couponData = coupons.map((coupon) => ({
+      ...coupon,
+      id: String(coupon.id),
+    }));
+
+    const stampBookData = stampBook
+      ? {
+          currentCount: stampBook.currentCount,
+          goalCount: stampBook.goalCount,
+          expiresAt: stampBook.expiresAt,
+          stampBookId: String(stampBook.id),
+        }
+      : {};
+
+    const cafeDetails = {
+      cafe: plainCafe, // 여기서 왜 말썽인지 모르겠습니다;
+      photos: photoData,
+      menu: menuData,
+      coupon: couponData,
+      ...stampBookData,
     };
+
+    console.log(cafeDetails);
     return cafeDetails;
   },
 };
 
-export const stampBookService = {
-  async getStampBook(userId, cafeId) {
-    const stampBook = await stampBookRepository.findStampBook(userId, cafeId);
-    const stampBookDetails = {
-      ...stampBook,
-      id: stampBook.id.toString(),
-    };
-    logger.debug(`스탬프북 조회 성공:`, stampBook);
-    return stampBookDetails;
-  },
-};
-
 export const cafeCouponService = {
-  async getCoupons(cafeId) {
-    const coupons = await cafeCouponRepository.findCafeCoupons(cafeId);
-
-    const couponDetails = coupons.map((coupon) => ({
-      ...coupon,
-      id: coupon.id.toString(),
-    }));
-
-    logger.debug(`카페 ID: ${cafeId}의 쿠폰 조회 성공: ${coupons.length}개`);
-    return couponDetails;
-  },
   async issueCouponToUser(couponInfo, userId) {
     const coupon = await cafeCouponRepository.issueCoupon(couponInfo, userId);
 
