@@ -133,9 +133,51 @@ export const updateReview = async (req, res, next) => {
   
   export const getMyReviews = async (req, res, next) => {
     try {
-      res.success({ message: "내 리뷰 목록" });
+      const userId = parseInt(req.user.userId);
+      const page = parseInt(req.query.page) || 1;
+      const limit = parseInt(req.query.limit) || 10;
+      const skip = (page - 1) * limit;
+  
+      const [total, reviews] = await Promise.all([
+        prisma.review.count({ where: { userId } }),
+        prisma.review.findMany({
+          where: { userId },
+          skip,
+          take: limit,
+          orderBy: { createdAt: 'desc' },
+          include: {
+            cafe: {
+              select: {
+                id: true,
+                name: true
+              }
+            }
+          }
+        })
+      ]);
+  
+      const formatted = reviews.map((review) => ({
+        reviewId: review.id,
+        cafeId: review.cafe.id,
+        cafeName: review.cafe.name,
+        title: review.title,
+        content: review.content,
+        images: review.images || [],
+        createdAt: review.createdAt
+      }));
+  
+      return res.success({
+        message: '내가 쓴 리뷰 목록 조회 성공',
+        data: formatted,
+        pagination: {
+          page,
+          limit,
+          total
+        }
+      });
     } catch (err) {
       next(err);
     }
   };
+  
   
