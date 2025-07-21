@@ -44,4 +44,6 @@ app.use(errorHandler); // 전역 예외 처리 미들웨어
 
 app.use(errorHandler);
 
+app.use(errorHandler);
+
 export default app;
