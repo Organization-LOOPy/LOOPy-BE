@@ -16,10 +16,10 @@ const router = express.Router();
 router.post("/cafe/:cafeId/review", authenticateJWT, validateReview, verifyStamp, reviewController.createReview);
 
 // 리뷰 수정
-router.patch("/reviews/:reviewId", authenticateJWT, validateReview, reviewController.updateReview);
+router.patch("/:reviewId", authenticateJWT, validateReview, reviewController.updateReview);
 
 // 리뷰 삭제
-router.delete("/reviews/:reviewId", authenticateJWT, reviewController.deleteReview);
+router.delete("/:reviewId", authenticateJWT, reviewController.deleteReview);
 
 
 // 내 리뷰 목록 조회
