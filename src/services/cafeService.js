@@ -4,78 +4,73 @@ import {
   stampBookRepository,
   cafeCouponRepository,
   cafeReviewRepository,
+  cafeBookmarkRepository,
 } from "../repositories/cafeReposiroty.js";
-import {
-  InvalidParameterError,
-  DuplicateCouponError,
-} from "../errors/customErrors.js";
+import {} from "../errors/customErrors.js";
 
 export const cafeService = {
-  async getCafeDetails(cafe, cafeId) {
-    const [photos, menu] = await Promise.all([
+  async getCafeDetails(cafe, cafeId, userId) {
+    const [photos, menu, stampBook, coupons, bookmark] = await Promise.all([
       cafeRepository.findPhotos(cafeId),
       cafeRepository.findMenu(cafeId),
+      stampBookRepository.findStampBook(userId, cafeId),
+      cafeCouponRepository.findCafeCoupons(cafeId),
+      cafeBookmarkRepository.isBookmarked(cafeId, userId),
     ]);
+    delete cafe.latitude;
+    delete cafe.longitude;
 
     const cafeDetails = {
-      ...cafe,
-      id: cafe.id.toString(),
+      cafe: {
+        ...cafe,
+      },
       photos: photos.map((photo) => ({
-        id: photo.id.toString(),
+        id: photo.id,
         url: photo.photoUrl,
         displayOrder: photo.displayOrder,
       })),
       menu: menu.map((item) => ({
-        id: item.id.toString(),
+        id: item.id,
         name: item.name,
         price: item.price,
         description: item.description,
         imgUrl: item.photoUrl,
         isSoldOut: item.isSoldOut,
       })),
+      coupons: coupons.map((coupon) => ({
+        ...coupon,
+        id: coupon.id,
+      })),
+      stampBook: stampBook
+        ? {
+            id: stampBook.id,
+            currentCount: stampBook.currentCount,
+            goalCount: stampBook.goalCount,
+            expiresAt: stampBook.expiresAt,
+            stampBookId: stampBook.id,
+          }
+        : null,
+      bookmark: {
+        isBookmarked: !!bookmark,
+      },
     };
 
-    logger.debug(`카페 정보 조회 성공: ${cafeDetails.name}`);
+    console.log(cafeDetails);
     return cafeDetails;
   },
 };
 
-export const stampBookService = {
-  async getStampBook(userId, cafeId) {
-    const stampBook = await stampBookRepository.findStampBook(userId, cafeId);
-    const stampBookDetails = {
-      ...stampBook,
-      id: stampBook.id.toString(),
-    };
-    logger.debug(`스탬프북 조회 성공:`, stampBook);
-    return stampBookDetails;
-  },
-};
-
 export const cafeCouponService = {
-  async getCoupons(cafeId) {
-    const coupons = await cafeCouponRepository.findCafeCoupons(cafeId);
-
-    const couponDetails = coupons.map((coupon) => ({
-      ...coupon,
-      id: coupon.id.toString(),
-    }));
-
-    logger.debug(`카페 ID: ${cafeId}의 쿠폰 조회 성공: ${coupons.length}개`);
-    return couponDetails;
-  },
   async issueCouponToUser(couponInfo, userId) {
     const coupon = await cafeCouponRepository.issueCoupon(couponInfo, userId);
 
     const couponDetail = {
       ...coupon,
-      id: coupon.id.toString(),
-      couponTemplateId: coupon.couponTemplate.id.toString(),
-
-      // 추가로 필요한 것들:
+      id: coupon.id,
+      couponTemplateId: coupon.couponTemplate.id,
       couponTemplate: {
         ...coupon.couponTemplate,
-        id: coupon.couponTemplate.id.toString(),
+        id: coupon.couponTemplate.id,
       },
     };
     logger.debug(`쿠폰 발급 성공: 쿠폰id: ${coupon.id}`);
@@ -85,9 +80,11 @@ export const cafeCouponService = {
 
 export const cafeReviewService = {
   async getCafeReviews(cafeId, cursor, take = 5) {
+    const numericCafeId = parseInt(cafeId, 10);
+    const numericCursor = parseInt(cursor, 10);
     const reviews = await cafeReviewRepository.getCafeReviews(
-      cafeId,
-      cursor,
+      numericCafeId,
+      numericCursor,
       take
     );
 
@@ -100,22 +97,21 @@ export const cafeReviewService = {
       };
     }
 
-    // Repository에서 take + 1개를 가져왔으므로 데이터 재가공
-    const hasNextPage = reviews.length > take; //다음 페이지가 있을 경우에만 상수 생성
+    const hasNextPage = reviews.length > take;
     const actualReviews = hasNextPage ? reviews.slice(0, take) : reviews;
 
     const reviewDetails = actualReviews.map((review) => ({
-      id: review.id.toString(),
+      id: review.id,
       title: review.title,
       content: review.content,
       nickname: review.user.nickname,
       userProfileImage: review.user.profileImageUrl,
       createdAt: review.createdAt,
-      images: review.images || "", // string 그대로 전달
+      images: review.images || "",
     }));
 
     const nextCursor = hasNextPage
-      ? actualReviews[actualReviews.length - 1].id.toString()
+      ? actualReviews[actualReviews.length - 1].id
       : null;
 
     logger.debug(
