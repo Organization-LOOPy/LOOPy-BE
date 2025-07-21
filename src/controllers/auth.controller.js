@@ -1,20 +1,26 @@
-import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
-import prisma from '../../prisma/client.js';
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import prisma from "../../prisma/client.js";
 import {
   DuplicateEmailError,
   MissingFieldsError,
   UserNotFoundError,
-  InvalidPasswordError,InternalServerError
-} from '../errors/customErrors.js';
+  InvalidPasswordError,
+  InternalServerError,
+} from "../errors/customErrors.js";
 
-// 회원가입 
+// 회원가입
 export const signup = async (req, res, next) => {
   try {
     const { email, password, nickname, phoneNumber, agreements } = req.body;
 
     if (!email || !password || !nickname || !phoneNumber) {
-      throw new MissingFieldsError(['email', 'password', 'nickname', 'phoneNumber']);
+      throw new MissingFieldsError([
+        "email",
+        "password",
+        "nickname",
+        "phoneNumber",
+      ]);
     }
 
     const existingUser = await prisma.user.findFirst({
@@ -36,9 +42,9 @@ export const signup = async (req, res, next) => {
           passwordHash: hashedPassword,
           nickname,
           phoneNumber,
-          role: 'CUSTOMER',
+          role: "CUSTOMER",
           allowKakaoAlert: false,
-          status: 'active',
+          status: "active",
         },
       });
 
@@ -63,13 +69,13 @@ export const signup = async (req, res, next) => {
     });
 
     const token = jwt.sign(
-      { userId: user.id.toString(), role: user.role },
+      { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" }
     );
 
     return res.status(201).json({
-      message: '회원가입 성공',
+      message: "회원가입 성공",
       token,
       user: {
         id: user.id.toString(),
@@ -78,11 +84,11 @@ export const signup = async (req, res, next) => {
       },
     });
   } catch (err) {
-    return next(new InternalServerError('회원가입 실패', err));
+    return next(new InternalServerError("회원가입 실패", err));
   }
 };
 
-// 로그인 
+// 로그인
 export const login = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -95,23 +101,26 @@ export const login = async (req, res, next) => {
       throw new UserNotFoundError(email);
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash || '');
+    const isPasswordValid = await bcrypt.compare(
+      password,
+      user.passwordHash || ""
+    );
 
     if (!isPasswordValid) {
       throw new InvalidPasswordError();
     }
 
     const token = jwt.sign(
-      { userId: user.id.toString(), role: user.role },
+      { userId: user.id, role: user.role },
       process.env.JWT_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: "7d" }
     );
 
     return res.json({
-      message: '로그인 성공',
+      message: "로그인 성공",
       token,
       user: {
-        id: user.id.toString(),
+        id: user.id,
         email: user.email,
         nickname: user.nickname,
       },
@@ -127,7 +136,7 @@ export const logout = async (req, res, next) => {
     const userId = req.user?.id;
 
     if (!userId) {
-      return res.status(401).json({ error: 'Unauthorized' });
+      return res.status(401).json({ error: "Unauthorized" });
     }
 
     await prisma.user.update({
@@ -137,7 +146,7 @@ export const logout = async (req, res, next) => {
       },
     });
 
-    return res.json({ message: '로그아웃 완료' });
+    return res.json({ message: "로그아웃 완료" });
   } catch (error) {
     next(error);
   }

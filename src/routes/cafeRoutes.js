@@ -3,6 +3,7 @@ import {
   getCafe,
   issueCafeCouponToUser,
   getCafeReviews,
+  addBookmark,
 } from "../controllers/cafeController.js";
 
 import {
@@ -25,5 +26,7 @@ router.use(isCorrectCafeId); // 카페 ID 유효성 검사
 router.get("/", getCafe);
 
 router.post("/coupon", isMyCoupon, issueCafeCouponToUser);
+
+router.post("/bookmark", addBookmark);
 
 export default router;

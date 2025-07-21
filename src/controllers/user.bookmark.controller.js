@@ -1,14 +1,14 @@
-import prisma from '../../prisma/client.js';
+import prisma from "../../prisma/client.js";
 import {
   UserNotFoundError,
   InternalServerError,
   BookmarkAlreadyExistsError,
   CafeNotFoundError,
-  BadRequestError, 
-  BookmarkNotFoundError
-} from '../errors/customErrors.js';
+  BadRequestError,
+  BookmarkNotFoundError,
+} from "../errors/customErrors.js";
 
-// 내가 북마크한 카페 조회 
+// 내가 북마크한 카페 조회
 export const getBookmarkedCafes = async (req, res, next) => {
   const userId = req.user.id;
 
@@ -16,15 +16,15 @@ export const getBookmarkedCafes = async (req, res, next) => {
     const bookmarks = await prisma.userBookmark.findMany({
       where: { userId },
       include: {
-        cafe: true, 
+        cafe: true,
       },
       orderBy: {
-        createdAt: 'desc',
+        createdAt: "desc",
       },
     });
 
     const cafes = bookmarks.map((bookmark) => ({
-      id: bookmark.cafe.id.toString(),
+      id: bookmark.cafe.id,
       name: bookmark.cafe.name,
       address: bookmark.cafe.address,
       region: bookmark.cafe.region,
@@ -38,11 +38,11 @@ export const getBookmarkedCafes = async (req, res, next) => {
     }));
 
     return res.success({
-      message: '북마크한 카페 목록 조회 성공',
+      message: "북마크한 카페 목록 조회 성공",
       bookmarks: cafes,
     });
   } catch (err) {
-    return next(new InternalServerError('북마크한 카페 조회 실패', err));
+    return next(new InternalServerError("북마크한 카페 조회 실패", err));
   }
 };
 
@@ -51,44 +51,44 @@ export const addBookmark = async (req, res, next) => {
   const { cafeId } = req.body;
 
   if (!cafeId) {
-    return next(new BadRequestError('카페 ID가 필요합니다.'));
+    return next(new BadRequestError("카페 ID가 필요합니다."));
   }
 
   try {
     const cafe = await prisma.cafe.findUnique({
-  where: { id: BigInt(cafeId) },
-});
+      where: { id: cafeId },
+    });
 
-if (!cafe) {
-  return next(new CafeNotFoundError({ cafeId }));
-}
+    if (!cafe) {
+      return next(new CafeNotFoundError({ cafeId }));
+    }
 
     const existing = await prisma.userBookmark.findUnique({
-  where: {
-    userId_cafeId: {
-      userId: BigInt(userId),
-      cafeId: BigInt(cafeId),
-    },
-  },
-});
+      where: {
+        userId_cafeId: {
+          userId: userId,
+          cafeId: cafeId,
+        },
+      },
+    });
 
-if (existing) {
-  return next(new BookmarkAlreadyExistsError({ cafeId }));
-}
+    if (existing) {
+      return next(new BookmarkAlreadyExistsError({ cafeId }));
+    }
     // 북마크 저장
     await prisma.userBookmark.create({
       data: {
-        userId: BigInt(userId),
-        cafeId: BigInt(cafeId),
+        userId: userId,
+        cafeId: cafeId,
       },
     });
 
     return res.success({
-      message: '북마크가 저장되었습니다.',
-      cafeId: cafeId.toString(),
+      message: "북마크가 저장되었습니다.",
+      cafeId: cafeId,
     });
   } catch (err) {
-    return next(new InternalServerError('북마크 저장 실패', err));
+    return next(new InternalServerError("북마크 저장 실패", err));
   }
 };
 
@@ -101,8 +101,8 @@ export const removeBookmark = async (req, res, next) => {
     const bookmark = await prisma.userBookmark.findUnique({
       where: {
         userId_cafeId: {
-          userId: BigInt(userId),
-          cafeId: BigInt(cafeId),
+          userId: userId,
+          cafeId: cafeId,
         },
       },
     });
@@ -114,17 +114,17 @@ export const removeBookmark = async (req, res, next) => {
     await prisma.userBookmark.delete({
       where: {
         userId_cafeId: {
-          userId: BigInt(userId),
-          cafeId: BigInt(cafeId),
+          userId: userId,
+          cafeId: cafeId,
         },
       },
     });
 
     return res.success({
-      message: '북마크가 삭제되었습니다.',
+      message: "북마크가 삭제되었습니다.",
       cafeId: cafeId.toString(),
     });
   } catch (err) {
-    return next(new InternalServerError('북마크 삭제 실패', err));
+    return next(new InternalServerError("북마크 삭제 실패", err));
   }
 };

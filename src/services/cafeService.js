@@ -80,9 +80,11 @@ export const cafeCouponService = {
 
 export const cafeReviewService = {
   async getCafeReviews(cafeId, cursor, take = 5) {
+    const numericCafeId = parseInt(cafeId, 10);
+    const numericCursor = parseInt(cursor, 10);
     const reviews = await cafeReviewRepository.getCafeReviews(
-      cafeId,
-      cursor,
+      numericCafeId,
+      numericCursor,
       take
     );
 

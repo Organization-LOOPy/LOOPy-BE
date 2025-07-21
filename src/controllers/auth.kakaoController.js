@@ -1,11 +1,11 @@
-import axios from 'axios';
-import jwt from 'jsonwebtoken';
-import { PrismaClient, UserRole } from '@prisma/client';
+import axios from "axios";
+import jwt from "jsonwebtoken";
+import { PrismaClient, UserRole } from "@prisma/client";
 import {
   KakaoLoginError,
   KakaoAlreadyLinkedError,
-  KakaoCodeMissingError
-} from '../errors/customErrors.js';
+  KakaoCodeMissingError,
+} from "../errors/customErrors.js";
 
 const prisma = new PrismaClient();
 
@@ -16,19 +16,23 @@ export const handleKakaoRedirect = async (req, res, next) => {
   if (!code) return next(new KakaoCodeMissingError());
 
   try {
-    const tokenRes = await axios.post('https://kauth.kakao.com/oauth/token', null, {
-      params: {
-        grant_type: 'authorization_code',
-        client_id: process.env.KAKAO_REST_API_KEY,
-        redirect_uri: `http://localhost:3000/api/auth/kakao/redirect`,
-        code,
-      },
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    });
+    const tokenRes = await axios.post(
+      "https://kauth.kakao.com/oauth/token",
+      null,
+      {
+        params: {
+          grant_type: "authorization_code",
+          client_id: process.env.KAKAO_REST_API_KEY,
+          redirect_uri: `http://localhost:3000/api/auth/kakao/redirect`,
+          code,
+        },
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      }
+    );
 
     const accessToken = tokenRes.data.access_token;
 
-    const userRes = await axios.get('https://kapi.kakao.com/v2/user/me', {
+    const userRes = await axios.get("https://kapi.kakao.com/v2/user/me", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -37,7 +41,7 @@ export const handleKakaoRedirect = async (req, res, next) => {
     const kakaoUser = userRes.data;
     const socialId = kakaoUser.id.toString();
     const email = kakaoUser.kakao_account?.email ?? null;
-    const nickname = kakaoUser.properties?.nickname ?? '카카오유저';
+    const nickname = kakaoUser.properties?.nickname ?? "카카오유저";
 
     let loggedInUserId = null;
     if (tokenFromQuery) {
@@ -45,7 +49,7 @@ export const handleKakaoRedirect = async (req, res, next) => {
         const decoded = jwt.verify(tokenFromQuery, process.env.JWT_SECRET);
         loggedInUserId = decoded.userId;
       } catch (err) {
-        console.warn('JWT 디코딩 실패:', err.message);
+        console.warn("JWT 디코딩 실패:", err.message);
       }
     }
 
@@ -60,8 +64,12 @@ export const handleKakaoRedirect = async (req, res, next) => {
       }
 
       const user = kakaoAccount.user;
-      const token = jwt.sign({ userId: user.id.toString() }, process.env.JWT_SECRET, { expiresIn: '7d' });
-      const redirectUrl = `${process.env.FRONT_LOGIN_SUCCESS_URI}?token=${token}&nickname=${encodeURIComponent(user.nickname)}`;
+      const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+        expiresIn: "7d",
+      });
+      const redirectUrl = `${
+        process.env.FRONT_LOGIN_SUCCESS_URI
+      }?token=${token}&nickname=${encodeURIComponent(user.nickname)}`;
       return res.redirect(redirectUrl);
     }
 
@@ -76,7 +84,11 @@ export const handleKakaoRedirect = async (req, res, next) => {
       return res.redirect(`${process.env.FRONT_PROFILE_URI}?linked=kakao`);
     }
 
-    const dummyPhone = 'kakao_' + Math.floor(Math.random() * 1e10).toString().padStart(10, '0');
+    const dummyPhone =
+      "kakao_" +
+      Math.floor(Math.random() * 1e10)
+        .toString()
+        .padStart(10, "0");
     const user = await prisma.user.create({
       data: {
         email,
@@ -84,15 +96,19 @@ export const handleKakaoRedirect = async (req, res, next) => {
         phoneNumber: dummyPhone,
         role: UserRole.CUSTOMER,
         allowKakaoAlert: false,
-        status: 'active',
+        status: "active",
         kakaoAccount: {
           create: { socialId },
         },
       },
     });
 
-    const token = jwt.sign({ userId: user.id.toString() }, process.env.JWT_SECRET, { expiresIn: '7d' });
-    const redirectUrl = `${process.env.FRONT_LOGIN_SUCCESS_URI}?token=${token}&nickname=${encodeURIComponent(user.nickname)}`;
+    const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+      expiresIn: "7d",
+    });
+    const redirectUrl = `${
+      process.env.FRONT_LOGIN_SUCCESS_URI
+    }?token=${token}&nickname=${encodeURIComponent(user.nickname)}`;
     return res.redirect(redirectUrl);
   } catch (err) {
     return next(new KakaoLoginError(err.response?.data || err.message));
@@ -106,21 +122,25 @@ export const handleKakaoLinkCallback = async (req, res, next) => {
   if (!code) return next(new KakaoCodeMissingError());
 
   try {
-    const tokenRes = await axios.post('https://kauth.kakao.com/oauth/token', null, {
-      params: {
-        grant_type: 'authorization_code',
-        client_id: process.env.KAKAO_REST_API_KEY,
-        redirect_uri: process.env.KAKAO_LINK_REDIRECT_URI,
-        code,
-      },
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
+    const tokenRes = await axios.post(
+      "https://kauth.kakao.com/oauth/token",
+      null,
+      {
+        params: {
+          grant_type: "authorization_code",
+          client_id: process.env.KAKAO_REST_API_KEY,
+          redirect_uri: process.env.KAKAO_LINK_REDIRECT_URI,
+          code,
+        },
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      }
+    );
 
     const accessToken = tokenRes.data.access_token;
 
-    const userRes = await axios.get('https://kapi.kakao.com/v2/user/me', {
+    const userRes = await axios.get("https://kapi.kakao.com/v2/user/me", {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
@@ -148,4 +168,4 @@ export const handleKakaoLinkCallback = async (req, res, next) => {
   } catch (err) {
     return next(new KakaoLoginError(err.response?.data || err.message));
   }
-}; 
+};
