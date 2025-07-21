@@ -75,5 +75,12 @@ export class DuplicateCouponError extends CustomError {
     super(message || "이미 발급받은 쿠폰입니다.", "C009", 409);
   }
 }
+
+//검색 라우터
+export class MissingUserCoordinate extends CustomError {
+  constructor(message) {
+    super(message || "사용자 주소가 누락되었습니다", "S001", 400);
+  }
+}
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
