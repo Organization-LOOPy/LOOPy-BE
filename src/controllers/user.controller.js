@@ -1,7 +1,15 @@
 import prisma from '../../prisma/client.js';
+import {
+  UserNotFoundError,
+  InvalidNicknameError,
+  PreferenceSaveError,
+  InternalServerError,
+  InvalidPreferredAreaError, 
+  BadRequestError 
+} from '../errors/customErrors.js';
 
-// 휴면계정으로 전환 
-export const deactivateUser = async (req, res) => {
+// 휴면 전환
+export const deactivateUser = async (req, res, next) => {
   const userId = req.user.id;
 
   try {
@@ -9,11 +17,11 @@ export const deactivateUser = async (req, res) => {
       where: { id: BigInt(userId) },
       data: {
         status: 'inactive',
-        inactivedAt: new Date(), // 휴면 시점 기록
+        inactivedAt: new Date(),
       },
     });
 
-    return res.status(200).json({
+    return res.success({
       message: '계정이 휴면 상태로 전환되었습니다.',
       user: {
         id: updatedUser.id.toString(),
@@ -21,14 +29,13 @@ export const deactivateUser = async (req, res) => {
         inactivedAt: updatedUser.inactivedAt,
       },
     });
-  } catch (error) {
-    console.error('휴면 전환 오류:', error);
-    return res.status(500).json({ error: '휴면 전환에 실패했습니다.' });
+  } catch (err) {
+    return next(new InternalServerError('휴면 전환 오류', err));
   }
 };
 
-// 휴면 계정 다시 활성화
-export const reactivateUser = async (req, res) => {
+// 휴면 해제
+export const reactivateUser = async (req, res, next) => {
   const userId = req.user.id;
 
   try {
@@ -40,7 +47,7 @@ export const reactivateUser = async (req, res) => {
       },
     });
 
-    return res.status(200).json({
+    return res.success({
       message: '계정이 다시 활성화되었습니다.',
       user: {
         id: updatedUser.id.toString(),
@@ -48,16 +55,13 @@ export const reactivateUser = async (req, res) => {
         inactivedAt: updatedUser.inactivedAt,
       },
     });
-  } catch (error) {
-    console.error('계정 복구 오류:', error);
-    return res.status(500).json({ error: '계정 복구에 실패했습니다.' });
+  } catch (err) {
+    return next(new InternalServerError('계정 복구 오류', err));
   }
 };
 
-// 사용자 정보 조회
-export const getMyInfo = async (req, res) => {
-  console.log('req.user:', req.user);
-  
+// 내 정보 조회
+export const getMyInfo = async (req, res, next) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user.id },
@@ -78,27 +82,27 @@ export const getMyInfo = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(404).json({ error: '사용자를 찾을 수 없습니다.' });
+      throw new UserNotFoundError(req.user.id);
     }
 
-    return res.status(200).json({
+    return res.success({
       user: {
         ...user,
-        id: user.id.toString(), // BigInt → string 변환
+        id: user.id.toString(),
       },
     });
-  } catch (error) {
-    console.error('내 정보 조회 오류:', error);
-    return res.status(500).json({ error: '사용자 정보 조회 실패' });
+  } catch (err) {
+    return next(err);
   }
 };
 
-export const updateNickname = async (req, res) => {
+// 닉네임 수정
+export const updateNickname = async (req, res, next) => {
   const userId = req.user.id;
   const { nickname } = req.body;
 
   if (!nickname || typeof nickname !== 'string' || nickname.trim() === '') {
-    return res.status(400).json({ error: '유효한 닉네임을 입력해주세요.' });
+    return next(new InvalidNicknameError(nickname));
   }
 
   try {
@@ -112,7 +116,7 @@ export const updateNickname = async (req, res) => {
       },
     });
 
-    return res.status(200).json({
+    return res.success({
       message: '닉네임이 성공적으로 변경되었습니다.',
       user: {
         id: updatedUser.id.toString(),
@@ -120,14 +124,13 @@ export const updateNickname = async (req, res) => {
         updatedAt: updatedUser.updatedAt,
       },
     });
-  } catch (error) {
-    console.error('닉네임 수정 오류:', error);
-    return res.status(500).json({ error: '닉네임 수정 중 오류가 발생했습니다.' });
+  } catch (err) {
+    return next(new InternalServerError('닉네임 수정 오류', err));
   }
 };
 
 // 선호 키워드 저장
-export const updateUserPreferences = async (req, res) => {
+export const updateUserPreferences = async (req, res, next) => {
   const userId = req.user.id;
   const { preferredKeywords } = req.body;
 
@@ -144,19 +147,96 @@ export const updateUserPreferences = async (req, res) => {
   try {
     const updated = await prisma.userPreference.upsert({
       where: { userId },
-       update: { preferredKeywords: sanitized },
-  create: {
-    userId,
-    preferredKeywords: sanitized
-  }
-});
-
-    return res.status(200).json({
-      message: '선호 키워드가 저장되었습니다.',
-      preferredKeywords: updated.preferredKeywords
+      update: { preferredKeywords: sanitized },
+      create: { userId, preferredKeywords: sanitized },
     });
-  } catch (error) {
-    console.error('키워드 저장 오류:', error);
-    return res.status(500).json({ error: '선호 키워드 저장 실패' });
+
+    return res.success({
+      message: '선호 키워드가 저장되었습니다.',
+      preferredKeywords: updated.preferredKeywords,
+    });
+  } catch (err) {
+    return next(new PreferenceSaveError('키워드 저장 오류', err));
+  }
+};
+
+// 자주 가는 동네 저장
+export const updatePreferredArea = async (req, res, next) => {
+  const userId = req.user.id;
+  const { preferredArea } = req.body;
+
+  if (!preferredArea || typeof preferredArea !== 'string' || preferredArea.trim() === '') {
+    return next(new InvalidPreferredAreaError(preferredArea));
+  }
+
+  try {
+    const updated = await prisma.userPreference.upsert({
+      where: { userId },
+      update: { preferredArea: preferredArea.trim() },
+      create: { userId, preferredArea: preferredArea.trim() },
+    });
+
+    return res.success({
+      message: '자주 가는 동네가 저장되었습니다.',
+      preferredArea: updated.preferredArea,
+    });
+  } catch (err) {
+    return next(new InternalServerError('preferredArea 저장 실패', err));
+  }
+};
+
+// 카카오 알림설정 수정
+export const updateKakaoAlert = async (req, res, next) => {
+  const userId = req.user.id;
+  const { allowKakaoAlert } = req.body;
+
+  if (typeof allowKakaoAlert !== 'boolean') {
+    return next(new BadRequestError('allowKakaoAlert 값은 true 또는 false여야 합니다.'));
+  }
+
+  try {
+    const updatedUser = await prisma.user.update({
+      where: { id: BigInt(userId) },
+      data: { allowKakaoAlert },
+      select: {
+        id: true,
+        nickname: true,
+        allowKakaoAlert: true,
+        updatedAt: true,
+      },
+    });
+
+    return res.success({
+      message: '카카오 알림 수신 설정이 변경되었습니다.',
+      user: {
+        id: updatedUser.id.toString(),
+        nickname: updatedUser.nickname,
+        allowKakaoAlert: updatedUser.allowKakaoAlert,
+        updatedAt: updatedUser.updatedAt,
+      },
+    });
+  } catch (err) {
+    return next(new InternalServerError('카카오 알림 설정 변경 실패', err));
+  }
+};
+
+// fcmToken 저장
+export const updateFcmToken = async (req, res, next) => {
+  const userId = req.user.id;
+  const { fcmToken } = req.body;
+
+  if (!fcmToken || typeof fcmToken !== 'string') {
+    return next(new BadRequestError('유효한 fcmToken이 필요합니다.'));
+  }
+
+  try {
+    await prisma.user.update({
+      where: { id: BigInt(userId) },
+      data: { fcmToken },
+    });
+
+    return res.success({ message: 'fcmToken이 저장되었습니다.' });
+  } catch (err) {
+    return next(new InternalServerError('fcmToken 저장 실패', err));
   }
 };
