@@ -149,12 +149,12 @@ export const cafeCouponRepository = {
 export const cafeReviewRepository = {
   async getCafeReviews(cafeId, cursor, take = 5) {
     const whereClause = {
-      cafeId: BigInt(cafeId),
+      cafeId: cafeId,
     };
 
     // cursor 조건 추가
     if (cursor) {
-      whereClause.id = { lt: BigInt(cursor) }; // cursor도 BigInt로 변환
+      whereClause.id = { lt: cursor }; // cursor도 BigInt로 변환
     }
 
     const reviews = await prisma.review.findMany({
@@ -177,5 +177,23 @@ export const cafeReviewRepository = {
     });
 
     return reviews;
+  },
+};
+
+export const cafeBookmarkRepository = {
+  async isBookmarked(cafeId, userId) {
+    const isBookmarked = await prisma.userBookmark.findUnique({
+      where: {
+        userId_cafeId: {
+          // 복합키 이름 (스키마에 정의된 대로)
+          userId: userId,
+          cafeId: cafeId,
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+    return isBookmarked ? isBookmarked : null;
   },
 };

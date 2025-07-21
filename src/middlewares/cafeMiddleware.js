@@ -35,11 +35,18 @@ export const isCorrectCafeId = async (req, res, next) => {
     if (!cafeId) {
       throw new MissingCafeIdError();
     }
-    logger.debug(`카페 id 확인: ${cafeId}`);
+
+    const numericCafeId = parseInt(cafeId, 10);
+
+    if (isNaN(numericCafeId) || numericCafeId <= 0) {
+      throw new InvalidParameterError(cafeId);
+    }
+
+    logger.debug(`카페 id 확인: ${numericCafeId}`);
 
     const cafe = await prisma.cafe.findUnique({
       where: {
-        id: BigInt(cafeId),
+        id: numericCafeId,
       },
       select: {
         id: true,
@@ -65,6 +72,7 @@ export const isCorrectCafeId = async (req, res, next) => {
 
     logger.debug(`카페 ${cafe.name} 확인 완료`);
     req.cafe = cafe;
+    req.cafeId = numericCafeId;
 
     next();
   } catch (err) {
@@ -90,7 +98,7 @@ export const isMyCoupon = async (req, res, next) => {
     const existingCoupon = await prisma.userCoupon.findFirst({
       where: {
         userId: req.user.id,
-        couponTemplateId: BigInt(couponInfo.id),
+        couponTemplateId: couponInfo.id,
       },
       select: {
         id: true,
@@ -100,10 +108,7 @@ export const isMyCoupon = async (req, res, next) => {
     });
 
     if (existingCoupon) {
-      throw new AlreadyIssuedCouponError(
-        String(couponInfo.id),
-        String(req.user.id)
-      );
+      throw new AlreadyIssuedCouponError(couponInfo.id, req.user.id);
     }
 
     logger.debug(`쿠폰 중복 확인 완료 - 발급 가능`);
