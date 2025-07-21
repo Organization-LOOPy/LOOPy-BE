@@ -148,4 +148,4 @@ export const handleKakaoLinkCallback = async (req, res, next) => {
   } catch (err) {
     return next(new KakaoLoginError(err.response?.data || err.message));
   }
-};
+}; 
