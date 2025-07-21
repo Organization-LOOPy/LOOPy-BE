@@ -14,11 +14,12 @@ app.use(express.json());
 
 app.get("/", (req, res) => res.send("루피 백엔드 작동 중!"));
 
-app.use(responseHandler);    
-app.use(errorHandler);       
+app.use(responseHandler);           
 app.use(passport.initialize());
 
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/users', userRouter);
+
+app.use(errorHandler);
 
 export default app;
