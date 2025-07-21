@@ -1,3 +1,5 @@
+//review.controller.js
+
 import prisma from "../../prisma/client.js";
 
 export const createReview = async (req, res, next) => {
@@ -8,7 +10,21 @@ export const createReview = async (req, res, next) => {
       const images = [];
       //const images = req.files?.map(file => file.location) || []; // S3 업로드 후 이미지 URL
       //추후 이미지 업로드 기능 추가 예정
+    
+      // 리뷰 작성 시 필수 값 검증
+      if (!title || title.length < 20) {
+        return res.error({
+          errorCode: "INVALID_TITLE",
+          reason: "제목은 최소 20자 이상이어야 합니다.",
+        });
+      }
 
+      if (!content || content.length < 500) {
+        return res.error({
+          errorCode: "INVALID_CONTENT",
+          reason: "본문은 최소 500자 이상이어야 합니다.",
+        });
+      }
       // 리뷰 저장
       const review = await prisma.review.create({
         data: {
