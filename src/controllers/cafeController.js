@@ -7,6 +7,7 @@ import {
   cafeCouponService,
 } from "../services/cafeService.js";
 
+//북마크 여부도 체크해야함
 export const getCafe = async (req, res, next) => {
   try {
     const cafe = req.cafe;

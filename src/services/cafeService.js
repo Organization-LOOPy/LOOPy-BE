@@ -16,9 +16,12 @@ export const cafeService = {
       cafeRepository.findPhotos(cafeId),
       cafeRepository.findMenu(cafeId),
     ]);
+    delete cafe.latitude;
+    delete cafe.longitude;
 
     const cafeDetails = {
       ...cafe,
+
       id: cafe.id.toString(),
       photos: photos.map((photo) => ({
         id: photo.id.toString(),
@@ -34,8 +37,6 @@ export const cafeService = {
         isSoldOut: item.isSoldOut,
       })),
     };
-
-    logger.debug(`카페 정보 조회 성공: ${cafeDetails.name}`);
     return cafeDetails;
   },
 };
