@@ -5,6 +5,7 @@ import {
   FailedIssuingCouponError,
   InvalidParameterError,
 } from "../errors/customErrors.js";
+import { addBookmark } from "../controllers/cafeController.js";
 
 export const cafeRepository = {
   async findPhotos(cafeId) {
@@ -195,5 +196,17 @@ export const cafeBookmarkRepository = {
       },
     });
     return isBookmarked ? isBookmarked : null;
+  },
+  async addBookmark(cafeId, userId) {
+    const bookmark = await prisma.create({
+      data: {
+        userId: userId,
+        cafeId: cafeId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    return bookmark;
   },
 };

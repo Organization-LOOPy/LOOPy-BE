@@ -61,3 +61,20 @@ export const getCafeReviews = async (req, res, next) => {
     next(err);
   }
 };
+
+export const addBookmark = async (req, res, next) => {
+  try {
+    const cafeId = req.cafe.id;
+    const userId = req.user.id;
+
+    const isBookmarkAdded = await cafeBookmarkService.addBookmark(
+      cafeId,
+      userId
+    );
+    return isBookmarkAdded;
+  } catch (err) {
+    logger.error(`카페 북마크 추가 중 오류 발생: ${err.message}`, {
+      cafeId: req.cafe?.id,
+    });
+  }
+};

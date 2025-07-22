@@ -6,7 +6,7 @@ import {
   cafeReviewRepository,
   cafeBookmarkRepository,
 } from "../repositories/cafeReposiroty.js";
-import {} from "../errors/customErrors.js";
+import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
 export const cafeService = {
   async getCafeDetails(cafe, cafeId, userId) {
@@ -123,5 +123,19 @@ export const cafeReviewService = {
       nextCursor,
       hasNextPage,
     };
+  },
+};
+
+export const cafeBookmarkService = {
+  async addBookmark(cafeId, userId) {
+    const isBookmared = cafeBookmarkRepository.isBookmarked(cafeId, userId);
+    if (isBookmared) {
+      throw new BookmarkAlreadyExistsError(cafeId);
+    }
+
+    const bookmark = cafeBookmarkRepository.addBookmark(cafeId, userId);
+
+    logger.debug(`카페 ID: ${cafeId}의 북마크 ${bookmark.id}추가 완료`);
+    return bookmark;
   },
 };
