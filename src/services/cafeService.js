@@ -128,12 +128,16 @@ export const cafeReviewService = {
 
 export const cafeBookmarkService = {
   async addBookmark(cafeId, userId) {
-    const isBookmared = cafeBookmarkRepository.isBookmarked(cafeId, userId);
+    //동기처리되면 내생각과 다르게 코드 실행되는거 주의!
+    const isBookmared = await cafeBookmarkRepository.isBookmarked(
+      cafeId,
+      userId
+    );
     if (isBookmared) {
-      throw new BookmarkAlreadyExistsError(cafeId);
+      throw new BookmarkAlreadyExistsError();
     }
-
-    const bookmark = cafeBookmarkRepository.addBookmark(cafeId, userId);
+    logger.debug(`북마크 여부 검증 완료: 북마크 하지 않은 카페 ${cafeId}`);
+    const bookmark = await cafeBookmarkRepository.addBookmark(cafeId, userId);
 
     logger.debug(`카페 ID: ${cafeId}의 북마크 ${bookmark.id}추가 완료`);
     return bookmark;

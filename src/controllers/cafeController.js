@@ -4,6 +4,7 @@ import {
   cafeService,
   cafeReviewService,
   cafeCouponService,
+  cafeBookmarkService,
 } from "../services/cafeService.js";
 
 //북마크 여부도 체크해야함
@@ -71,10 +72,12 @@ export const addBookmark = async (req, res, next) => {
       cafeId,
       userId
     );
-    return isBookmarkAdded;
+
+    res.success(isBookmarkAdded);
   } catch (err) {
     logger.error(`카페 북마크 추가 중 오류 발생: ${err.message}`, {
       cafeId: req.cafe?.id,
     });
+    next(err);
   }
 };
