@@ -131,6 +131,14 @@ export class NotEnoughPointError extends CustomError {
 
 
 //카페 조회
+export class MissingSearchQuery extends Error {
+  constructor(message = '검색어가 비어 있습니다.') {
+    super(message);
+    this.name = 'MissingSearchQuery';
+    this.statusCode = 400;
+  }
+}
+
 export class MissingCafeIdError extends CustomError {
   constructor() {
     super("카페 ID가 누락되었습니다.", "C001", 400);
