@@ -3,7 +3,7 @@ import {
   MissingUserCoordinate,
   MissingSearchQuery,
 } from "../errors/customErrors.js";
-import { searchCafeService } from "../services/searchService.js";
+import { searchCafeService } from "../services/search.service.js";
 
 export const cafeSearch = async (res, req, next) => {
   try {
@@ -17,7 +17,7 @@ export const cafeSearch = async (res, req, next) => {
       throw new MissingSearchQuery();
     }
 
-    const results = await cafeService.findCafes({
+    const results = await cafeService.findCafeList({
       x,
       y,
       searchQuery,
@@ -36,17 +36,6 @@ export const cafeSearch = async (res, req, next) => {
     next(err);
   }
 };
-/*return {
-        id: place.id,
-        place_name: place.place_name,
-        address_name: place.address_name,
-        road_address_name: place.road_address_name,
-        x: place.x,
-        y: place.y,
-        region_1depth_name: addressParts[0] ?? "",
-        region_2depth_name: addressParts[1] ?? "",
-        region_3depth_name: addressParts[2] ?? "",
-*/
 
 export const getCafeMapData = async (res, req, next) => {
   try {

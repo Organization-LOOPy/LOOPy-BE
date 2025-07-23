@@ -1,10 +1,10 @@
 import { logger } from "../utils/logger.js";
-import { cafeRepository } from "../repositories/cafeRepository.js";
-import { searchCafeRepository } from "../repositories/searchRepository.js";
+import { cafeRepository } from "../repositories/cafe.repository.js";
+import { searchCafeRepository } from "../repositories/search.repository.js";
 import { getDistanceInMeters } from "../utils/geo.js";
 
 export const searchCafeService = {
-  async findcafe(
+  async findcafeList(
     x,
     y,
     searchQuery,

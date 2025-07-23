@@ -5,7 +5,7 @@ import {
   cafeSearch,
   getCafeMapData,
   cafeDetail,
-} from "../controllers/seachController.js";
+} from "../controllers/seach.controller.js";
 
 const router = express.Router();
 //router.use(authenticateJWT);

@@ -4,7 +4,7 @@ import {
   issueCafeCouponToUser,
   getCafeReviews,
   addBookmark,
-} from "../controllers/cafeController.js";
+} from "../controllers/cafe.controller.js";
 
 import {
   isCorrectCafeId,
