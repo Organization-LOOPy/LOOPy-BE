@@ -1,9 +1,9 @@
 import { logger } from "../utils/logger.js";
 import { cafeRepository } from "../repositories/cafe.repository.js";
-import { searchCafeRepository } from "../repositories/search.repository.js";
+import { cafeSearchRepository } from "../repositories/search.repository.js";
 import { getDistanceInMeters } from "../utils/geo.js";
 
-export const searchCafeService = {
+export const cafeSearchService = {
   async findcafeList(
     x,
     y,
@@ -15,8 +15,8 @@ export const searchCafeService = {
     region2,
     region3
   ) {
-    const refinedX = Number(x);
-    const refinedY = Number(y);
+    const refinedX = parseFloat(x);
+    const refinedY = parseFloat(y);
     const query = (searchQuery ?? "").trim();
 
     const selectedStoreFilters = Object.entries(storeFilters ?? {})
@@ -80,7 +80,7 @@ export const searchCafeService = {
       });
     }
 
-    const searchResults = await searchRepository.findCafeByInfos(
+    const searchResults = await cafeSearchRepository.findCafeByInfos(
       whereConditions
     );
 

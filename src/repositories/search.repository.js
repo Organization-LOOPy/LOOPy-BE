@@ -1,7 +1,7 @@
 import { logger } from "../utils/logger.js";
 import prisma from "../../prisma/client.js";
 
-export const searchCafeRepository = {
+export const cafeSearchRepository = {
   async findCafesByIds(cafeIds) {
     const cafeInfo = await prisma.cafe.findMany({
       where: {

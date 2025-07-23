@@ -3,7 +3,7 @@ import {
   MissingUserCoordinate,
   MissingSearchQuery,
 } from "../errors/customErrors.js";
-import { searchCafeService } from "../services/search.service.js";
+import { cafeSearchService } from "../services/search.service.js";
 
 export const cafeSearch = async (res, req, next) => {
   try {
@@ -17,7 +17,7 @@ export const cafeSearch = async (res, req, next) => {
       throw new MissingSearchQuery();
     }
 
-    const results = await cafeService.findCafeList({
+    const results = await cafeSearchService.findCafeList({
       x,
       y,
       searchQuery,
@@ -39,8 +39,28 @@ export const cafeSearch = async (res, req, next) => {
 
 export const getCafeMapData = async (res, req, next) => {
   try {
-    const { x, y, searchQuery } = req.query;
-    const { storeFilter, takeOutFilter, menuFilter } = req.body;
+    const { x, y, store, menu, takeout, region1, region2, region3 } = req.query;
+
+    const userId = req.user.id;
+
+    if (!x || !y) {
+      throw new MissingUserCoordinate();
+    }
+
+    const results = await mapSearchService.searchCafesOnMap({
+      x,
+      y,
+      storeFilters: store,
+      menuFilters: menu,
+      takeOutFilters: takeout,
+      region1,
+      region2,
+      region3,
+      userId,
+    });
+
+    logger.debug(`카페 검색 완료: ${results}`);
+    res.success(results);
   } catch (err) {
     logger.error(`카페 검색 중 오류 발생: ${err.message}`);
     next(err);
