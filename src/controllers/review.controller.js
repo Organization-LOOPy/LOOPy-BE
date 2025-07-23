@@ -1,4 +1,5 @@
 import prisma from "../../prisma/client.js";
+import { uploadToS3 } from "../utils/s3.js";
 import {
   InvalidReviewTitleError,
   InvalidReviewContentError,
@@ -11,7 +12,7 @@ export const createReview = async (req, res, next) => {
     const { title, content } = req.body;
     const { cafeId } = req.params;
     const userId = req.user.id; 
-    const images = [];
+    const files = req.files;
 
     if (!title || title.length < 20) {
       return next(new InvalidReviewTitleError(title));
@@ -21,13 +22,30 @@ export const createReview = async (req, res, next) => {
       return next(new InvalidReviewContentError(content));
     }
 
+    if (files.length > 5) {
+      return next(new TooManyImagesError(files.length));
+    }
+    
+    for (const file of files) {
+      if (!file.mimetype.startsWith("image/")) {
+        return next(new InvalidImageTypeError(file.mimetype));
+      }
+    }
+
+    let imageUrls = [];
+    if (files && files.length > 0) {
+      imageUrls = await Promise.all(
+        files.map((file) => uploadToS3(file)) // S3에 업로드
+      );
+    }
+
     const review = await prisma.review.create({
       data: {
         title,
         content,
         cafeId: parseInt(cafeId),
         userId,
-        images,
+        images: imageUrls,
       },
     });
 
