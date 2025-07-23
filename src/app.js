@@ -11,6 +11,8 @@ import passport from "./config/passport.js";
 import userRouter from "./routes/user.routes.js";
 import reviewRouter from './routes/review.routes.js';
 import challengeRoutes from './routes/challenge.routes.js';
+import notificationRoutr from "./routes/notification.routes.js";
+
 
 const app = express();
 
@@ -43,6 +45,8 @@ app.use("/api/v1/users", userRouter);
 app.use('/api/v1/reviews', reviewRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafe/:cafeId", cafeRouter);
+app.use("/api/v1", notificationRoutr);
+
 
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어
