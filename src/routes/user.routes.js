@@ -12,13 +12,13 @@ import {
   updateFcmToken,
   savePhoneNumberAfterVerification,
   saveUserAgreements
-} from '../controllers/userController.js';
+} from '../controllers/user.controller.js';
 
 import {
   addBookmark,
   getBookmarkedCafes,
   removeBookmark,
-} from '../controllers/userBookmarkController.js';
+} from '../controllers/user.bookmark.controller.js';
 
 
 const router = express.Router();
