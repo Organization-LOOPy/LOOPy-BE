@@ -5,7 +5,6 @@ import {
   FailedIssuingCouponError,
   InvalidParameterError,
 } from "../errors/customErrors.js";
-import { addBookmark } from "../controllers/cafeController.js";
 
 export const cafeRepository = {
   async findPhotos(cafeId) {

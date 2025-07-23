@@ -264,7 +264,9 @@ model Cafe {
   id             Int        @id @default(autoincrement())
   name           String     @db.VarChar(255)
   address        String     @db.VarChar(500)
-  region         String     @db.VarChar(100)
+  region1DepthName String   @map("region_1depth_name") @db.VarChar(50)
+  region2DepthName String   @map("region_2depth_name") @db.VarChar(50)
+  region3DepthName String   @map("region_3depth_name") @db.VarChar(50)
   latitude       Float
   longitude      Float
   ownerName      String     @map("owner_name") @db.VarChar(100)

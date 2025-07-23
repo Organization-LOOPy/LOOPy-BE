@@ -5,7 +5,7 @@ import {
   cafeCouponRepository,
   cafeReviewRepository,
   cafeBookmarkRepository,
-} from "../repositories/cafeReposiroty.js";
+} from "../repositories/cafeRepository.js";
 import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
 export const cafeService = {

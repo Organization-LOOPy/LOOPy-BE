@@ -52,7 +52,6 @@ export const isCorrectCafeId = async (req, res, next) => {
         id: true,
         name: true,
         address: true,
-        region: true,
         businessHours: true,
         phone: true,
         websiteUrl: true,
