@@ -1,6 +1,6 @@
 import express from 'express';
 import { getCurrentPoint, 
-  getUserPointTransactions } from '../controllers/pointController.js';
+  getUserPointTransactions } from '../controllers/point.controller.js';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();

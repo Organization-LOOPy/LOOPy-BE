@@ -1,6 +1,6 @@
 import express from 'express';
-import { signup, login, logout } from '../controllers/authController.js';
-import { handleKakaoRedirect, handleKakaoLinkCallback } from '../controllers/authKakaoController.js';
+import { signup, login, logout } from '../controllers/auth.controller.js';
+import { handleKakaoRedirect, handleKakaoLinkCallback } from '../controllers/auth.kakaoController.js';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
 import passport from '../config/passport.js';
 

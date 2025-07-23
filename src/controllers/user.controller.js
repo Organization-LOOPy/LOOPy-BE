@@ -9,7 +9,7 @@ import {
   updateFcmTokenService,
   savePhoneNumberAfterVerificationService,
   saveUserAgreementsService
-} from '../services/userService.js';
+} from '../services/user.service.js';
 
 export const deactivateUser = async (req, res, next) => {
   try {

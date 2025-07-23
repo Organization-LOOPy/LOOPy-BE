@@ -6,7 +6,7 @@ import {
   InvalidPreferredAreaError,
   BadRequestError,
 } from '../errors/customErrors.js';
-import { verifyPhoneNumber } from './firebaseService.js';
+import { verifyPhoneNumber } from './firebase.service.js';
 
 // 탈퇴(사용자 휴면 계정으로 전환)
 export const deactivateUserService = async (userId) => {

@@ -1,7 +1,7 @@
 import {
   handleKakaoRedirectService,
   handleKakaoLinkCallbackService,
-} from '../services/authKakaoService.js';
+} from '../services/auth.kakao.service.js';
 
 export const handleKakaoRedirect = async (req, res, next) => {
   try {

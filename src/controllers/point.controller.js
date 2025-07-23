@@ -1,4 +1,4 @@
-import { getPointTransactionsByUserId, getCurrentPointByUserIdService } from '../services/pointService.js';
+import { getPointTransactionsByUserId, getCurrentPointByUserIdService } from '../services/point.service.js';
 
 export const getCurrentPoint = async (req, res, next) => {
   try {

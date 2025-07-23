@@ -2,7 +2,7 @@ import {
   getBookmarkedCafesService,
   addBookmarkService,
   removeBookmarkService,
-} from '../services/userBookmarkService.js';
+} from '../services/user.bookmark.service.js';
 
 export const getBookmarkedCafes = async (req, res, next) => {
   const userId = req.user.id;

@@ -8,7 +8,6 @@ import {
   InvalidPasswordError,
   BadRequestError,
 } from '../errors/customErrors.js';
-import { verifyPhoneNumber } from './firebaseService.js';
 
 // 이메일 기반 회원가입 
 export const signupService = async (body) => {
