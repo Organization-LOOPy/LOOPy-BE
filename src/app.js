@@ -9,7 +9,9 @@ import searchRouter from "./routes/search.routes.js";
 import cafeRouter from "./routes/cafe.routes.js";
 import passport from "./config/passport.js";
 import userRouter from "./routes/user.routes.js";
+import reviewRouter from './routes/review.routes.js';
 import challengeRoutes from './routes/challenge.routes.js';
+
 const app = express();
 
 setupSwagger(app);
@@ -38,6 +40,7 @@ app.use("/api/v1/challenges", challengeRoutes);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
+app.use('/api/v1/reviews', reviewRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafe/:cafeId", cafeRouter);
 
