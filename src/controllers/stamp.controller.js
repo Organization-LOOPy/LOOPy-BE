@@ -220,3 +220,135 @@ export const getStampBookDetail = async (req, res, next) => {
       next(err);
     }
   };
+
+  export const cancelStampConversion = async (req, res, next) => {
+    const userId = req.user.id;
+    const stampBookId = parseInt(req.params.stampBookId, 10);
+  
+    try {
+      const stampBook = await prisma.stampBook.findUnique({
+        where: { id: stampBookId },
+      });
+  
+      if (!stampBook) throw new NotFoundError("존재하지 않는 스탬프북입니다.");
+      if (stampBook.userId !== userId)
+        throw new ForbiddenError("본인의 스탬프북만 환전 취소할 수 있습니다.");
+      if (!stampBook.isConverted || !stampBook.convertedAt)
+        throw new BadRequestError("환전되지 않은 스탬프북입니다.");
+  
+      const now = new Date();
+      const convertedAt = new Date(stampBook.convertedAt);
+      const diffInDays = (now - convertedAt) / (1000 * 60 * 60 * 24);
+      if (diffInDays > 3)
+        throw new BadRequestError("환전 취소는 3일 이내에만 가능합니다.");
+  
+      const stampCount = stampBook.currentStampCount; // 또는 stampBook.stamps.length
+      const refundPoint = stampCount * 100;
+  
+      await prisma.$transaction([
+        prisma.stampBook.update({
+          where: { id: stampBookId },
+          data: {
+            isConverted: false,
+            convertedAt: null,
+            status: 'completed',
+          },
+        }),
+        prisma.user.update({
+          where: { id: userId },
+          data: {
+            totalPoint: {
+              decrement: refundPoint,
+            },
+          },
+        }),
+        prisma.pointTransaction.create({
+          data: {
+            userId,
+            stampBookId,
+            point: -refundPoint,
+            type: 'refunded',
+            description: '스탬프 환전 취소',
+          },
+        }),
+      ]);
+  
+      return res.success({ message: "환전 취소 완료", refundPoint });
+    } catch (err) {
+      next(err);
+    }
+  };
+  
+  export const extendStampBook = async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const stampBookId = parseInt(req.params.stampBookId, 10);
+  
+      const stampBook = await prisma.stampBook.findUnique({
+        where: { id: stampBookId },
+      });
+  
+      if (!stampBook) throw new StampbookNotFoundError();
+      if (stampBook.userId !== userId)
+        throw new ForbiddenError("해당 스탬프북에 대한 권한이 없습니다.");
+      if (stampBook.status !== "active")
+        throw new BadRequestError("진행 중인 스탬프북만 연장할 수 있습니다.");
+      if (stampBook.extendedAt)
+        throw new BadRequestError("이미 연장된 스탬프북입니다.");
+  
+      const newExpiresAt = new Date(stampBook.expiresAt);
+      newExpiresAt.setDate(newExpiresAt.getDate() + 14);
+  
+      const updated = await prisma.stampBook.update({
+        where: { id: stampBookId },
+        data: {
+          expiresAt: newExpiresAt,
+          extendedAt: new Date(),
+        },
+      });
+  
+      return res.success({
+        message: "스탬프북이 14일 연장되었습니다.",
+        newExpiresAt: updated.expiresAt,
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  export const getExpiringStampBooks = async (req, res, next) => {
+    try {
+      const userId = req.user.id;
+      const today = new Date();
+      const oneWeekLater = new Date();
+      oneWeekLater.setDate(today.getDate() + 7);
+  
+      const expiringBooks = await prisma.stampBook.findMany({
+        where: {
+          userId,
+          status: 'active',
+          expiresAt: {
+            gte: today,
+            lte: oneWeekLater,
+          },
+        },
+        include: {
+          cafe: {
+            select: {
+              id: true,
+              name: true,
+              address: true,
+            },
+          },
+        },
+        orderBy: {
+          expiresAt: 'asc',
+        },
+      });
+  
+      return res.success(expiringBooks);
+    } catch (err) {
+      next(err);
+    }
+  };
+  

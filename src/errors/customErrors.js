@@ -123,12 +123,6 @@ export class InvalidPointAmountError extends CustomError {
   }
 }
 
-export class InvalidPointAmountError extends CustomError {
-  constructor(point) {
-    super("잘못된 포인트 값입니다.", "INVALID_POINT_AMOUNT", 400, { point });
-  }
-}
-
 export class NotEnoughPointError extends CustomError {
   constructor(currentPoint, requiredPoint) {
     super("포인트가 부족합니다.", "NOT_ENOUGH_POINT", 400, { currentPoint, requiredPoint });
