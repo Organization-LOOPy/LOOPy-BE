@@ -4,7 +4,8 @@ import {
   cafeService,
   cafeReviewService,
   cafeCouponService,
-} from "../services/cafeService.js";
+  cafeBookmarkService,
+} from "../services/cafe.service.js";
 
 //북마크 여부도 체크해야함
 export const getCafe = async (req, res, next) => {
@@ -61,4 +62,23 @@ export const getCafeReviews = async (req, res, next) => {
     next(err);
   }
   
+};
+
+export const addBookmark = async (req, res, next) => {
+  try {
+    const cafeId = req.cafe.id;
+    const userId = req.user.id;
+
+    const isBookmarkAdded = await cafeBookmarkService.addBookmark(
+      cafeId,
+      userId
+    );
+
+    res.success(isBookmarkAdded);
+  } catch (err) {
+    logger.error(`카페 북마크 추가 중 오류 발생: ${err.message}`, {
+      cafeId: req.cafe?.id,
+    });
+    next(err);
+  }
 };

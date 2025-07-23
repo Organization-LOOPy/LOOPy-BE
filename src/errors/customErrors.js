@@ -182,4 +182,10 @@ export class ChallengeNotFoundError extends CustomError {
 }
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
+
+export class MissingSearchQuery extends CustomError {
+  constructor(message) {
+    super(message || "검색어가 누락되었습니다.", "S002", 400);
+  }
+}
 export default CustomError;
