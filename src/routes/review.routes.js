@@ -13,13 +13,13 @@ import { verifyStamp } from "../middlewares/verifyStamp.js";
 const router = express.Router();
 
 // 리뷰 작성
-router.post("/cafe/:cafeId/review", authenticateJWT, validateReview, verifyStamp, reviewController.createReview);
+router.post("/cafe/:cafeId/review", authenticateJWT, validateReview, verifyStamp, createReview);
 
 // 리뷰 수정
-router.patch("/:reviewId", authenticateJWT, validateReview, reviewController.updateReview);
+router.patch("/:reviewId", authenticateJWT, validateReview, updateReview);
 
 // 리뷰 삭제
-router.delete("/:reviewId", authenticateJWT, reviewController.deleteReview);
+router.delete("/:reviewId", authenticateJWT, deleteReview);
 
 
 // 내 리뷰 목록 조회
