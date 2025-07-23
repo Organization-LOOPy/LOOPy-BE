@@ -58,4 +58,22 @@ export const cafeSearchRepository = {
 
     return cafeList;
   },
+
+  async findCafeWithBookmarks(whereConditions, userId) {
+    const cafes = await prisma.cafe.findMany({
+      where: whereConditions,
+      select: {
+        id: true,
+        latitude: true,
+        longitude: true,
+        userBookmarks: {
+          where: { userId: userId },
+          select: { id: true },
+        },
+      },
+      take: 30,
+    });
+
+    return cafes;
+  },
 };

@@ -2,6 +2,7 @@ import { logger } from "../utils/logger.js";
 import { cafeRepository } from "../repositories/cafe.repository.js";
 import { cafeSearchRepository } from "../repositories/search.repository.js";
 import { getDistanceInMeters } from "../utils/geo.js";
+import { parseFiltersFromQuery } from "../utils/parserFilterFromJson.js";
 
 export const cafeSearchService = {
   async findcafeList(
@@ -169,5 +170,73 @@ export const cafeSearchService = {
     cafe.distance = getDistanceInMeters(cafe.latitude, cafe.longtitude, x, y);
 
     return cafeDetails;
+  },
+};
+
+export const mapSearchService = {
+  async searchCafesOnMap({
+    x,
+    y,
+    storeFilters,
+    menuFilters,
+    takeOutFilters,
+    region1,
+    region2,
+    region3,
+    userId,
+  }) {
+    const refinedX = parseFloat(x);
+    const refinedY = parseFloat(y);
+
+    const parsedStoreFilters = parseFiltersFromQuery(storeFilters);
+    const parsedMenuFilters = parseFiltersFromQuery(menuFilters);
+    const parsedTakeOutFilters = parseFiltersFromQuery(takeOutFilters);
+
+    const refinedRegion1 = region1?.trim() || null;
+    const refinedRegion2 = region2?.trim() || null;
+    const refinedRegion3 = region3?.trim() || null;
+
+    const whereConditions = {
+      AND: [
+        { status: "active" },
+        ...(refinedRegion1 ? [{ region1DepthName: refinedRegion1 }] : []),
+        ...(refinedRegion2 ? [{ region2DepthName: refinedRegion2 }] : []),
+      ],
+    };
+
+    //필터조건 추가
+    Object.keys(parsedStoreFilters).forEach((filter) => {
+      whereConditions.AND.push({
+        storeFilters: {
+          path: [filter],
+          equals: true,
+        },
+      });
+    });
+
+    Object.keys(parsedMenuFilters).forEach((filter) => {
+      whereConditions.AND.push({
+        menuFilters: {
+          path: [filter],
+          equals: true,
+        },
+      });
+    });
+
+    Object.keys(parsedTakeOutFilters).forEach((filter) => {
+      whereConditions.AND.push({
+        takeOutFilters: {
+          path: [filter],
+          equals: true,
+        },
+      });
+    });
+
+    const cafes = await cafeSearchRepository.findCafesWithBookmarks(
+      whereConditions,
+      userId
+    );
+
+    return cafes;
   },
 };
