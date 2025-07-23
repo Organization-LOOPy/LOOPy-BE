@@ -13,9 +13,11 @@ import {
 } from "../middlewares/cafe-middleware.js";
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
 
+import { addBookmark } from "../controllers/user.bookmark.controller.js";
+
 const router = express.Router({ mergeParams: true });
 
-//router.use(authenticateJWT);
+router.use(authenticateJWT);
 
 router.use(test); // 테스트용 미들웨어, 실제 배포 시 제거
 

@@ -113,7 +113,7 @@ info: GET /user 304 - - 1.382 ms 이런 형식으로 로그 기록
  📦 src/
 ┣ 📂controllers/         # 요청 처리 (req/res)
 ┣ 📂services/            # 비즈니스 로직
-┣ 📂models/              # DB 모델 정의 (Mongoose/Sequelize 등)
+┣ 📂repositories/        # DB 모델 접근
 ┣ 📂routes/              # 라우터 정의 (REST API endpoint 분기)
 ┣ 📂middlewares/         # 인증, 에러 핸들링, 로깅 등
 ┣ 📂utils/               # 공통 함수, 헬퍼
