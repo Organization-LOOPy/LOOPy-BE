@@ -42,6 +42,7 @@ export const cafeSearchService = {
         {
           region1: refinedRegion1,
           region2: refinedRegion2,
+          region3: refinedRegion3,
         },
         // 쿼리 조건
         query ? { name: { contains: query } } : {},

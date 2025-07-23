@@ -1,9 +1,11 @@
-import AWS from 'aws-sdk';
+import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
 
-const s3 = new AWS.S3({
-  accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-  secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+const s3 = new S3Client({
   region: "ap-northeast-2",
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 export const uploadToS3 = async (file) => {
@@ -14,6 +16,9 @@ export const uploadToS3 = async (file) => {
     ContentType: file.mimetype,
   };
 
-  const result = await s3.upload(uploadParams).promise();
-  return result.Location;
+  const command = new PutObjectCommand(uploadParams);
+  const result = await s3.send(command);
+  // v3에서는 결과에 Location이 없어서 직접 만들어야 함
+  const location = `https://${uploadParams.Bucket}.s3.${s3.config.region}.amazonaws.com/${uploadParams.Key}`;
+  return location;
 };

@@ -69,7 +69,6 @@ export const getCafeMapData = async (res, req, next) => {
   }
 };
 
-//북마크 여부도 체크해야함, 해당 라우터 qa 필요
 export const cafeDetail = async (res, req, next) => {
   try {
     const cafe = req.cafe;
