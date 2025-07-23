@@ -123,6 +123,12 @@ export class InvalidPointAmountError extends CustomError {
   }
 }
 
+export class InvalidPointAmountError extends CustomError {
+  constructor(point) {
+    super("잘못된 포인트 값입니다.", "INVALID_POINT_AMOUNT", 400, { point });
+  }
+}
+
 export class NotEnoughPointError extends CustomError {
   constructor(currentPoint, requiredPoint) {
     super("포인트가 부족합니다.", "NOT_ENOUGH_POINT", 400, { currentPoint, requiredPoint });
@@ -208,7 +214,21 @@ export class MissingUserCoordinate extends CustomError {
   }
 }
 
+
 //챌린지
+
+export class NoActiveStampError extends CustomError {
+  constructor(userId, cafeId) {
+    super(
+      "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
+      "ST001",
+      403,
+      { userId, cafeId } // ← 이 부분
+    );
+  }
+}
+
+
 export class ChallengeNotFoundError extends CustomError {
   constructor(challengeId) {
     super(
@@ -227,5 +247,79 @@ export class StampbookNotFoundError extends CustomError {
     this.statusCode = 404;
   }
 }
+
+
+// 제목 누락 또는 짧음
+export class InvalidReviewTitleError extends CustomError {
+  constructor(title) {
+    super(
+      "제목은 최소 20자 이상이어야 합니다.",
+      "R001",
+      400,
+      { title }
+    );
+  }
+}
+
+// 본문 누락 또는 짧음
+export class InvalidReviewContentError extends CustomError {
+  constructor(content) {
+    super(
+      "본문은 최소 500자 이상이어야 합니다.",
+      "R002",
+      400,
+      { content }
+    );
+  }
+}
+
+// 리뷰 없을 때
+export class ReviewNotFoundError extends CustomError {
+  constructor(reviewId) {
+    super(
+      `ID ${reviewId}에 해당하는 리뷰가 존재하지 않습니다.`,
+      "R003",
+      404,
+      { reviewId }
+    );
+  }
+}
+
+// 권한 없음
+export class ForbiddenReviewAccessError extends CustomError {
+  constructor(userId, reviewOwnerId) {
+    super(
+      "본인의 리뷰만 수정/삭제할 수 있습니다.",
+      "R004",
+      403,
+      { userId, reviewOwnerId }
+    );
+  }
+}
+
+// 필드 모두 누락
+export class MissingReviewFieldsError extends CustomError {
+  constructor(missingFields = []) {
+    super(
+      "제목과 본문을 모두 입력해주세요.",
+      "R005",
+      400,
+      { missingFields }
+    );
+  }
+}
+
+export class InvalidImageTypeError extends CustomError {
+  constructor(mimetype) {
+    super(`이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: ${mimetype})`, 400, 'R006');
+  }
+}
+
+export class TooManyImagesError extends CustomError {
+  constructor(count) {
+    super(`이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: ${count}개)`, 400, 'R007');
+  }
+}
+
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
