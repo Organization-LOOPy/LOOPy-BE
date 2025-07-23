@@ -9,6 +9,7 @@ import searchRouter from "./routes/search.routes.js";
 import cafeRouter from "./routes/cafe.routes.js";
 import passport from "./config/passport.js";
 import userRouter from "./routes/user.routes.js";
+import pointRouter from "./routes/point.router.js";
 import challengeRoutes from './routes/challenge.routes.js';
 const app = express();
 
@@ -40,7 +41,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafe/:cafeId", cafeRouter);
-
+app.use("/api/v1/points", pointRouter);
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어
 
