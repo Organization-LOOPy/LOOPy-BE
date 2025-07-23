@@ -170,6 +170,7 @@ export class MissingUserCoordinate extends CustomError {
   }
 }
 
+//챌린지
 export class ChallengeNotFoundError extends CustomError {
   constructor(challengeId) {
     super(
@@ -180,6 +181,13 @@ export class ChallengeNotFoundError extends CustomError {
     );
   }
 }
-
+//
+export class StampbookNotFoundError extends CustomError {
+  constructor(message = "Not Found") {
+    super(message);
+    this.name = "NotFoundError";
+    this.statusCode = 404;
+  }
+}
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
