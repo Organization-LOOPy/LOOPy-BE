@@ -196,4 +196,16 @@ export const cafeBookmarkRepository = {
     });
     return isBookmarked ? isBookmarked : null;
   },
+  async addBookmark(cafeId, userId) {
+    const bookmark = await prisma.userBookmark.create({
+      data: {
+        userId: userId,
+        cafeId: cafeId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    return bookmark;
+  },
 };

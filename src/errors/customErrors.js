@@ -181,6 +181,17 @@ export class NoActiveStampError extends CustomError {
   }
 }
 
+export class ChallengeNotFoundError extends CustomError {
+  constructor(challengeId) {
+    super(
+      `챌린지 ID ${challengeId}에 해당하는 챌린지를 찾을 수 없습니다.`,
+      "CH001",       
+      404,           
+      { challengeId } 
+    );
+  }
+}
+
 // 제목 누락 또는 짧음
 export class InvalidReviewTitleError extends CustomError {
   constructor(title) {
