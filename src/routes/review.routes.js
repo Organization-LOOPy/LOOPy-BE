@@ -8,6 +8,7 @@ import {
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
 import { validateReview } from "../middlewares/validateReview.js";
 import { verifyStamp } from "../middlewares/verifyStamp.js";
+import { upload } from "../middlewares/multer.js";
 
 const router = express.Router();
 
@@ -15,7 +16,7 @@ const router = express.Router();
 router.use(authenticateJWT);
 
 // 리뷰 작성
-router.post("/cafe/:cafeId/review", validateReview, verifyStamp, createReview);
+router.post("/cafe/:cafeId/review", upload.array("images", 5), validateReview, verifyStamp, createReview);
 
 // 리뷰 수정
 router.patch("/:reviewId", validateReview, updateReview);
