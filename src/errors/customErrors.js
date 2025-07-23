@@ -241,5 +241,17 @@ export class MissingReviewFieldsError extends CustomError {
   }
 }
 
+export class InvalidImageTypeError extends CustomError {
+  constructor(mimetype) {
+    super(`이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: ${mimetype})`, 400, 'R006');
+  }
+}
+
+export class TooManyImagesError extends CustomError {
+  constructor(count) {
+    super(`이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: ${count}개)`, 400, 'R007');
+  }
+}
+
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
