@@ -16,7 +16,6 @@ model User {
   email           String?    @unique @db.VarChar(255)
   passwordHash    String?    @map("password_hash") @db.VarChar(255)
   phoneNumber     String     @unique @map("phone_number") @db.VarChar(20)
-  profileUrl      String?    @map("profile_url") @db.Text 
   nickname        String     @db.VarChar(50)
   role            UserRole
   allowKakaoAlert Boolean    @default(false) @map("allow_kakao_alert")
