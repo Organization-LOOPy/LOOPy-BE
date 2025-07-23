@@ -1,5 +1,4 @@
 import { CustomError } from "../errors/customErrors.js";
-import { logger } from "../utils/logger.js";
 
 export const errorHandler = (err, req, res, next) => {
   if (res.headersSent) return next(err);
@@ -11,8 +10,6 @@ export const errorHandler = (err, req, res, next) => {
       data: err.data || null,
     });
   }
-
-  //logger.error("🔥 Unhandled Error:", err);
 
   return res.status(500).json({
     errorCode: "UNKNOWN",

@@ -16,7 +16,6 @@ model User {
   email           String?    @unique @db.VarChar(255)
   passwordHash    String?    @map("password_hash") @db.VarChar(255)
   phoneNumber     String     @unique @map("phone_number") @db.VarChar(20)
-  profileUrl      String?    @map("profile_url") @db.Text 
   nickname        String     @db.VarChar(50)
   role            UserRole
   allowKakaoAlert Boolean    @default(false) @map("allow_kakao_alert")
@@ -264,7 +263,9 @@ model Cafe {
   id             Int        @id @default(autoincrement())
   name           String     @db.VarChar(255)
   address        String     @db.VarChar(500)
-  region         String     @db.VarChar(100)
+  region1DepthName String   @map("region_1depth_name") @db.VarChar(50)
+  region2DepthName String   @map("region_2depth_name") @db.VarChar(50)
+  region3DepthName String   @map("region_3depth_name") @db.VarChar(50)
   latitude       Float
   longitude      Float
   ownerName      String     @map("owner_name") @db.VarChar(100)
