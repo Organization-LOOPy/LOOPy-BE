@@ -124,21 +124,44 @@ export const getNotificationById = async (req, res) => {
             id: true,
             name: true,
             address: true,
-            thumbnailUrl: true,
           },
         });
       
         detail = cafe;
         break;
-      
 
-    case "coupon":
-      // 아직 미구현 → 임시 메시지
-      detail = {
-        message: "쿠폰 정보는 추후 제공될 예정입니다.",
-      };
-      break;
+        case "coupon":
+          const rawUserCoupons = await prisma.$queryRaw`
+            SELECT
+              id AS couponId,
+              user_id AS userId,
+              coupon_template_id AS couponTemplateId,
+              acquisition_type AS acquisitionType,
+              status,
+              issued_at AS issuedAt,
+              expired_at AS expiredAt,
+              used_at AS usedAt,
+              cafeId
+            FROM user_coupons
+            WHERE user_id = ${userId}
+              AND status = 'active'
+          `;
 
+          detail = rawUserCoupons.map(coupon => ({
+            couponId: Number(coupon.couponId),
+            userId: Number(coupon.userId),
+            couponTemplateId: Number(coupon.couponTemplateId),
+            acquisitionType: coupon.acquisitionType,
+            status: coupon.status,
+            issuedAt: coupon.issuedAt,
+            expiredAt: coupon.expiredAt,
+            usedAt: coupon.usedAt,
+            cafeId: Number(coupon.cafeId),
+          }));
+          break;
+
+        
+        
     case "system":
       default:
         detail = {
