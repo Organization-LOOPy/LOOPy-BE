@@ -12,6 +12,7 @@ import userRouter from "./routes/user.routes.js";
 import pointRouter from "./routes/point.router.js";
 import reviewRouter from './routes/review.routes.js';
 import challengeRoutes from './routes/challenge.routes.js';
+import stampbookRouter from './routes/stamp.routes.js';
 
 const app = express();
 
@@ -44,6 +45,9 @@ app.use("/api/v1/users", userRouter);
 app.use('/api/v1/reviews', reviewRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafe/:cafeId", cafeRouter);
+app.use("/api/v1/stampbooks", stampbookRouter);
+
+
 app.use("/api/v1/points", pointRouter);
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어
