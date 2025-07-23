@@ -1,6 +1,9 @@
 import axios from "axios";
 import jwt from "jsonwebtoken";
-import { PrismaClient, UserRole } from "@prisma/client";
+//import { PrismaClient, UserRole } from "@prisma/client";
+import pkg from "@prisma/client";
+const { PrismaClient, UserRole } = pkg;
+
 import {
   KakaoLoginError,
   KakaoAlreadyLinkedError,

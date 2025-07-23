@@ -5,6 +5,7 @@ import { reactivateUser, updateUserPreferences, updatePreferredArea,
     updateFcmToken  
  } from '../controllers/user.controller.js';
 import {getBookmarkedCafes, addBookmark, removeBookmark } from '../controllers/user.bookmark.controller.js'
+import { getMyChallengeList } from '../controllers/challenge.controller.js';
 
 const router = express.Router();
 
@@ -19,5 +20,7 @@ router.post('/me/bookmarks', authenticateJWT, addBookmark);
 router.delete('/me/bookmarks/:cafeId', authenticateJWT, removeBookmark);
 router.patch('/me/kakao-alert', authenticateJWT, updateKakaoAlert);
 router.patch('/me/fcm-token', authenticateJWT, updateFcmToken);
+
+router.get('/me/challenges', authenticateJWT, getMyChallengeList);
 
 export default router;

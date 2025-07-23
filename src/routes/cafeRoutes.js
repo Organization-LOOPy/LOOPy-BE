@@ -3,7 +3,7 @@ import {
   getCafe,
   issueCafeCouponToUser,
   getCafeReviews,
-  addBookmark,
+  //addBookmark,
 } from "../controllers/cafeController.js";
 
 import {
@@ -12,6 +12,8 @@ import {
   test,
 } from "../middlewares/cafeMiddleware.js";
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
+
+import { addBookmark } from "../controllers/user.bookmark.controller.js";
 
 const router = express.Router({ mergeParams: true });
 

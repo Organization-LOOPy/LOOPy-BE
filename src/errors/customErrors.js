@@ -169,5 +169,17 @@ export class MissingUserCoordinate extends CustomError {
     super(message || "사용자 주소가 누락되었습니다", "S001", 400);
   }
 }
+
+export class ChallengeNotFoundError extends CustomError {
+  constructor(challengeId) {
+    super(
+      `챌린지 ID ${challengeId}에 해당하는 챌린지를 찾을 수 없습니다.`,
+      "CH001",       
+      404,           
+      { challengeId } 
+    );
+  }
+}
+
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
