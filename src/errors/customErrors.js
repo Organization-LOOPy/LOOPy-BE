@@ -218,8 +218,11 @@ export class MissingUserCoordinate extends CustomError {
   }
 }
 
+<<<<<<< HEAD
 //챌린지
 
+=======
+>>>>>>> 9dbe851c9c62f4b792c185d1dba89325e973ea1f
 export class NoActiveStampError extends CustomError {
   constructor(userId, cafeId) {
     super(
@@ -250,21 +253,25 @@ export class StampbookNotFoundError extends CustomError {
   }
 }
 
+<<<<<<< HEAD
 // 제목 누락 또는 짧음
+=======
+
+// 리뷰 관련
+
+>>>>>>> 9dbe851c9c62f4b792c185d1dba89325e973ea1f
 export class InvalidReviewTitleError extends CustomError {
   constructor(title) {
     super("제목은 최소 20자 이상이어야 합니다.", "R001", 400, { title });
   }
 }
 
-// 본문 누락 또는 짧음
 export class InvalidReviewContentError extends CustomError {
   constructor(content) {
     super("본문은 최소 500자 이상이어야 합니다.", "R002", 400, { content });
   }
 }
 
-// 리뷰 없을 때
 export class ReviewNotFoundError extends CustomError {
   constructor(reviewId) {
     super(`ID ${reviewId}에 해당하는 리뷰가 존재하지 않습니다.`, "R003", 404, {
@@ -273,7 +280,6 @@ export class ReviewNotFoundError extends CustomError {
   }
 }
 
-// 권한 없음
 export class ForbiddenReviewAccessError extends CustomError {
   constructor(userId, reviewOwnerId) {
     super("본인의 리뷰만 수정/삭제할 수 있습니다.", "R004", 403, {
@@ -283,7 +289,6 @@ export class ForbiddenReviewAccessError extends CustomError {
   }
 }
 
-// 필드 모두 누락
 export class MissingReviewFieldsError extends CustomError {
   constructor(missingFields = []) {
     super("제목과 본문을 모두 입력해주세요.", "R005", 400, { missingFields });
@@ -309,6 +314,42 @@ export class TooManyImagesError extends CustomError {
     );
   }
 }
+
+export class NoActiveStampError extends CustomError {
+  constructor(userId, cafeId) {
+    super(
+      "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
+      "R008",
+      403,
+      { userId, cafeId } 
+    );
+  }
+}
+
+// 스탬프북 관련
+export class StampNotEligibleError extends CustomError {
+  constructor(userId, cafeId) {
+    super(
+      `스탬프 목표를 아직 달성하지 않았거나 이미 완료된 상태입니다. userId: ${userId}, cafeId: ${cafeId}`,
+      "ST001",
+      400,
+      { userId, cafeId }
+    );
+  }
+}
+
+// 알림 관련
+export class NotificationNotFoundError extends CustomError {
+  constructor(notificationId) {
+    super(
+      `해당 알림을 찾을 수 없습니다. notificationId: ${notificationId}`,
+      "N001",
+      404,
+      { notificationId }
+    );
+  }
+}
+
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;

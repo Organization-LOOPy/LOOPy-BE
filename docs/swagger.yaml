@@ -1102,8 +1102,383 @@ paths:
                   data:
                     type: "null"
                     example: null
+<<<<<<< HEAD
         '401':
           description: 인증 실패 (JWT 누락 또는 유효하지 않음)
+=======
+                  success:
+                    $ref: '#/components/schemas/ReviewListResponse'
+  /api/v1/challenges:
+    get:
+      summary: 챌린지 목록 조회
+      description: 현재 유효한 챌린지 목록을 조회합니다. (종료일 오름차순 정렬)
+      tags: [Challenge]
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                  error:
+                    type: string
+                    nullable: true
+                  success:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        title:
+                          type: string
+                        description:
+                          type: string
+                        thumbnailUrl:
+                          type: string
+                        startDate:
+                          type: string
+                          format: date
+                        endDate:
+                          type: string
+                          format: date
+                        isParticipated:
+                          type: boolean
+
+  /api/v1/challenges/{challengeId}:
+    get:
+      summary: 챌린지 상세 조회
+      description: 챌린지 ID로 상세 정보를 조회합니다.
+      tags: [Challenge]
+      parameters:
+        - in: path
+          name: challengeId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                  error:
+                    type: string
+                    nullable: true
+                  success:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      title: { type: string }
+                      description: { type: string }
+                      thumbnailUrl: { type: string }
+                      startDate: { type: string, format: date }
+                      endDate: { type: string, format: date }
+                      goalDescription: { type: string }
+                      goalCount: { type: integer }
+                      rewardPoint: { type: integer }
+                      isParticipated: { type: boolean }
+                      availableCafes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id: { type: integer }
+                            name: { type: string }
+                            address: { type: string }
+                            region1DepthName: { type: string }
+                            region2DepthName: { type: string }
+                            region3DepthName: { type: string }
+
+  /api/v1/challenges/{challengeId}/join:
+    post:
+      summary: 챌린지 참여
+      description: 해당 챌린지에 로그인 유저가 참여합니다.
+      tags: [Challenge]
+      parameters:
+        - in: path
+          name: challengeId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType: { type: string }
+                  error: { type: string, nullable: true }
+                  success:
+                    type: object
+                    properties:
+                      message: { type: string }
+
+  /api/v1/challenges/{challengeId}/cafes:
+    get:
+      summary: 참여 가능 매장 조회
+      description: 특정 챌린지에 참여 가능한 카페 목록을 반환합니다.
+      tags: [Challenge]
+      parameters:
+        - in: path
+          name: challengeId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType: { type: string }
+                  error: { type: string, nullable: true }
+                  success:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        cafeId: { type: integer }
+                        name: { type: string }
+                        address: { type: string }
+                        region: { type: string }
+                        distance: { type: number }
+
+  /api/v1/users/me/challenges:
+    get:
+      summary: 나의 챌린지 목록 조회
+      description: 로그인 유저가 현재 참여 중인 챌린지 목록을 조회합니다.
+      tags: [Challenge]
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType: { type: string }
+                  error: { type: string, nullable: true }
+                  success:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        title: { type: string }
+                        thumbnailUrl: { type: string }
+                        tag: { type: string, nullable: true }
+                        startDate: { type: string, format: date }
+                        endDate: { type: string, format: date }
+
+  /api/v1/challenges/{challengeId}/complete:
+    post:
+      summary: 챌린지 완료 처리
+      description: 챌린지를 완료 처리하고 쿠폰을 발급합니다.
+      tags: [Challenge]
+      parameters:
+        - in: path
+          name: challengeId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType: { type: string }
+                  error: { type: string, nullable: true }
+                  success:
+                    type: object
+                    properties:
+                      message: { type: string }
+                      couponId: { type: integer, nullable: true }
+  /api/v1/users/me/stampbooks:
+    get:
+      summary: 전체 스탬프북 조회
+      description: 로그인한 사용자의 전체 스탬프북을 정렬 기준에 따라 조회
+      tags:
+        - Stamp
+      parameters:
+        - in: query
+          name: sortBy
+          schema:
+            type: string
+            enum: [mostStamped, shortestDeadline]
+          description: 정렬 기준 (적립 많은 순 or 기한 짧은 순). 기본값: 생성일 내림차순
+      responses:
+        '200':
+          description: 스탬프북 리스트 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StampBookListResponse'
+
+  /api/v1/stampbooks/{stampBookId}:
+    get:
+      summary: 스탬프북 상세 조회
+      description: 특정 스탬프북의 상세 정보를 조회
+      tags:
+        - Stamp
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 스탬프북 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StampBookDetail'
+
+  /api/v1/stampbooks/{stampBookId}/stamps:
+    post:
+      summary: 도장 적립
+      description: 스탬프북에 도장 1개 적립 (QR or 수동 방식)
+      tags:
+        - Stamp
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                cafeId:
+                  type: integer
+                method:
+                  type: string
+                  enum: [QR, MANUAL]
+      responses:
+        '200':
+          description: 도장 적립 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  stampCount:
+                    type: integer
+                  isStampbookCompleted:
+                    type: boolean
+
+  /api/v1/stampbooks/{stampBookId}/convert:
+    post:
+      summary: 스탬프 → 포인트 환전
+      description: 완료된 스탬프북을 포인트로 환전
+      tags:
+        - Stamp
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 환전 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  stampCount:
+                    type: integer
+                  pointAmount:
+                    type: integer
+
+    delete:
+      summary: 환전 취소
+      description: 환전 후 3일 이내 환전 취소
+      tags:
+        - Stamp
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 환전 취소 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  refundPoint:
+                    type: integer
+
+  /api/v1/stampbooks/{stampBookId}/extend:
+    patch:
+      summary: 스탬프북 기간 연장
+      description: 진행 중인 스탬프북의 만료일을 14일 연장
+      tags:
+        - Stamp
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 연장 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  newExpiresAt:
+                    type: string
+                    format: date-time
+
+  /api/v1/users/me/stampbooks/expiring:
+    get:
+      summary: 소멸 임박 스탬프북 조회
+      description: 7일 이내 만료 예정인 active 스탬프북 목록 조회
+      tags:
+        - Stamp
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/StampBookExpiring'
+>>>>>>> 9dbe851c9c62f4b792c185d1dba89325e973ea1f
 
 components:
   schemas:
@@ -1399,3 +1774,254 @@ tags:
   - name: Users
     description: 사용자 정보 및 설정 관련 API
 
+
+ChallengeListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        thumbnailUrl:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        isParticipated:
+          type: boolean
+
+ChallengeListResponse:
+    type: array
+    items:
+      $ref: '#/components/schemas/ChallengeListItem'
+
+ChallengeAvailableCafe:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        region1DepthName:
+          type: string
+        region2DepthName:
+          type: string
+        region3DepthName:
+          type: string
+
+    ChallengeDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        description:
+          type: string
+        thumbnailUrl:
+          type: string
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+        goalDescription:
+          type: string
+        goalCount:
+          type: integer
+        rewardPoint:
+          type: integer
+        isParticipated:
+          type: boolean
+        availableCafes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChallengeAvailableCafe'
+
+    MyChallengeListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        thumbnailUrl:
+          type: string
+        tag:
+          type: string
+          nullable: true
+        startDate:
+          type: string
+          format: date
+        endDate:
+          type: string
+          format: date
+
+    MyChallengeListResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/MyChallengeListItem'
+
+    StampBookListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        cafe:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            address:
+              type: string
+        currentCount:
+          type: integer
+        goalCount:
+          type: integer
+        status:
+          type: string
+        expiredAt:
+          type: string
+          format: date-time
+
+    StampBookListResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/StampBookListItem'
+
+    Stamp:
+      type: object
+      properties:
+        id:
+          type: integer
+        stampedAt:
+          type: string
+          format: date-time
+        stampImageUrl:
+          type: string
+        source:
+          type: string
+        note:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+
+    StampBookDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        cafe:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            address:
+              type: string
+        goalCount:
+          type: integer
+        currentCount:
+          type: integer
+        status:
+          type: string
+        isCompleted:
+          type: boolean
+        rewardDetail:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        lastVisitedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date-time
+        extendedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiredAt:
+          type: string
+          format: date-time
+          nullable: true
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+        convertedAt:
+          type: string
+          format: date-time
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        stamps:
+          type: array
+          items:
+            $ref: '#/components/schemas/Stamp'
+
+    StampBookExpiring:
+      type: object
+      properties:
+        id:
+          type: integer
+        cafe:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            address:
+              type: string
+        expiresAt:
+          type: string
+          format: date-time
+        status:
+          type: string
+
+    StampConversionResult:
+      type: object
+      properties:
+        message:
+          type: string
+        stampCount:
+          type: integer
+        pointAmount:
+          type: integer
+
+    StampCancelConversionResult:
+      type: object
+      properties:
+        message:
+          type: string
+        refundPoint:
+          type: integer
+
+    StampBookExtendResult:
+      type: object
+      properties:
+        message:
+          type: string
+        newExpiresAt:
+          type: string
+          format: date-time
