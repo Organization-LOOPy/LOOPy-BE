@@ -1,4 +1,6 @@
 import prisma from "../../prisma/client.js";
+import { NotificationNotFoundError } from "../errors/customErrors.js";
+
 
 export const getUserNotifications = async (req, res) => {
   const userId = req.user.id;
@@ -53,6 +55,10 @@ export const getNotificationById = async (req, res) => {
         },
       },
     });
+
+  if (!notification) {
+    throw new NotificationNotFoundError(notificationId);
+  }
 
   // 2. 읽음 처리 (읽지 않았을 때만)
   if (!notification.isRead) {
@@ -131,42 +137,35 @@ export const getNotificationById = async (req, res) => {
         break;
 
         case "coupon":
-          const rawUserCoupons = await prisma.$queryRaw`
-            SELECT
-              id AS couponId,
-              user_id AS userId,
-              coupon_template_id AS couponTemplateId,
-              acquisition_type AS acquisitionType,
-              status,
-              issued_at AS issuedAt,
-              expired_at AS expiredAt,
-              used_at AS usedAt,
-              cafeId
-            FROM user_coupons
-            WHERE user_id = ${userId}
-              AND status = 'active'
-          `;
-
-          detail = rawUserCoupons.map(coupon => ({
-            couponId: Number(coupon.couponId),
-            userId: Number(coupon.userId),
-            couponTemplateId: Number(coupon.couponTemplateId),
-            acquisitionType: coupon.acquisitionType,
-            status: coupon.status,
-            issuedAt: coupon.issuedAt,
-            expiredAt: coupon.expiredAt,
-            usedAt: coupon.usedAt,
-            cafeId: Number(coupon.cafeId),
-          }));
+          if (!notification.cafeId) {
+            detail = [];
+            break;
+          }
+        
+          detail = await prisma.couponTemplate.findMany({ // 해당 카페의 쿠폰 템플릿으로 이동
+            where: {
+              cafeId: notification.cafeId,
+              isActive: true,
+            },
+            select: {
+              id: true,
+              name: true,
+              validDays: true,
+              discountType: true,
+              discountValue: true,
+              applicableMenuId: true,
+              expiredAt: true,
+            },
+          });
+        
           break;
-
         
         
     case "system":
       default:
         detail = {
-          title: notification.title,
-          content: notification.content,
+          title: notification.title,  // 알림 제목
+          content: notification.content, // 알림 내용
         };
         break;
         
