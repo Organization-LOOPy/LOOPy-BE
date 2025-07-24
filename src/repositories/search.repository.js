@@ -29,9 +29,15 @@ export const cafeSearchRepository = {
     return cafeInfo;
   },
 
-  async findCafeByInfos(whereConditions) {
+  async findCafeByInfos(whereConditions, cursor, take = 10) {
+    const whereClause = { ...whereConditions };
+
+    if (cursor) {
+      whereClause.createdAt = { lt: cursor };
+    }
+
     const cafeList = await prisma.cafe.findMany({
-      where: whereConditions,
+      where: whereClause,
       select: {
         id: true,
         name: true,
@@ -51,9 +57,10 @@ export const cafeSearchRepository = {
           },
         },
       },
-      //orderBy: [
-      // 필요시 region3 일치도로 정렬
-      //],
+      orderBy: {
+        createdAt: "asc",
+      },
+      take: take + 1, // 다음 페이지 존재 확인
     });
 
     return cafeList;

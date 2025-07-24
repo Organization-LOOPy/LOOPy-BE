@@ -155,7 +155,7 @@ export const cafeReviewRepository = {
 
     // cursor 조건 추가
     if (cursor) {
-      whereClause.id = { lt: cursor }; // cursor도 BigInt로 변환
+      whereClause.id = { lt: cursor };
     }
 
     const reviews = await prisma.review.findMany({
