@@ -29,7 +29,7 @@ export class InternalServerError extends CustomError {
   }
 }
 
-// 사용자 인증 관련 
+// 사용자 인증 관련
 export class TokenMissingError extends CustomError {
   constructor() {
     super("인증 토큰이 누락되었습니다.", "TOKEN_MISSING", 401);
@@ -62,7 +62,11 @@ export class KakaoLoginError extends CustomError {
 
 export class KakaoAlreadyLinkedError extends CustomError {
   constructor() {
-    super("이미 다른 계정에 연결된 카카오 계정입니다.", "KAKAO_ALREADY_LINKED", 409);
+    super(
+      "이미 다른 계정에 연결된 카카오 계정입니다.",
+      "KAKAO_ALREADY_LINKED",
+      409
+    );
   }
 }
 
@@ -72,16 +76,20 @@ export class KakaoCodeMissingError extends CustomError {
   }
 }
 
-// 마이페이지 
+// 마이페이지
 export class InvalidNicknameError extends CustomError {
   constructor(nickname) {
-    super("유효한 닉네임을 입력해주세요.", "INVALID_NICKNAME", 400, { nickname });
+    super("유효한 닉네임을 입력해주세요.", "INVALID_NICKNAME", 400, {
+      nickname,
+    });
   }
 }
 
 export class InvalidPreferredAreaError extends CustomError {
   constructor(value) {
-    super("유효한 동네명을 입력해주세요.", "INVALID_PREFERRED_AREA", 400, { value });
+    super("유효한 동네명을 입력해주세요.", "INVALID_PREFERRED_AREA", 400, {
+      value,
+    });
   }
 }
 
@@ -91,7 +99,7 @@ export class PreferenceSaveError extends CustomError {
   }
 }
 
-// 북마크 
+// 북마크
 export class BookmarkAlreadyExistsError extends CustomError {
   constructor(data) {
     super("이미 북마크한 카페입니다.", "BM001", 409, data);
@@ -110,7 +118,7 @@ export class CafeNotFoundError extends CustomError {
   }
 }
 
-// 포인트 
+// 포인트
 export class PointTransactionNotFoundError extends CustomError {
   constructor(data = null) {
     super("포인트 내역이 존재하지 않습니다.", "POINT_TX_NOT_FOUND", 404, data);
@@ -125,16 +133,18 @@ export class InvalidPointAmountError extends CustomError {
 
 export class NotEnoughPointError extends CustomError {
   constructor(currentPoint, requiredPoint) {
-    super("포인트가 부족합니다.", "NOT_ENOUGH_POINT", 400, { currentPoint, requiredPoint });
+    super("포인트가 부족합니다.", "NOT_ENOUGH_POINT", 400, {
+      currentPoint,
+      requiredPoint,
+    });
   }
 }
 
-
 //카페 조회
 export class MissingSearchQuery extends Error {
-  constructor(message = '검색어가 비어 있습니다.') {
+  constructor(message = "검색어가 비어 있습니다.") {
     super(message);
-    this.name = 'MissingSearchQuery';
+    this.name = "MissingSearchQuery";
     this.statusCode = 400;
   }
 }
@@ -208,6 +218,8 @@ export class MissingUserCoordinate extends CustomError {
   }
 }
 
+//챌린지
+
 export class NoActiveStampError extends CustomError {
   constructor(userId, cafeId) {
     super(
@@ -219,14 +231,13 @@ export class NoActiveStampError extends CustomError {
   }
 }
 
-
 export class ChallengeNotFoundError extends CustomError {
   constructor(challengeId) {
     super(
       `챌린지 ID ${challengeId}에 해당하는 챌린지를 찾을 수 없습니다.`,
-      "CH001",       
-      404,           
-      { challengeId } 
+      "CH001",
+      404,
+      { challengeId }
     );
   }
 }
@@ -239,83 +250,59 @@ export class StampbookNotFoundError extends CustomError {
   }
 }
 
-
 // 리뷰 관련
 
 export class InvalidReviewTitleError extends CustomError {
   constructor(title) {
-    super(
-      "제목은 최소 20자 이상이어야 합니다.",
-      "R001",
-      400,
-      { title }
-    );
+    super("제목은 최소 20자 이상이어야 합니다.", "R001", 400, { title });
   }
 }
 
 export class InvalidReviewContentError extends CustomError {
   constructor(content) {
-    super(
-      "본문은 최소 500자 이상이어야 합니다.",
-      "R002",
-      400,
-      { content }
-    );
+    super("본문은 최소 500자 이상이어야 합니다.", "R002", 400, { content });
   }
 }
 
 export class ReviewNotFoundError extends CustomError {
   constructor(reviewId) {
-    super(
-      `ID ${reviewId}에 해당하는 리뷰가 존재하지 않습니다.`,
-      "R003",
-      404,
-      { reviewId }
-    );
+    super(`ID ${reviewId}에 해당하는 리뷰가 존재하지 않습니다.`, "R003", 404, {
+      reviewId,
+    });
   }
 }
 
 export class ForbiddenReviewAccessError extends CustomError {
   constructor(userId, reviewOwnerId) {
-    super(
-      "본인의 리뷰만 수정/삭제할 수 있습니다.",
-      "R004",
-      403,
-      { userId, reviewOwnerId }
-    );
+    super("본인의 리뷰만 수정/삭제할 수 있습니다.", "R004", 403, {
+      userId,
+      reviewOwnerId,
+    });
   }
 }
 
 export class MissingReviewFieldsError extends CustomError {
   constructor(missingFields = []) {
-    super(
-      "제목과 본문을 모두 입력해주세요.",
-      "R005",
-      400,
-      { missingFields }
-    );
+    super("제목과 본문을 모두 입력해주세요.", "R005", 400, { missingFields });
   }
 }
 
 export class InvalidImageTypeError extends CustomError {
   constructor(mimetype) {
-    super(`이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: ${mimetype})`, 400, 'R006');
+    super(
+      `이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: ${mimetype})`,
+      400,
+      "R006"
+    );
   }
 }
 
 export class TooManyImagesError extends CustomError {
   constructor(count) {
-    super(`이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: ${count}개)`, 400, 'R007');
-  }
-}
-
-export class NoActiveStampError extends CustomError {
-  constructor(userId, cafeId) {
     super(
-      "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
-      "R008",
-      403,
-      { userId, cafeId } 
+      `이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: ${count}개)`,
+      400,
+      "R007"
     );
   }
 }
@@ -343,7 +330,6 @@ export class NotificationNotFoundError extends CustomError {
     );
   }
 }
-
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
