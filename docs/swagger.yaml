@@ -1102,10 +1102,9 @@ paths:
                   data:
                     type: "null"
                     example: null
-<<<<<<< HEAD
         '401':
           description: 인증 실패 (JWT 누락 또는 유효하지 않음)
-=======
+
                   success:
                     $ref: '#/components/schemas/ReviewListResponse'
   /api/v1/challenges:
@@ -1478,7 +1477,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/StampBookExpiring'
->>>>>>> 9dbe851c9c62f4b792c185d1dba89325e973ea1f
 
 components:
   schemas:
@@ -1816,7 +1814,7 @@ ChallengeAvailableCafe:
         region3DepthName:
           type: string
 
-    ChallengeDetail:
+ChallengeDetail:
       type: object
       properties:
         id:
@@ -1846,7 +1844,7 @@ ChallengeAvailableCafe:
           items:
             $ref: '#/components/schemas/ChallengeAvailableCafe'
 
-    MyChallengeListItem:
+MyChallengeListItem:
       type: object
       properties:
         id:
@@ -1865,12 +1863,12 @@ ChallengeAvailableCafe:
           type: string
           format: date
 
-    MyChallengeListResponse:
+MyChallengeListResponse:
       type: array
       items:
         $ref: '#/components/schemas/MyChallengeListItem'
 
-    StampBookListItem:
+StampBookListItem:
       type: object
       properties:
         id:
@@ -1894,12 +1892,12 @@ ChallengeAvailableCafe:
           type: string
           format: date-time
 
-    StampBookListResponse:
+StampBookListResponse:
       type: array
       items:
         $ref: '#/components/schemas/StampBookListItem'
 
-    Stamp:
+Stamp:
       type: object
       properties:
         id:
@@ -1918,7 +1916,7 @@ ChallengeAvailableCafe:
         longitude:
           type: number
 
-    StampBookDetail:
+StampBookDetail:
       type: object
       properties:
         id:
@@ -1979,7 +1977,7 @@ ChallengeAvailableCafe:
           items:
             $ref: '#/components/schemas/Stamp'
 
-    StampBookExpiring:
+StampBookExpiring:
       type: object
       properties:
         id:
@@ -1999,7 +1997,7 @@ ChallengeAvailableCafe:
         status:
           type: string
 
-    StampConversionResult:
+StampConversionResult:
       type: object
       properties:
         message:
@@ -2009,7 +2007,7 @@ ChallengeAvailableCafe:
         pointAmount:
           type: integer
 
-    StampCancelConversionResult:
+StampCancelConversionResult:
       type: object
       properties:
         message:
@@ -2017,7 +2015,7 @@ ChallengeAvailableCafe:
         refundPoint:
           type: integer
 
-    StampBookExtendResult:
+StampBookExtendResult:
       type: object
       properties:
         message:
