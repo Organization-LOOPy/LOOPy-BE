@@ -15,7 +15,6 @@ import challengeRoutes from './routes/challenge.routes.js';
 import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
 
-
 const app = express();
 
 setupSwagger(app);

@@ -208,6 +208,17 @@ export class MissingUserCoordinate extends CustomError {
   }
 }
 
+export class NoActiveStampError extends CustomError {
+  constructor(userId, cafeId) {
+    super(
+      "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
+      "ST001",
+      403,
+      { userId, cafeId } // ← 이 부분
+    );
+  }
+}
+
 
 export class ChallengeNotFoundError extends CustomError {
   constructor(challengeId) {
@@ -219,6 +230,15 @@ export class ChallengeNotFoundError extends CustomError {
     );
   }
 }
+//
+export class StampbookNotFoundError extends CustomError {
+  constructor(message = "Not Found") {
+    super(message);
+    this.name = "NotFoundError";
+    this.statusCode = 404;
+  }
+}
+
 
 // 리뷰 관련
 
