@@ -93,19 +93,20 @@ export const cafeCouponRepository = {
   },
 
   async issueCoupon(couponInfo, userId) {
-    if (!couponInfo?.id || !userId) {
-      throw new InvalidParameterError(
-        "쿠폰 정보 또는 사용자 ID가 누락되었습니다."
-      );
+    const { id, validDays } = couponInfo;
+
+    if (typeof validDays !== "number" || isNaN(validDays)) {
+      throw new Error("쿠폰의 유효 일수가 잘못되었습니다.");
     }
+
+    const expiredAt = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000);
 
     const coupon = await prisma.userCoupon.create({
       data: {
-        userId: userId,
-        couponTemplateId: couponInfo.id,
-        expiredAt: new Date(
-          Date.now() + couponInfo.validDays * 24 * 60 * 60 * 1000
-        ), //사장님이 설정한 유효기간 후 만료
+        userId,
+        couponTemplateId: id,
+        expiredAt,
+        //사장님이 설정한 유효기간 후 만료
         acquisitionType: "promotion",
       },
       select: {
