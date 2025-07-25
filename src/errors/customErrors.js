@@ -217,20 +217,7 @@ export class MissingUserCoordinate extends CustomError {
     super(message || "사용자 주소가 누락되었습니다", "S001", 400);
   }
 }
-
 //챌린지
-
-export class NoActiveStampError extends CustomError {
-  constructor(userId, cafeId) {
-    super(
-      "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
-      "ST001",
-      403,
-      { userId, cafeId } // ← 이 부분
-    );
-  }
-}
-
 export class ChallengeNotFoundError extends CustomError {
   constructor(challengeId) {
     super(
@@ -299,10 +286,21 @@ export class InvalidImageTypeError extends CustomError {
 
 export class TooManyImagesError extends CustomError {
   constructor(count) {
-    super(
+  super(
       `이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: ${count}개)`,
       400,
       "R007"
+    );
+  }
+}
+
+export class NoActiveStampError extends CustomError {
+  constructor(userId, cafeId) {
+    super(
+    "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
+      "R008",
+      403,
+      { userId, cafeId } // ← 이 부분
     );
   }
 }
