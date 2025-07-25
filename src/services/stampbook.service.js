@@ -1,3 +1,5 @@
+// stampbook.service.js
+
 import prisma from '../../prisma/client.js';
 import { StampNotEligibleError } from "../errors/customErrors.js";
   

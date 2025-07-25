@@ -1,3 +1,4 @@
+// notification.controller.js
 import prisma from "../../prisma/client.js";
 import { NotificationNotFoundError } from "../errors/customErrors.js";
 
