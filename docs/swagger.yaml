@@ -1112,6 +1112,8 @@ paths:
       summary: 챌린지 목록 조회
       description: 현재 유효한 챌린지 목록을 조회합니다. (종료일 오름차순 정렬)
       tags: [Challenge]
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: 성공
@@ -1152,6 +1154,8 @@ paths:
       summary: 챌린지 상세 조회
       description: 챌린지 ID로 상세 정보를 조회합니다.
       tags: [Challenge]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: challengeId
@@ -1201,6 +1205,8 @@ paths:
       summary: 챌린지 참여
       description: 해당 챌린지에 로그인 유저가 참여합니다.
       tags: [Challenge]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: challengeId
@@ -1227,6 +1233,8 @@ paths:
       summary: 참여 가능 매장 조회
       description: 특정 챌린지에 참여 가능한 카페 목록을 반환합니다.
       tags: [Challenge]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: challengeId
@@ -1259,6 +1267,8 @@ paths:
       summary: 나의 챌린지 목록 조회
       description: 로그인 유저가 현재 참여 중인 챌린지 목록을 조회합니다.
       tags: [Challenge]
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: 성공
@@ -1286,6 +1296,8 @@ paths:
       summary: 챌린지 완료 처리
       description: 챌린지를 완료 처리하고 쿠폰을 발급합니다.
       tags: [Challenge]
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: challengeId
@@ -1313,6 +1325,8 @@ paths:
       description: 로그인한 사용자의 전체 스탬프북을 정렬 기준에 따라 조회
       tags:
         - Stamp
+      security:
+        - bearerAuth: []
       parameters:
         - in: query
           name: sortBy
@@ -1334,6 +1348,8 @@ paths:
       description: 특정 스탬프북의 상세 정보를 조회
       tags:
         - Stamp
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: stampBookId
@@ -1354,6 +1370,8 @@ paths:
       description: 스탬프북에 도장 1개 적립 (QR or 수동 방식)
       tags:
         - Stamp
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: stampBookId
@@ -1391,6 +1409,8 @@ paths:
       description: 완료된 스탬프북을 포인트로 환전
       tags:
         - Stamp
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: stampBookId
@@ -1417,6 +1437,8 @@ paths:
       description: 환전 후 3일 이내 환전 취소
       tags:
         - Stamp
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: stampBookId
@@ -1442,6 +1464,8 @@ paths:
       description: 진행 중인 스탬프북의 만료일을 14일 연장
       tags:
         - Stamp
+      security:
+        - bearerAuth: []
       parameters:
         - in: path
           name: stampBookId
@@ -1468,6 +1492,8 @@ paths:
       description: 7일 이내 만료 예정인 active 스탬프북 목록 조회
       tags:
         - Stamp
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: 조회 성공
@@ -1477,6 +1503,357 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/StampBookExpiring'
+  
+  /api/v1/notification/{notificationId}:
+    get:
+      tags:
+        - Notifications
+      summary: 알림 상세 조회
+      description: 알림 ID를 기반으로 상세 정보를 조회합니다. 읽지 않은 알림이라면 읽음 처리됩니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: notificationId
+          in: path
+          required: true
+          description: 조회할 알림 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 알림 상세 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 알림 상세 조회 성공
+                  data:
+                    type: object
+                    properties:
+                      notificationId:
+                        type: integer
+                        example: 12
+                      title:
+                        type: string
+                        example: 오늘의 챌린지가 시작됐어요!
+                      type:
+                        type: string
+                        enum: [system, challenge, stamp, review, coupon]
+                      createdAt:
+                        type: string
+                        format: date-time
+                      cafe:
+                        type: object
+                        nullable: true
+                        properties:
+                          id:
+                            type: integer
+                            example: 1
+                          name:
+                            type: string
+                            example: 루피커피
+                      detail:
+                        oneOf:
+                          - $ref: '#/components/schemas/SystemNotificationDetail'
+                          - $ref: '#/components/schemas/ChallengeNotificationDetail'
+                          - $ref: '#/components/schemas/StampNotificationDetail'
+                          - $ref: '#/components/schemas/ReviewNotificationDetail'
+                          - $ref: '#/components/schemas/CouponNotificationDetail'
+        '404':
+          description: 알림이 존재하지 않음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/stampbooks/{cafeId}/coupon:
+    post:
+      tags:
+        - StampBooks
+      summary: 스탬프 목표 달성 시 리워드 쿠폰 발급
+      description: 스탬프북의 목표를 달성한 경우, 사용자에게 리워드 쿠폰을 발급합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          description: 쿠폰을 발급받을 카페 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 리워드 쿠폰 발급 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 리워드 쿠폰 발급 성공
+                  coupon:
+                    $ref: '#/components/schemas/UserCoupon'
+        '400':
+          description: 스탬프북이 조건을 만족하지 않음 또는 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증되지 않은 사용자
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 스탬프북 또는 카페를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/cafe/{cafeId}/review:
+  post:
+    tags:
+      - Review
+    summary: 리뷰 작성
+    description: 제목 20자 이상, 본문 500자 이상, 이미지 최대 5장까지 첨부 가능합니다.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: cafeId
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 리뷰를 작성할 카페 ID
+    requestBody:
+      required: true
+      content:
+        multipart/form-data:
+          schema:
+            type: object
+            required:
+              - title
+              - content
+            properties:
+              title:
+                type: string
+                example: "카페 분위기가 너무 좋아요!"
+              content:
+                type: string
+                example: >
+                  커피 맛도 좋고 조용해서 공부하기 좋았어요. 다음에 또 방문할 예정입니다.
+              images:
+                type: array
+                items:
+                  type: string
+                  format: binary
+                description: 첨부 이미지 파일 (최대 5장)
+    responses:
+      '201':
+        description: 리뷰 작성 성공
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: 리뷰 작성 성공
+                review:
+                  $ref: '#/components/schemas/Review'
+      '400':
+        description: 잘못된 요청 (제목/본문 미입력, 유효성 실패 등)
+        content:
+          application/json:
+            examples:
+              제목 짧음:
+                value: { errorCode: "R001", reason: "제목은 최소 20자 이상이어야 합니다." }
+              본문 짧음:
+                value: { errorCode: "R002", reason: "본문은 최소 500자 이상이어야 합니다." }
+              필드 누락:
+                value: { errorCode: "R005", reason: "제목과 본문을 모두 입력해주세요." }
+              이미지 타입 오류:
+                value: { errorCode: "R006", reason: "이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: text/plain)" }
+              이미지 수량 초과:
+                value: { errorCode: "R007", reason: "이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: 6개)" }
+      '403':
+        description: 유효한 스탬프가 없음
+        content:
+          application/json:
+            example:
+              value: { errorCode: "R008", reason: "스탬프 적립을 시작하고 리뷰를 작성해보세요!" }
+      '500':
+        description: 서버 오류
+
+  /api/v1/reviews/{reviewId}:
+  patch:
+    tags:
+      - Review
+    summary: 리뷰 수정
+    description: 본인의 리뷰만 수정할 수 있습니다.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: reviewId
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 수정할 리뷰 ID
+    requestBody:
+      required: true
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - title
+              - content
+            properties:
+              title:
+                type: string
+                example: "업데이트된 제목입니다."
+              content:
+                type: string
+                example: "내용도 새롭게 작성했습니다."
+    responses:
+      '200':
+        description: 리뷰 수정 성공
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: 리뷰 수정 성공
+                review:
+                  $ref: '#/components/schemas/Review'
+      '403':
+        description: 권한 없음
+        content:
+          application/json:
+            example:
+              value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
+      '404':
+        description: 리뷰 없음
+        content:
+          application/json:
+            example:
+              value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
+      '400':
+        description: 필수 필드 누락
+        content:
+          application/json:
+            example:
+              value: { errorCode: "R005", reason: "제목과 본문을 모두 입력해주세요." }
+      '500':
+        description: 서버 오류
+
+  delete:
+    tags:
+      - Review
+    summary: 리뷰 삭제
+    description: 본인이 작성한 리뷰만 삭제할 수 있습니다.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: reviewId
+        in: path
+        required: true
+        schema:
+          type: integer
+        description: 삭제할 리뷰 ID
+    responses:
+      '200':
+        description: 리뷰 삭제 성공
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: 리뷰 삭제 성공!
+      '403':
+        description: 권한 없음
+        content:
+          application/json:
+            example:
+              value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
+      '404':
+        description: 리뷰 없음
+        content:
+          application/json:
+            example:
+              value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
+      '500':
+        description: 서버 오류
+
+  /api/v1/users/me/reviews:
+  get:
+    tags:
+      - Review
+    summary: 내가 작성한 리뷰 목록 조회
+    description: 로그인한 사용자가 작성한 리뷰 목록을 페이지네이션 형식으로 조회합니다.
+    security:
+      - bearerAuth: []
+    parameters:
+      - name: page
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 1
+        description: 조회할 페이지 번호
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type: integer
+          default: 10
+        description: 페이지당 항목 수
+    responses:
+      '200':
+        description: 내가 쓴 리뷰 목록 조회 성공
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: 내가 쓴 리뷰 목록 조회 성공
+                data:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/UserReviewSummary'
+                pagination:
+                  type: object
+                  properties:
+                    page:
+                      type: integer
+                      example: 1
+                    limit:
+                      type: integer
+                      example: 10
+                    total:
+                      type: integer
+                      example: 27
+      '401':
+        description: 인증 실패
+        content:
+          application/json:
+            example:
+              value: { errorCode: "AUTH001", reason: "JWT 토큰이 유효하지 않습니다." }
+      '500':
+        description: 서버 오류
 
 components:
   schemas:
@@ -1652,18 +2029,20 @@ components:
           example: "2025-07-19T09:20:09.040Z"
  
     ErrorResponse:
-      type: object
-      properties:
-        errorCode:
-          type: string
-          enum: [C001, C005, C006]
-        reason:
-          type: string
-        data:
-          type: "null"
-          example: null
+    type: object
+    properties:
+      errorCode:
+        type: string
+      reason:
+        type: string
+      data:
+        type: object
+      example:
+        errorCode: BM001
+        reason: 이미 북마크한 카페입니다.
+        data: null
 
-        RegisterRequest:
+    RegisterRequest:
       type: object
       required:
         - email
@@ -1762,18 +2141,8 @@ components:
         cafeId:
           type: integer
           example: 1
-    securitySchemes:
-      bearerAuth:
-        type: http
-        scheme: bearer
-        bearerFormat: JWT
 
-tags:
-  - name: Users
-    description: 사용자 정보 및 설정 관련 API
-
-
-ChallengeListItem:
+    ChallengeListItem:
       type: object
       properties:
         id:
@@ -1793,12 +2162,12 @@ ChallengeListItem:
         isParticipated:
           type: boolean
 
-ChallengeListResponse:
-    type: array
-    items:
-      $ref: '#/components/schemas/ChallengeListItem'
+    ChallengeListResponse:
+      type: array
+      items:
+        $ref: '#/components/schemas/ChallengeListItem'
 
-ChallengeAvailableCafe:
+    ChallengeAvailableCafe:
       type: object
       properties:
         id:
@@ -1814,7 +2183,7 @@ ChallengeAvailableCafe:
         region3DepthName:
           type: string
 
-ChallengeDetail:
+    ChallengeDetail:
       type: object
       properties:
         id:
@@ -1844,7 +2213,7 @@ ChallengeDetail:
           items:
             $ref: '#/components/schemas/ChallengeAvailableCafe'
 
-MyChallengeListItem:
+    MyChallengeListItem:
       type: object
       properties:
         id:
@@ -1863,12 +2232,12 @@ MyChallengeListItem:
           type: string
           format: date
 
-MyChallengeListResponse:
+    MyChallengeListResponse:
       type: array
       items:
         $ref: '#/components/schemas/MyChallengeListItem'
 
-StampBookListItem:
+    StampBookListItem:
       type: object
       properties:
         id:
@@ -1892,12 +2261,12 @@ StampBookListItem:
           type: string
           format: date-time
 
-StampBookListResponse:
+    StampBookListResponse:
       type: array
       items:
         $ref: '#/components/schemas/StampBookListItem'
 
-Stamp:
+    Stamp:
       type: object
       properties:
         id:
@@ -1916,7 +2285,7 @@ Stamp:
         longitude:
           type: number
 
-StampBookDetail:
+    StampBookDetail:
       type: object
       properties:
         id:
@@ -1977,7 +2346,7 @@ StampBookDetail:
           items:
             $ref: '#/components/schemas/Stamp'
 
-StampBookExpiring:
+    StampBookExpiring:
       type: object
       properties:
         id:
@@ -1997,7 +2366,7 @@ StampBookExpiring:
         status:
           type: string
 
-StampConversionResult:
+    StampConversionResult:
       type: object
       properties:
         message:
@@ -2007,7 +2376,7 @@ StampConversionResult:
         pointAmount:
           type: integer
 
-StampCancelConversionResult:
+    StampCancelConversionResult:
       type: object
       properties:
         message:
@@ -2015,7 +2384,7 @@ StampCancelConversionResult:
         refundPoint:
           type: integer
 
-StampBookExtendResult:
+    StampBookExtendResult:
       type: object
       properties:
         message:
@@ -2023,3 +2392,145 @@ StampBookExtendResult:
         newExpiresAt:
           type: string
           format: date-time
+
+    SystemNotificationDetail:
+      type: object
+      properties:
+        title:
+          type: string
+          example: 시스템 알림 제목
+        content:
+          type: string
+          example: 시스템 알림 본문
+
+    ChallengeNotificationDetail:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+          title:
+            type: string
+          description:
+            type: string
+          thumbnailUrl:
+            type: string
+          startDate:
+            type: string
+            format: date
+          endDate:
+            type: string
+            format: date
+          isActive:
+            type: boolean
+
+    StampNotificationDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        currentCount:
+          type: integer
+        goalCount:
+          type: integer
+        rewardDetail:
+          type: string
+        status:
+          type: string
+        isCompleted:
+          type: boolean
+        isConverted:
+          type: boolean
+        expiresAt:
+          type: string
+          format: date-time
+        lastVisitedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ReviewNotificationDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+
+    CouponNotificationDetail:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+          name:
+            type: string
+          validDays:
+            type: integer
+          discountType:
+            type: string
+          discountValue:
+            type: integer
+          applicableMenuId:
+            type: integer
+            nullable: true
+          expiredAt:
+            type: string
+            format: date-time
+
+    UserCoupon:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        couponTemplateId:
+          type: integer
+        acquisitionType:
+          type: string
+          enum: [stamp, promotion]
+        status:
+          type: string
+          enum: [active, used, expired]
+        issuedAt:
+          type: string
+          format: date-time
+        expiredAt:
+          type: string
+          format: date-time
+        couponTemplate:
+          type: object
+          properties:
+            id:
+              type: integer
+            cafeId:
+              type: integer
+            name:
+              type: string
+            discountType:
+              type: string
+              enum: [AMOUNT, PERCENT]
+            discountValue:
+              type: number
+            validDays:
+              type: integer
+            isActive:
+              type: boolean
+            expiredAt:
+              type: string
+              format: date-time
+
+  securitySchemes:
+      bearerAuth:
+        type: http
+        scheme: bearer
+        bearerFormat: JWT
+
+tags:
+  - name: Users
+    description: 사용자 정보 및 설정 관련 API
