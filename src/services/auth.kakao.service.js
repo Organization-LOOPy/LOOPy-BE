@@ -1,20 +1,36 @@
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
-import prismaPackage from '@prisma/client'; 
-import { KakaoLoginError, KakaoAlreadyLinkedError, KakaoCodeMissingError } from '../errors/customErrors.js';
+import { PrismaClient } from '@prisma/client';
+import { KakaoAlreadyLinkedError, KakaoCodeMissingError,
+  MissingRoleError, InvalidRoleError 
+ } from '../errors/customErrors.js';
 
-const { PrismaClient, UserRole } = prismaPackage;
 const prisma = new PrismaClient();
 
+// 공통 util 함수
+const buildRedirectUrl = (token, nickname) =>
+  `${process.env.FRONT_LOGIN_SUCCESS_URI}?token=${token}&nickname=${encodeURIComponent(nickname.slice(0, 50))}`;
+
+const createJwt = (userId, roles, currentRole) =>
+  jwt.sign({ userId: userId.toString(), roles, currentRole }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
 // 카카오 소셜 로그인
-export const handleKakaoRedirectService = async (code, tokenFromQuery) => {
+export const handleKakaoRedirectService = async (code, tokenFromQuery, roleFromQuery) => {
   if (!code) throw new KakaoCodeMissingError();
+  if (!roleFromQuery) throw new MissingRoleError();
+
+  const requestedRole = roleFromQuery.toUpperCase();
+  if (!['CUSTOMER', 'OWNER'].includes(requestedRole)) {
+    throw new InvalidRoleError();
+  }
+
+  const redirectUri = `${process.env.KAKAO_REDIRECT_URI}?role=${roleFromQuery}`;
 
   const tokenRes = await axios.post('https://kauth.kakao.com/oauth/token', null, {
     params: {
       grant_type: 'authorization_code',
       client_id: process.env.KAKAO_REST_API_KEY,
-      redirect_uri: `http://localhost:3000/api/auth/kakao/redirect`,
+      redirect_uri: redirectUri,
       code,
     },
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -23,9 +39,7 @@ export const handleKakaoRedirectService = async (code, tokenFromQuery) => {
   const accessToken = tokenRes.data.access_token;
 
   const userRes = await axios.get('https://kapi.kakao.com/v2/user/me', {
-    headers: {
-      Authorization: `Bearer ${accessToken}`,
-    },
+    headers: { Authorization: `Bearer ${accessToken}` },
   });
 
   const kakaoUser = userRes.data;
@@ -49,49 +63,51 @@ export const handleKakaoRedirectService = async (code, tokenFromQuery) => {
   });
 
   if (kakaoAccount) {
-    if (loggedInUserId && kakaoAccount.user.id !== Number(loggedInUserId)) {
+    const user = kakaoAccount.user;
+    if (loggedInUserId && user.id !== Number(loggedInUserId)) {
       throw new KakaoAlreadyLinkedError();
     }
 
-    const user = kakaoAccount.user;
-    const token = jwt.sign({ userId: user.id.toString() }, process.env.JWT_SECRET, {
-      expiresIn: '7d',
+    const existingRoles = await prisma.userRole.findMany({
+      where: { userId: user.id },
+      select: { role: true },
     });
-    const redirectUrl = `${process.env.FRONT_LOGIN_SUCCESS_URI}?token=${token}&nickname=${encodeURIComponent(user.nickname)}`;
-    return { redirectUrl };
+    const roleList = existingRoles.map((r) => r.role);
+
+    if (!roleList.includes(requestedRole)) {
+      await prisma.userRole.create({ data: { userId: user.id, role: requestedRole } });
+      roleList.push(requestedRole);
+    }
+
+
+    const token = createJwt(user.id, roleList, requestedRole);
+    return { redirectUrl: buildRedirectUrl(token, user.nickname) };
   }
 
-  if (loggedInUserId) {
-    await prisma.kakaoAccount.create({
-      data: {
-        userId: Number(loggedInUserId),
-        socialId,
-      },
-    });
+let dummyPhone, duplicate;
+do {
+  dummyPhone = 'kakao_' + Math.floor(Math.random() * 1e10).toString().padStart(10, '0');
+  duplicate = await prisma.user.findUnique({ where: { phoneNumber: dummyPhone } });
+} while (duplicate);
 
-    return { redirectUrl: `${process.env.FRONT_PROFILE_URI}?linked=kakao` };
-  }
-
-  const dummyPhone = 'kakao_' + Math.floor(Math.random() * 1e10).toString().padStart(10, '0');
   const user = await prisma.user.create({
     data: {
       email,
       nickname,
       phoneNumber: dummyPhone,
-      role: UserRole.CUSTOMER,
       allowKakaoAlert: false,
       status: 'active',
       kakaoAccount: {
         create: { socialId },
       },
+      userRole: {
+        create: { role: requestedRole },
+      },
     },
   });
 
-  const token = jwt.sign({ userId: user.id.toString() }, process.env.JWT_SECRET, {
-    expiresIn: '7d',
-  });
-  const redirectUrl = `${process.env.FRONT_LOGIN_SUCCESS_URI}?token=${token}&nickname=${encodeURIComponent(user.nickname)}`;
-  return { redirectUrl };
+  const token = createJwt(newUser.id, [requestedRole], requestedRole);
+  return { redirectUrl: buildRedirectUrl(token, user.nickname) };
 };
 
 //클라이언트에 콜백 
@@ -105,9 +121,7 @@ export const handleKakaoLinkCallbackService = async (code, userId) => {
       redirect_uri: process.env.KAKAO_LINK_REDIRECT_URI,
       code,
     },
-    headers: {
-      'Content-Type': 'application/x-www-form-urlencoded',
-    },
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
 
   const accessToken = tokenRes.data.access_token;

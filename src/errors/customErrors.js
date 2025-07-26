@@ -29,7 +29,7 @@ export class InternalServerError extends CustomError {
   }
 }
 
-// 사용자 인증 관련 
+// 사용자 인증 관련
 export class TokenMissingError extends CustomError {
   constructor() {
     super("인증 토큰이 누락되었습니다.", "TOKEN_MISSING", 401);
@@ -62,7 +62,17 @@ export class KakaoLoginError extends CustomError {
 
 export class KakaoAlreadyLinkedError extends CustomError {
   constructor() {
-    super("이미 다른 계정에 연결된 카카오 계정입니다.", "KAKAO_ALREADY_LINKED", 409);
+    super(
+      "이미 다른 계정에 연결된 카카오 계정입니다.",
+      "KAKAO_ALREADY_LINKED",
+      409
+    );
+  }
+}
+
+export class MissingRoleError extends CustomError {
+  constructor() {
+    super('역할 정보가 누락되었습니다.', 'ROLE_MISSING', 400);
   }
 }
 
@@ -72,16 +82,33 @@ export class KakaoCodeMissingError extends CustomError {
   }
 }
 
-// 마이페이지 
+export class InvalidRoleError extends CustomError {
+  constructor(role) {
+    super(`잘못된 역할 요청입니다: ${role}`, "INVALID_ROLE", 400, { role });
+  }
+}
+
+export class RoleNotGrantedError extends CustomError {
+  constructor(role) {
+    super(`해당 사용자는 ${role} 역할이 등록되어 있지 않습니다.`, "ROLE_NOT_GRANTED", 403, { role });
+  }
+}
+
+
+// 마이페이지
 export class InvalidNicknameError extends CustomError {
   constructor(nickname) {
-    super("유효한 닉네임을 입력해주세요.", "INVALID_NICKNAME", 400, { nickname });
+    super("유효한 닉네임을 입력해주세요.", "INVALID_NICKNAME", 400, {
+      nickname,
+    });
   }
 }
 
 export class InvalidPreferredAreaError extends CustomError {
   constructor(value) {
-    super("유효한 동네명을 입력해주세요.", "INVALID_PREFERRED_AREA", 400, { value });
+    super("유효한 동네명을 입력해주세요.", "INVALID_PREFERRED_AREA", 400, {
+      value,
+    });
   }
 }
 
@@ -91,7 +118,7 @@ export class PreferenceSaveError extends CustomError {
   }
 }
 
-// 북마크 
+// 북마크
 export class BookmarkAlreadyExistsError extends CustomError {
   constructor(data) {
     super("이미 북마크한 카페입니다.", "BM001", 409, data);
@@ -110,7 +137,7 @@ export class CafeNotFoundError extends CustomError {
   }
 }
 
-// 포인트 
+// 포인트
 export class PointTransactionNotFoundError extends CustomError {
   constructor(data = null) {
     super("포인트 내역이 존재하지 않습니다.", "POINT_TX_NOT_FOUND", 404, data);
@@ -125,16 +152,18 @@ export class InvalidPointAmountError extends CustomError {
 
 export class NotEnoughPointError extends CustomError {
   constructor(currentPoint, requiredPoint) {
-    super("포인트가 부족합니다.", "NOT_ENOUGH_POINT", 400, { currentPoint, requiredPoint });
+    super("포인트가 부족합니다.", "NOT_ENOUGH_POINT", 400, {
+      currentPoint,
+      requiredPoint,
+    });
   }
 }
 
-
 //카페 조회
 export class MissingSearchQuery extends Error {
-  constructor(message = '검색어가 비어 있습니다.') {
+  constructor(message = "검색어가 비어 있습니다.") {
     super(message);
-    this.name = 'MissingSearchQuery';
+    this.name = "MissingSearchQuery";
     this.statusCode = 400;
   }
 }
@@ -207,29 +236,14 @@ export class MissingUserCoordinate extends CustomError {
     super(message || "사용자 주소가 누락되었습니다", "S001", 400);
   }
 }
-
-
 //챌린지
-
-export class NoActiveStampError extends CustomError {
-  constructor(userId, cafeId) {
-    super(
-      "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
-      "ST001",
-      403,
-      { userId, cafeId } // ← 이 부분
-    );
-  }
-}
-
-
 export class ChallengeNotFoundError extends CustomError {
   constructor(challengeId) {
     super(
       `챌린지 ID ${challengeId}에 해당하는 챌린지를 찾을 수 없습니다.`,
-      "CH001",       
-      404,           
-      { challengeId } 
+      "CH001",
+      404,
+      { challengeId }
     );
   }
 }
@@ -242,76 +256,117 @@ export class StampbookNotFoundError extends CustomError {
   }
 }
 
+// 리뷰 관련
 
-// 제목 누락 또는 짧음
 export class InvalidReviewTitleError extends CustomError {
   constructor(title) {
-    super(
-      "제목은 최소 20자 이상이어야 합니다.",
-      "R001",
-      400,
-      { title }
-    );
+    super("제목은 최소 20자 이상이어야 합니다.", "R001", 400, { title });
   }
 }
 
-// 본문 누락 또는 짧음
 export class InvalidReviewContentError extends CustomError {
   constructor(content) {
-    super(
-      "본문은 최소 500자 이상이어야 합니다.",
-      "R002",
-      400,
-      { content }
-    );
+    super("본문은 최소 500자 이상이어야 합니다.", "R002", 400, { content });
   }
 }
 
-// 리뷰 없을 때
 export class ReviewNotFoundError extends CustomError {
   constructor(reviewId) {
-    super(
-      `ID ${reviewId}에 해당하는 리뷰가 존재하지 않습니다.`,
-      "R003",
-      404,
-      { reviewId }
-    );
+    super(`ID ${reviewId}에 해당하는 리뷰가 존재하지 않습니다.`, "R003", 404, {
+      reviewId,
+    });
   }
 }
 
-// 권한 없음
 export class ForbiddenReviewAccessError extends CustomError {
   constructor(userId, reviewOwnerId) {
-    super(
-      "본인의 리뷰만 수정/삭제할 수 있습니다.",
-      "R004",
-      403,
-      { userId, reviewOwnerId }
-    );
+    super("본인의 리뷰만 수정/삭제할 수 있습니다.", "R004", 403, {
+      userId,
+      reviewOwnerId,
+    });
   }
 }
 
-// 필드 모두 누락
 export class MissingReviewFieldsError extends CustomError {
   constructor(missingFields = []) {
-    super(
-      "제목과 본문을 모두 입력해주세요.",
-      "R005",
-      400,
-      { missingFields }
-    );
+    super("제목과 본문을 모두 입력해주세요.", "R005", 400, { missingFields });
   }
 }
 
 export class InvalidImageTypeError extends CustomError {
   constructor(mimetype) {
-    super(`이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: ${mimetype})`, 400, 'R006');
+    super(
+      `이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: ${mimetype})`,
+      400,
+      "R006"
+    );
   }
 }
 
 export class TooManyImagesError extends CustomError {
   constructor(count) {
-    super(`이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: ${count}개)`, 400, 'R007');
+  super(
+      `이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: ${count}개)`,
+      400,
+      "R007"
+    );
+  }
+}
+
+export class NoActiveStampError extends CustomError {
+  constructor(userId, cafeId) {
+    super(
+    "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
+      "R008",
+      403,
+      { userId, cafeId } // ← 이 부분
+    );
+  }
+}
+
+// 스탬프북 관련
+export class StampNotEligibleError extends CustomError {
+  constructor(userId, cafeId) {
+    super(
+      `스탬프 목표를 아직 달성하지 않았거나 이미 완료된 상태입니다. userId: ${userId}, cafeId: ${cafeId}`,
+      "ST001",
+      400,
+      { userId, cafeId }
+    );
+  }
+}
+
+// 알림 관련
+export class NotificationNotFoundError extends CustomError {
+  constructor(notificationId) {
+    super(
+      `해당 알림을 찾을 수 없습니다. notificationId: ${notificationId}`,
+      "N001",
+      404,
+      { notificationId }
+    );
+  }
+}
+
+
+// 사장용 api 커스텀 에러
+
+// 카페 관리
+export class CafeNotExistError extends CustomError {
+  constructor(cafeId) {
+    super('ID ${cafeId}에 해당하는 카페를 찾을 수 없습니다.', "CAFE_NOT_FOUND", 404, { cafeId })
+  }
+}
+
+export class UnauthCafeAccessError extends CustomError {
+  constructor(cafeId) {
+    super('카페 ID ${cafeId}에 대한 접근 권한이 없습니다.', "CAFE_UNAUTHORIZED", 403, { cafeId })
+  }
+}
+
+export class CafeAlreadyExistError extends CustomError {
+  constructor(cafeId) {
+    super('이미 카페를 등록한 사용자입니다. (userId: ${userId})', "CAFE_ALREADY_EXIST", 400, { userId });
   }
 }
 

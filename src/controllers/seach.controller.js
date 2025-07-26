@@ -10,7 +10,7 @@ import {
 
 export const cafeSearch = async (res, req, next) => {
   try {
-    const { x, y, searchQuery } = req.query;
+    const { x, y, searchQuery, cursor } = req.query;
     const { storeFilter, takeOutFilter, menuFilter, addressInfo } = req.body;
 
     if (!x || !y) {
@@ -21,6 +21,7 @@ export const cafeSearch = async (res, req, next) => {
     }
 
     const results = await cafeSearchService.findCafeList({
+      cursor,
       x,
       y,
       searchQuery,

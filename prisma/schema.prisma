@@ -17,7 +17,6 @@ model User {
   passwordHash    String?    @map("password_hash") @db.VarChar(255)
   phoneNumber     String     @unique @map("phone_number") @db.VarChar(20)
   nickname        String     @db.VarChar(50)
-  role            UserRole
   allowKakaoAlert Boolean    @default(false) @map("allow_kakao_alert")
   status          UserStatus @default(active)
   fcmToken        String?    @map("fcm_token") @db.VarChar(255)
@@ -26,6 +25,7 @@ model User {
   inactivedAt     DateTime?  @map("inactived_at")
 
   // Relations
+  roles UserRole[]
   kakaoAccount          KakaoAccount?
   userPreferences       UserPreference?
   verificationCodes     VerificationCode[]
@@ -38,8 +38,19 @@ model User {
   notifications         Notification[]
   coupons               UserCoupon[]
   bookmarks             UserBookmark[]
+  cafes                 Cafe[]
 
   @@map("users")
+}
+
+model UserRole {
+  id     Int       @id @default(autoincrement())
+  user   User      @relation(fields: [userId], references: [id])
+  userId Int
+  role   RoleType
+
+  @@unique([userId, role])
+  @@map("user_role")
 }
 
 model KakaoAccount {
@@ -265,6 +276,8 @@ model PointTransaction {
 model Cafe {
   id             Int        @id @default(autoincrement())
   name           String     @db.VarChar(255)
+  ownerId        Int       @unique @map("owner_id")
+  owner          User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   address        String     @db.VarChar(500)
   region1DepthName String   @map("region_1depth_name") @db.VarChar(50)
   region2DepthName String   @map("region_2depth_name") @db.VarChar(50)
@@ -410,7 +423,7 @@ model UserCoupon {
 // Enums
 // ================================
 
-enum UserRole {
+enum RoleType {
   CUSTOMER
   OWNER
 }

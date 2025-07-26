@@ -18,13 +18,18 @@ const opts = {
 
 passport.use(
   new JwtStrategy(opts, async (jwtPayload, done) => {
+    console.log('🔥 [jwtPayload]:', jwtPayload);
     try {
       const user = await prisma.user.findUnique({
         where: { id: parseInt(jwtPayload.userId, 10) },
       });
 
       if (user) {
-        return done(null, { id: user.id }); 
+        return done(null, {
+          id: user.id,
+          roles: jwtPayload.roles,
+          currentRole: jwtPayload.currentRole,
+        });
       } else {
         return done(null, false);
       }
@@ -33,5 +38,6 @@ passport.use(
     }
   })
 );
+
 
 export default passport;

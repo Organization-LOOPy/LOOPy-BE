@@ -6,6 +6,7 @@ import { parseFiltersFromQuery } from "../utils/parserFilterFromJson.js";
 
 export const cafeSearchService = {
   async findcafeList(
+    cursor,
     x,
     y,
     searchQuery,
@@ -83,7 +84,8 @@ export const cafeSearchService = {
     }
 
     const searchResults = await cafeSearchRepository.findCafeByInfos(
-      whereConditions
+      whereConditions,
+      cursor
     );
 
     if (searchResults.length > 0) {
