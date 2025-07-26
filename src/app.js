@@ -1,5 +1,7 @@
 import express from "express";
 import cors from "cors";
+import swaggerUi from 'swagger-ui-express';
+import YAML from 'yamljs';
 import { morganMiddleware } from "./utils/logger.js";
 import { responseHandler } from "./middlewares/responseHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -12,9 +14,18 @@ import userRouter from "./routes/user.routes.js";
 import pointRouter from "./routes/point.router.js";
 import reviewRouter from './routes/review.routes.js';
 import challengeRoutes from './routes/challenge.routes.js';
+
+import stampbookRouter from './routes/stamp.routes.js';
+
+const swaggerDocument = YAML.load('./src/docs/swagger.yaml');
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
+
 import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
 import adminCafeRouter from "./routes/admin.cafe.routes.js";
+
 const app = express();
 
 setupSwagger(app);
@@ -29,9 +40,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
   exposedHeaders: ["x-access-token", "Content-Encoding"],
 };
-app.use(cors(corsOptions));
-app.use(express.json());
-
 app.get("/", (req, res) => res.send("루피 백엔드 작동 중!"));
 
 app.use(responseHandler);
