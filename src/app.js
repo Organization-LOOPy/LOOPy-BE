@@ -14,7 +14,7 @@ import reviewRouter from './routes/review.routes.js';
 import challengeRoutes from './routes/challenge.routes.js';
 import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
-
+import adminCafeRouter from "./routes/admin.cafe.routes.js";
 const app = express();
 
 setupSwagger(app);
@@ -49,6 +49,7 @@ app.use("/api/v1/cafe/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
 app.use("/api/v1/stampbooks", stampbookRouter);
+app.use("/api/v1/owners", adminCafeRouter);
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어
 

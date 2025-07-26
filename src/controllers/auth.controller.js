@@ -12,8 +12,8 @@ export const signup = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    const { email, password } = req.body;
-    const result = await loginService(email, password); 
+    const { email, password, role } = req.body;
+    const result = await loginService(email, password, role);
     return res.json(result);
   } catch (err) {
     next(err);

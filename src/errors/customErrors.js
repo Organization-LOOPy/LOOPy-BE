@@ -70,11 +70,30 @@ export class KakaoAlreadyLinkedError extends CustomError {
   }
 }
 
+export class MissingRoleError extends CustomError {
+  constructor() {
+    super('역할 정보가 누락되었습니다.', 'ROLE_MISSING', 400);
+  }
+}
+
 export class KakaoCodeMissingError extends CustomError {
   constructor() {
     super("카카오 인증 코드가 누락되었습니다.", "KAKAO_CODE_MISSING", 400);
   }
 }
+
+export class InvalidRoleError extends CustomError {
+  constructor(role) {
+    super(`잘못된 역할 요청입니다: ${role}`, "INVALID_ROLE", 400, { role });
+  }
+}
+
+export class RoleNotGrantedError extends CustomError {
+  constructor(role) {
+    super(`해당 사용자는 ${role} 역할이 등록되어 있지 않습니다.`, "ROLE_NOT_GRANTED", 403, { role });
+  }
+}
+
 
 // 마이페이지
 export class InvalidNicknameError extends CustomError {
@@ -326,6 +345,28 @@ export class NotificationNotFoundError extends CustomError {
       404,
       { notificationId }
     );
+  }
+}
+
+
+// 사장용 api 커스텀 에러
+
+// 카페 관리
+export class CafeNotExistError extends CustomError {
+  constructor(cafeId) {
+    super('ID ${cafeId}에 해당하는 카페를 찾을 수 없습니다.', "CAFE_NOT_FOUND", 404, { cafeId })
+  }
+}
+
+export class UnauthCafeAccessError extends CustomError {
+  constructor(cafeId) {
+    super('카페 ID ${cafeId}에 대한 접근 권한이 없습니다.', "CAFE_UNAUTHORIZED", 403, { cafeId })
+  }
+}
+
+export class CafeAlreadyExistError extends CustomError {
+  constructor(cafeId) {
+    super('이미 카페를 등록한 사용자입니다. (userId: ${userId})', "CAFE_ALREADY_EXIST", 400, { userId });
   }
 }
 
