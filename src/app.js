@@ -34,9 +34,6 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
   exposedHeaders: ["x-access-token", "Content-Encoding"],
 };
-app.use(cors(corsOptions));
-app.use(express.json());
-
 app.get("/", (req, res) => res.send("루피 백엔드 작동 중!"));
 
 app.use(responseHandler);
