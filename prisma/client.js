@@ -1,7 +1,5 @@
-//import { PrismaClient } from "@prisma/client";
-import pkg from '@prisma/client';
-const { PrismaClient } = pkg;
-
+import pkg from "@prisma/client";
+const { PrismaClient, RoleType } = pkg;
 const globalForPrisma = globalThis;
 
 const prisma =
@@ -15,3 +13,4 @@ if (process.env.NODE_ENV !== "prod") {
 }
 
 export default prisma;
+export { RoleType };
