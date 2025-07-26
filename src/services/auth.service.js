@@ -7,14 +7,21 @@ import {
   UserNotFoundError,
   InvalidPasswordError,
   BadRequestError,
+  InvalidRoleError,
+  RoleNotGrantedError
 } from '../errors/customErrors.js';
+import { RoleType } from '@prisma/client';
 
 // 이메일 기반 회원가입 
 export const signupService = async (body) => {
-  const { email, password, nickname, phoneNumber, agreements } = body;
+  const { email, password, nickname, phoneNumber, agreements, role } = body;
 
-  if (!email || !password || !nickname || !phoneNumber) {
-    throw new MissingFieldsError(['email', 'password', 'nickname', 'phoneNumber']);
+  if (!email || !password || !nickname || !phoneNumber || !role) {
+    throw new MissingFieldsError(['email', 'password', 'nickname', 'phoneNumber', 'role']);
+  }
+
+  if (!['CUSTOMER', 'OWNER'].includes(role)) {
+    throw new InvalidRoleError(role);
   }
 
   const existingUser = await prisma.user.findFirst({
@@ -36,7 +43,6 @@ export const signupService = async (body) => {
         passwordHash: hashedPassword,
         nickname,
         phoneNumber,
-        role: 'CUSTOMER',
         allowKakaoAlert: false,
         status: 'active',
       },
@@ -57,11 +63,25 @@ export const signupService = async (body) => {
       data: { userId: createdUser.id },
     });
 
+    await tx.userRole.createMany({
+      data: [
+        { userId: createdUser.id, role: RoleType.CUSTOMER },
+    { userId: createdUser.id, role: RoleType.OWNER },
+      ],
+    });
+
     return createdUser;
   });
 
+  const userRoles = await prisma.userRole.findMany({
+    where: { userId: user.id },
+    select: { role: true },
+  });
+
+  const roles = userRoles.map((r) => r.role);
+
   const token = jwt.sign(
-    { userId: user.id.toString(), role: user.role },
+    { userId: user.id.toString(), roles },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -73,21 +93,37 @@ export const signupService = async (body) => {
       id: user.id.toString(),
       email: user.email,
       nickname: user.nickname,
+      roles,
+      currentRole: role,
     },
   };
 };
 
 // 이메일 기반 로그인
-export const loginService = async (email, password) => {
+export const loginService = async (email, password, requestedRole) => {
   const user = await prisma.user.findUnique({ where: { email } });
-
   if (!user) throw new UserNotFoundError(email);
 
   const isPasswordValid = await bcrypt.compare(password, user.passwordHash || '');
   if (!isPasswordValid) throw new InvalidPasswordError();
 
+  if (!Object.values(RoleType).includes(requestedRole)) {
+    throw new InvalidRoleError();
+  }
+
+  const userRoles = await prisma.userRole.findMany({
+    where: { userId: user.id },
+    select: { role: true },
+  });
+
+  const roles = userRoles.map((r) => r.role);
+
+  if (!roles.includes(requestedRole)) {
+    throw new RoleNotGrantedError(requestedRole);
+  }
+
   const token = jwt.sign(
-    { userId: user.id.toString(), role: user.role },
+    { userId: user.id.toString(), roles, currentRole: requestedRole },
     process.env.JWT_SECRET,
     { expiresIn: '7d' }
   );
@@ -99,9 +135,12 @@ export const loginService = async (email, password) => {
       id: user.id.toString(),
       email: user.email,
       nickname: user.nickname,
+      roles,
+      currentRole: requestedRole,
     },
   };
 };
+
 
 // 로그아웃 
 export const logoutService = async (userId) => {
