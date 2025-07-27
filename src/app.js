@@ -53,7 +53,9 @@ app.use("/api/v1/cafe/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
 app.use("/api/v1/stampbooks", stampbookRouter);
-app.use("/api/v1/owners", adminCafeRouter);
+
+// 사장용
+app.use("/api/v1/owners/cafes", adminCafeRouter);
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어
 

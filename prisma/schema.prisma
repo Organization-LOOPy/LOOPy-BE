@@ -325,7 +325,8 @@ model CafeMenu {
   // Relations
   cafe            Cafe             @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   couponTemplates CouponTemplate[]
-
+   
+  @@unique([cafeId, name])
   @@map("cafe_menu")
 }
 
