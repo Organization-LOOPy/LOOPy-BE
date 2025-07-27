@@ -99,7 +99,6 @@ export const signupService = async (body) => {
       id: user.id.toString(),
       email: user.email,
       nickname: user.nickname,
-      roles,
       currentRole: role,
     },
   };
@@ -144,7 +143,6 @@ export const loginService = async (email, password, requestedRole) => {
       id: user.id.toString(),
       email: user.email,
       nickname: user.nickname,
-      roles,
       currentRole: requestedRole,
     },
   };

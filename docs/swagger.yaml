@@ -1,12 +1,15 @@
 openapi: 3.0.0
 info:
-  title: LOOPy API
-  description: 루피 프로젝트 백엔드 API 문서입니다.
+  title: LOOPy API(테스트)
+  description: 루피 프로젝트 백엔드 API 문서입니다!
   version: 1.0.0
 
 servers:
-  - url: http://13.209.89.251:3000
+  - url: http://localhost:3000/
     description: 로컬 개발 서버
+
+security:
+  - bearerAuth: []
 
 paths:
   /health:
@@ -39,12 +42,25 @@ paths:
       description: 사용자가 이메일, 비밀번호, 닉네임, 전화번호, 사용자 역할, 알림 수신 동의 및 약관 동의 정보를 제출하여 회원가입
       tags:
         - Auth
+      security: [] 
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: test@example.com
+              password: securepassword123
+              nickname: 테스터
+              phoneNumber: "01012345678"
+              role: CUSTOMER
+              allowKakaoAlert: true
+              agreements:
+                termsAgreed: true
+                privacyPolicyAgreed: true
+                marketingAgreed: false
+                locationPermission: true
       responses:
         '201':
           description: 회원가입 성공
@@ -60,25 +76,7 @@ paths:
                     type: string
                     example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                   user:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: "2"
-                      email:
-                        type: string
-                        example: yof@naver.com
-                      nickname:
-                        type: string
-                        example: 유진
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                        example: [ "CUSTOMER", "OWNER" ]
-                      currentRole:
-                        type: string
-                        example: OWNER
+                    $ref: '#/components/schemas/UserProfile'
         '400':
           description: 잘못된 요청 (필수 항목 누락 또는 중복된 이메일 등)
           content:
@@ -92,6 +90,7 @@ paths:
       description: 사용자가 이메일과 비밀번호로 로그인, JWT 토큰과 사용자 정보를 발급
       tags:
         - Auth
+      security: [] 
       requestBody:
         required: true
         content:
@@ -113,31 +112,14 @@ paths:
                     type: string
                     example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                   user:
-                    type: object
-                    properties:
-                      id:
-                        type: string
-                        example: "2"
-                      email:
-                        type: string
-                        example: yof@naver.com
-                      nickname:
-                        type: string
-                        example: 유진
-                      roles:
-                        type: array
-                        items:
-                          type: string
-                        example: [ "CUSTOMER", "OWNER" ]
-                      currentRole:
-                        type: string
-                        example: CUSTOMER
+                    $ref: '#/components/schemas/LoginUserProfile'
         '400':
           description: 이메일 또는 비밀번호 오류
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
 
   /api/v1/auth/logout:
     post:
@@ -165,7 +147,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-    /api/v1/point/current:
+  /api/v1/points/current:
     get:
       summary: 현재 포인트 조회
       description: 인증된 사용자의 현재 보유 포인트를 조회
@@ -204,7 +186,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
   /api/v1/users/me/fcm-token:
-    post:
+    patch:
       summary: FCM 토큰 저장
       description: 사용자의 FCM 푸시 알림 토큰을 저장
       tags:
@@ -290,7 +272,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/active:
+  /api/v1/users/me/activate:
     patch:
       summary: 휴면 계정 활성화
       description: 휴면 상태인 계정을 다시 활성화
@@ -435,7 +417,7 @@ paths:
                         example: "2"
                       nickname:
                         type: string
-                        example: 새로운유진
+                        example: 새로운닉네임
                       updatedAt:
                         type: string
                         format: date-time
@@ -586,7 +568,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/alert-settings:
+  /api/v1/users/me/kakao-alert:
     patch:
       summary: 카카오 알림톡 허용 여부 저장
       description: 인증된 사용자의 카카오 알림톡 수신 여부를 저장
@@ -774,7 +756,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/point/transactions:
+  /api/v1/points/transactions:
     get:
       summary: 포인트 거래 내역 조회
       description: 인증된 사용자의 포인트 적립/사용/환불 내역을 최신순으로 조회
@@ -806,6 +788,7 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
   /api/v1/cafes/{cafeId}:
     get:
       summary: 카페 상세 정보 조회
@@ -1863,6 +1846,11 @@ paths:
         description: 서버 오류
 
 components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
   schemas:
     UserProfile:
       type: object
@@ -1878,7 +1866,7 @@ components:
           example: "01012345678"
         nickname:
           type: string
-          example: 유진
+          example: 테스터
         role:
           type: string
           enum: [CUSTOMER, OWNER]
@@ -1911,6 +1899,24 @@ components:
           format: date-time
           nullable: true
           example: null
+  
+    LoginUserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "1"
+        email:
+          type: string
+          example: test@example.com
+        nickname:
+          type: string
+          example: 테스터
+        currentRole:
+          type: string
+          enum: [CUSTOMER, OWNER]
+          example: CUSTOMER
+
 
     UserAgreementRequest:
       type: object
@@ -2036,75 +2042,71 @@ components:
           example: "2025-07-19T09:20:09.040Z"
  
     ErrorResponse:
-    type: object
-    properties:
-      errorCode:
-        type: string
-      reason:
-        type: string
-      data:
-        type: object
-      example:
-        errorCode: BM001
-        reason: 이미 북마크한 카페입니다.
-        data: null
+      type: object
+      properties:
+        errorCode:
+          type: string
+        reason:
+          type: string
+        data:
+          type: object
+        example:
+          errorCode: BM001
+          reason: 이미 북마크한 카페입니다.
+          data: null
 
     RegisterRequest:
-  type: object
-  required:
-    - email
-    - password
-    - nickname
-    - phoneNumber
-    - role
-    - allowKakaoAlert
-    - agreements
-  properties:
-    email:
-      type: string
-      format: email
-      example: test@example.com
-    password:
-      type: string
-      format: password
-      example: securepassword123
-    nickname:
-      type: string
-      example: 테스터
-    phoneNumber:
-      type: string
-      example: "01012345678"
-    role:
-      type: string
-      description: 사용자의 역할 (CUSTOMER 또는 OWNER 중 하나)
-      enum:
-        - CUSTOMER
-        - OWNER
-      example: CUSTOMER
-    allowKakaoAlert:
-      type: boolean
-      description: 카카오 알림 수신 여부
-      example: true
-    agreements:
       type: object
       required:
-        - termsAgreed
-        - privacyPolicyAgreed
-        - marketingAgreed
-        - locationPermission
+        - email
+        - password
+        - nickname
+        - phoneNumber
+        - role
+        - allowKakaoAlert
+        - agreements
       properties:
-        termsAgreed:
+        email:
+          type: string
+          format: email
+          default: test@example.com
+        password:
+          type: string
+          format: password
+          default: securepassword123
+        nickname:
+          type: string
+          default: 테스터
+        phoneNumber:
+          type: string
+          default: "01012345678"
+        role:
+          type: string
+          enum: [CUSTOMER, OWNER]
+          default: CUSTOMER
+        allowKakaoAlert:
           type: boolean
-          example: true
-        privacyPolicyAgreed:
-          type: boolean
-          example: true
-        marketingAgreed:
-          type: boolean
-          example: false
-        locationPermission:
-          type: boolean
-          example: true
+          default: true
+        agreements:
+          type: object
+          required:
+            - termsAgreed
+            - privacyPolicyAgreed
+            - marketingAgreed
+            - locationPermission
+          properties:
+            termsAgreed:
+              type: boolean
+              default: true
+            privacyPolicyAgreed:
+              type: boolean
+              default: true
+            marketingAgreed:
+              type: boolean
+              default: false
+            locationPermission:
+              type: boolean
+              default: true
 
     LoginRequest:
       type: object
@@ -2120,6 +2122,10 @@ components:
           type: string
           format: password
           example: securepassword123
+        role:
+          type: string
+          enum: [CUSTOMER, OWNER]
+          example: CUSTOMER
 
     FcmTokenRequest:
       type: object
@@ -2147,7 +2153,7 @@ components:
       properties:
         nickname:
           type: string
-          example: 새로운유진
+          example: 새로운닉네임
 
     BookmarkRequest:
       type: object
