@@ -29,6 +29,7 @@ const corsOptions = {
     "http://localhost:5173", // 프론트엔드 로컬 환경
     "https://loo-py.xyz", // 프론트엔드 배포 환경
     "http://13.209.89.251:3000",
+    "http://localhost:3000"
   ],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],

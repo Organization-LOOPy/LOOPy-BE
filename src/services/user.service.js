@@ -51,7 +51,6 @@ export const getMyInfoService = async (userId) => {
       email: true,
       phoneNumber: true,
       nickname: true,
-      role: true,
       status: true,
       allowKakaoAlert: true,
       fcmToken: true,
