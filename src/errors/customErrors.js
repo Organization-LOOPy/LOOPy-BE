@@ -352,23 +352,96 @@ export class NotificationNotFoundError extends CustomError {
 // 사장용 api 커스텀 에러
 
 // 카페 관리
+// 1. 기본 정보 등록 
 export class CafeNotExistError extends CustomError {
   constructor(cafeId) {
-    super('ID ${cafeId}에 해당하는 카페를 찾을 수 없습니다.', "CAFE_NOT_FOUND", 404, { cafeId })
+    super(`ID ${cafeId}에 해당하는 카페를 찾을 수 없습니다.`, "CAFE_NOT_FOUND", 404, { cafeId });
   }
 }
 
 export class UnauthCafeAccessError extends CustomError {
   constructor(cafeId) {
-    super('카페 ID ${cafeId}에 대한 접근 권한이 없습니다.', "CAFE_UNAUTHORIZED", 403, { cafeId })
+    super(`카페 ID ${cafeId}에 대한 접근 권한이 없습니다.`, "CAFE_UNAUTHORIZED", 403, { cafeId });
   }
 }
 
 export class CafeAlreadyExistError extends CustomError {
-  constructor(cafeId) {
-    super('이미 카페를 등록한 사용자입니다. (userId: ${userId})', "CAFE_ALREADY_EXIST", 400, { userId });
+  constructor(userId) {
+    super(`이미 카페를 등록한 사용자입니다. (userId: ${userId})`, "CAFE_ALREADY_EXIST", 400, { userId });
   }
 }
+
+export class InvalidCafeBasicInfoError extends CustomError {
+  constructor(missingFields = []) {
+    super(
+      `카페 기본 정보에 누락된 필드가 있습니다: ${missingFields.join(', ')}`,
+      "CAFE_BASIC_INFO_INVALID",
+      400,
+      { missingFields }
+    );
+  }
+}
+
+// 2. 운영 정보 등록
+export class InvalidBusinessHoursError extends CustomError {
+  constructor(detail) {
+    super(
+      `운영시간 정보가 잘못되었습니다: ${detail}`,
+      "BUSINESS_HOURS_INVALID",
+      400,
+      { detail }
+    );
+  }
+}
+
+// 3. 메뉴 등록
+export class DuplicateMenuNameError extends CustomError {
+  constructor(duplicateNames) {
+    super(
+      `중복된 메뉴 이름이 존재합니다: ${duplicateNames.join(', ')}`,
+      "MENU_NAME_DUPLICATE",
+      409,
+      { duplicateNames }
+    );
+  }
+}
+
+export class InvalidMenuDataError extends CustomError {
+  constructor(detail) {
+    super(
+      `메뉴 정보가 잘못되었습니다: ${detail}`,
+      "MENU_INVALID",
+      400,
+      { detail }
+    );
+  }
+}
+
+
+// 4. 사진 등록
+export class InvalidPhotoUrlsError extends CustomError {
+  constructor(reason) {
+    super(
+      `유효하지 않은 사진 URL 목록입니다: ${reason}`,
+      "PHOTO_URLS_INVALID",
+      400,
+      { reason }
+    );
+  }
+}
+
+// 5. 등록 완료
+export class CafeAlreadyCompletedError extends CustomError {
+  constructor(cafeId) {
+    super(
+      `카페 ID ${cafeId}는 이미 등록이 완료된 상태입니다.`,
+      "CAFE_ALREADY_COMPLETED",
+      400,
+      { cafeId }
+    );
+  }
+}
+
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;

@@ -36,7 +36,7 @@ paths:
   /api/v1/auth/signup:
     post:
       summary: 이메일 회원가입
-      description: 사용자가 이메일, 비밀번호, 닉네임, 전화번호, 알림 수신 동의 및 약관 동의 정보를 제출하여 회원가입
+      description: 사용자가 이메일, 비밀번호, 닉네임, 전화번호, 사용자 역할, 알림 수신 동의 및 약관 동의 정보를 제출하여 회원가입
       tags:
         - Auth
       requestBody:
@@ -53,24 +53,32 @@ paths:
               schema:
                 type: object
                 properties:
-                  resultType:
+                  message:
                     type: string
-                    example: SUCCESS
-                  error:
-                    type: "null"
-                    example: null
-                  success:
+                    example: 회원가입 성공
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
                     type: object
                     properties:
-                      message:
+                      id:
                         type: string
-                        example: 회원가입 성공
-                      userId:
+                        example: "2"
+                      email:
                         type: string
-                        example: "7"
+                        example: yof@naver.com
                       nickname:
                         type: string
-                        example: "테스터"
+                        example: 유진
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "CUSTOMER", "OWNER" ]
+                      currentRole:
+                        type: string
+                        example: OWNER
         '400':
           description: 잘못된 요청 (필수 항목 누락 또는 중복된 이메일 등)
           content:
@@ -98,33 +106,32 @@ paths:
               schema:
                 type: object
                 properties:
-                  resultType:
+                  message:
                     type: string
-                    example: SUCCESS
-                  error:
-                    type: "null"
-                    example: null
-                  success:
+                    example: 로그인 성공
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
                     type: object
                     properties:
-                      message:
+                      id:
                         type: string
-                        example: 로그인 성공
-                      token:
+                        example: "2"
+                      email:
                         type: string
-                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-                      user:
-                        type: object
-                        properties:
-                          id:
-                            type: string
-                            example: "6"
-                          email:
-                            type: string
-                            example: test@example.com
-                          nickname:
-                            type: string
-                            example: 테스터
+                        example: yof@naver.com
+                      nickname:
+                        type: string
+                        example: 유진
+                      roles:
+                        type: array
+                        items:
+                          type: string
+                        example: [ "CUSTOMER", "OWNER" ]
+                      currentRole:
+                        type: string
+                        example: CUSTOMER
         '400':
           description: 이메일 또는 비밀번호 오류
           content:
@@ -2043,52 +2050,61 @@ components:
         data: null
 
     RegisterRequest:
+  type: object
+  required:
+    - email
+    - password
+    - nickname
+    - phoneNumber
+    - role
+    - allowKakaoAlert
+    - agreements
+  properties:
+    email:
+      type: string
+      format: email
+      example: test@example.com
+    password:
+      type: string
+      format: password
+      example: securepassword123
+    nickname:
+      type: string
+      example: 테스터
+    phoneNumber:
+      type: string
+      example: "01012345678"
+    role:
+      type: string
+      description: 사용자의 역할 (CUSTOMER 또는 OWNER 중 하나)
+      enum:
+        - CUSTOMER
+        - OWNER
+      example: CUSTOMER
+    allowKakaoAlert:
+      type: boolean
+      description: 카카오 알림 수신 여부
+      example: true
+    agreements:
       type: object
       required:
-        - email
-        - password
-        - nickname
-        - phoneNumber
-        - allowKakaoAlert
-        - agreements
+        - termsAgreed
+        - privacyPolicyAgreed
+        - marketingAgreed
+        - locationPermission
       properties:
-        email:
-          type: string
-          format: email
-          example: test@example.com
-        password:
-          type: string
-          format: password
-          example: securepassword123
-        nickname:
-          type: string
-          example: 테스터
-        phoneNumber:
-          type: string
-          example: "01012345678"
-        allowKakaoAlert:
+        termsAgreed:
           type: boolean
           example: true
-        agreements:
-          type: object
-          required:
-            - termsAgreed
-            - privacyPolicyAgreed
-            - marketingAgreed
-            - locationPermission
-          properties:
-            termsAgreed:
-              type: boolean
-              example: true
-            privacyPolicyAgreed:
-              type: boolean
-              example: true
-            marketingAgreed:
-              type: boolean
-              example: false
-            locationPermission:
-              type: boolean
-              example: true
+        privacyPolicyAgreed:
+          type: boolean
+          example: true
+        marketingAgreed:
+          type: boolean
+          example: false
+        locationPermission:
+          type: boolean
+          example: true
 
     LoginRequest:
       type: object

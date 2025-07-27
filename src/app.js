@@ -27,7 +27,8 @@ app.use(morganMiddleware);
 const corsOptions = {
   origin: [
     "http://localhost:5173", // 프론트엔드 로컬 환경
-    "https://loo-py.xyz/", // 프론트엔드 배포 환경
+    "https://loo-py.xyz", // 프론트엔드 배포 환경
+    "http://13.209.89.251:3000",
   ],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
@@ -36,9 +37,6 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 
-app.get("/", (req, res) => res.send("루피 백엔드 작동 중!"));
-
-app.use(responseHandler);
 app.use(passport.initialize());
 
 app.use(responseHandler); // 응답 포맷 통일 미들웨어
@@ -53,7 +51,9 @@ app.use("/api/v1/cafe/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
 app.use("/api/v1/stampbooks", stampbookRouter);
-app.use("/api/v1/owners", adminCafeRouter);
+
+// 사장용
+app.use("/api/v1/owners/cafes", adminCafeRouter);
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어
 
