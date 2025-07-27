@@ -14,7 +14,7 @@ router.post('/:cafeId/menus', postCafeMenus);
 router.post('/:cafeId/photos', postCafePhotos);
 router.patch('/:cafeId/complete',completeCafeRegistration);
 
-router.get('/cafe', getCafe);
-router.patch('/cafe/:cafeId', updateCafe);
+router.get('/myCafe', getCafe);
+router.patch('/myCafe/:cafeId', updateCafe);
 
 export default router;

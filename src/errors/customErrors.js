@@ -355,19 +355,19 @@ export class NotificationNotFoundError extends CustomError {
 // 1. 기본 정보 등록 
 export class CafeNotExistError extends CustomError {
   constructor(cafeId) {
-    super('ID ${cafeId}에 해당하는 카페를 찾을 수 없습니다.', "CAFE_NOT_FOUND", 404, { cafeId })
+    super(`ID ${cafeId}에 해당하는 카페를 찾을 수 없습니다.`, "CAFE_NOT_FOUND", 404, { cafeId });
   }
 }
 
 export class UnauthCafeAccessError extends CustomError {
   constructor(cafeId) {
-    super('카페 ID ${cafeId}에 대한 접근 권한이 없습니다.', "CAFE_UNAUTHORIZED", 403, { cafeId })
+    super(`카페 ID ${cafeId}에 대한 접근 권한이 없습니다.`, "CAFE_UNAUTHORIZED", 403, { cafeId });
   }
 }
 
 export class CafeAlreadyExistError extends CustomError {
-  constructor(cafeId) {
-    super('이미 카페를 등록한 사용자입니다. (userId: ${userId})', "CAFE_ALREADY_EXIST", 400, { userId });
+  constructor(userId) {
+    super(`이미 카페를 등록한 사용자입니다. (userId: ${userId})`, "CAFE_ALREADY_EXIST", 400, { userId });
   }
 }
 
