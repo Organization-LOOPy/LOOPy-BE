@@ -14,13 +14,6 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Check for Prisma changes
-        uses: dorny/paths-filter@v3
-        id: prisma-changes
-        with:
-          filters: |
-            prisma: ["prisma/**"]
-
       - name: Configure SSH
         run: |
           mkdir -p ~/.ssh
@@ -34,29 +27,19 @@ jobs:
             StrictHostKeyChecking no
           END
 
-      - name: Copy project files to EC2
-        run: |
-          ssh loopy-server 'sudo mkdir -p /opt/loopy-be'
-          ssh loopy-server 'sudo chown ubuntu:ubuntu /opt/loopy-be'
-          rsync -avz --delete \
-            --exclude 'node_modules' \
-            --exclude '.git' \
-            --exclude '.env' \
-            --exclude '*.log' \
-            ./ loopy-server:/opt/loopy-be/
-
-      - name: Deploy with Docker
+      - name: Update code and deploy
         run: |
           ssh loopy-server '
             cd /opt/loopy-be
             
-            echo "Stopping current containers..."
+            echo "Pulling latest code..."
+            git pull origin icebread
+            
+            echo "Stopping current container..."
             docker stop loopy-app || true
             docker rm loopy-app || true
-            docker rmi loopy-be || true
-            docker system prune -f || true
             
-            echo "Building new image..."
+            echo "Building new image with latest code..."
             docker build -t loopy-be .
             
             echo "Starting new container..."
@@ -69,16 +52,7 @@ jobs:
             docker ps
             
             echo "Checking recent logs..."
-            docker logs loopy-app --tail=30
-          '
-
-      - name: Prisma Migration
-        if: steps.prisma-changes.outputs.prisma == 'true'
-        run: |
-          ssh loopy-server '
-            cd /opt/loopy-be
-            echo "Applying Prisma migrations..."
-            docker exec loopy-app pnpm exec prisma migrate deploy
+            docker logs loopy-app --tail=20
           '
 
       - name: Health Check
@@ -86,29 +60,19 @@ jobs:
           ssh loopy-server '
             echo "Starting health check..."
             
-            sleep 10
+            for i in {1..6}; do
+              if curl -f -s http://localhost:3000 > /dev/null 2>&1; then
+                echo "Server is responding normally!"
+                echo "Deployment completed successfully!"
+                exit 0
+              fi
+              echo "Health check retry... ($i/6)"
+              sleep 10
+            done
             
-            if docker ps | grep -q loopy-app; then
-              echo "Container is running successfully."
-              
-              for i in {1..5}; do
-                if curl -f -s http://localhost:3000 > /dev/null 2>&1; then
-                  echo "Server is responding normally!"
-                  echo "LOOPy-BE deployment completed successfully!"
-                  exit 0
-                fi
-                echo "Health check retry... ($i/5)"
-                sleep 10
-              done
-              
-              echo "Server is not responding yet but container is running."
-              echo "Please wait a little more."
-            else
-              echo "Container execution failed!"
-              echo "Error logs:"
-              docker logs loopy-app
-              exit 1
-            fi
+            echo "Health check failed. Checking logs..."
+            docker logs loopy-app --tail=50
+            exit 1
           '
 
       - name: Deployment Summary
