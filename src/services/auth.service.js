@@ -11,6 +11,7 @@ import {
   RoleNotGrantedError,
 } from "../errors/customErrors.js";
 import { RoleType } from "../../prisma/client.js";
+import { generateQRCode } from './user.service.js'; 
 
 // 이메일 기반 회원가입
 export const signupService = async (body) => {
@@ -51,6 +52,7 @@ export const signupService = async (body) => {
         phoneNumber,
         allowKakaoAlert: false,
         status: "active",
+        qrCode: "",
       },
     });
 
@@ -74,6 +76,13 @@ export const signupService = async (body) => {
         { userId: createdUser.id, role: RoleType.CUSTOMER },
         { userId: createdUser.id, role: RoleType.OWNER },
       ],
+    });
+
+    const finalQrCodeImage = await generateQRCode(createdUser.id);
+
+    await tx.user.update({
+      where: { id: createdUser.id },
+      data: { qrCode: finalQrCodeImage },
     });
 
     return createdUser;

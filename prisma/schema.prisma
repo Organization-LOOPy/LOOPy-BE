@@ -20,6 +20,7 @@ model User {
   allowKakaoAlert Boolean    @default(false) @map("allow_kakao_alert")
   status          UserStatus @default(active)
   fcmToken        String?    @map("fcm_token") @db.VarChar(255)
+  qrCode          String?    @map("qr_code") @db.Text
   createdAt       DateTime   @default(now()) @map("created_at")
   updatedAt       DateTime   @updatedAt @map("updated_at")
   inactivedAt     DateTime?  @map("inactived_at")

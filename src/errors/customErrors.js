@@ -468,6 +468,27 @@ export class UnauthorizedPhotoDeleteError extends CustomError {
   }
 }
 
+export class QRCodeError extends CustomError {
+  constructor(reason){
+    super(
+      `QR 코드 생성 실패`,
+      "QR_CODE_NOT_COMPLETED",
+      400,
+      { reason },
+    );
+  }
+}
+
+export class QRNotFoundError extends CustomError {
+  constructor(reason){
+    super(
+      `QR 코드가 존재하지 않습니다.`,
+      "QR_CODE_NOT_FOUND",
+      404,
+      { reason },
+    );
+  }
+}
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
