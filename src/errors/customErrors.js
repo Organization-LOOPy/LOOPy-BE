@@ -360,8 +360,12 @@ export class CafeNotExistError extends CustomError {
 }
 
 export class UnauthCafeAccessError extends CustomError {
-  constructor(cafeId) {
-    super(`카페 ID ${cafeId}에 대한 접근 권한이 없습니다.`, "CAFE_UNAUTHORIZED", 403, { cafeId });
+  constructor(userId, cafeId, photoId = null) {
+    const reason = photoId
+      ? `사용자(userId: ${userId})는 카페 ID ${cafeId}의 이미지(photoId: ${photoId})에 대한 접근 권한이 없습니다.`
+      : `사용자(userId: ${userId})는 카페 ID ${cafeId}에 대한 접근 권한이 없습니다.`;
+
+    super(reason, "CAFE_UNAUTHORIZED", 403, { userId, cafeId, photoId });
   }
 }
 
@@ -418,7 +422,7 @@ export class InvalidMenuDataError extends CustomError {
 }
 
 
-// 4. 사진 등록
+// 사진 등록
 export class InvalidPhotoUrlsError extends CustomError {
   constructor(reason) {
     super(
@@ -430,7 +434,7 @@ export class InvalidPhotoUrlsError extends CustomError {
   }
 }
 
-// 5. 등록 완료
+// 4. 등록 완료
 export class CafeAlreadyCompletedError extends CustomError {
   constructor(cafeId) {
     super(
@@ -438,6 +442,28 @@ export class CafeAlreadyCompletedError extends CustomError {
       "CAFE_ALREADY_COMPLETED",
       400,
       { cafeId }
+    );
+  }
+}
+
+export class CafePhotoNotFoundError extends CustomError {
+  constructor(photoId) {
+    super(
+      `해당 ID의 카페 이미지를 찾을 수 없습니다. (photoId: ${photoId})`,
+      "CAFE_PHOTO_NOT_FOUND",
+      404,
+      { photoId }
+    );
+  }
+}
+
+export class UnauthorizedPhotoDeleteError extends CustomError {
+  constructor(userId, cafeId) {
+    super(
+      `사용자(userId: ${userId})는 해당 카페(cafeId: ${cafeId})의 이미지를 삭제할 권한이 없습니다.`,
+      "UNAUTHORIZED_PHOTO_DELETE",
+      403,
+      { userId, cafeId }
     );
   }
 }
