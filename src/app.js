@@ -41,7 +41,9 @@ app.use(express.json());
 app.use(passport.initialize());
 
 app.use(responseHandler); // 응답 포맷 통일 미들웨어
-app.get("/", (req, res) => res.send("루피 백엔드 작동 중!"));
+app.get("/", (req, res) =>
+  res.send("루피 백엔드 작동 중!, cicd파이프라인 확인")
+);
 app.get("/health", (req, res) => {
   res.status(200).send("ok");
 });
