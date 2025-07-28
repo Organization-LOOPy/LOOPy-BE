@@ -5,8 +5,8 @@ info:
   version: 1.0.0
 
 servers:
-  - url: http://13.209.89.251:3000/
-    description: 로컬 개발 서버
+  - url: https://loopyxyz.duckdns.org/
+    description: 서버 배포 도메인 
 
 security:
   - bearerAuth: []
@@ -82,7 +82,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/SignupErrorResponse'
 
   /api/v1/auth/login:
     post:
@@ -118,7 +118,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
+                $ref: '#/components/schemas/LoginErrorResponse'
 
 
   /api/v1/auth/logout:
@@ -146,6 +146,58 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/me/qrcode:
+    get:
+      summary: 사용자 QR 코드 조회
+      description: |
+        회원가입 시 자동 생성된 사용자의 QR 코드를 조회합니다.  
+        QR 코드는 사용자 ID를 기반으로 생성되며, 값이 변하지 않습니다.
+      tags:
+        - Users
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: QR 코드 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  success:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        example: 1
+                      qrCodeImage:
+                        type: string
+                        description: data:image/png;base64 형식의 QR 코드 이미지 문자열
+                        example: data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAMgAAADIC...
+        '401':
+          description: 인증 실패 (토큰 누락 또는 만료)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: QR 코드 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
 
   /api/v1/points/current:
     get:
@@ -2040,20 +2092,23 @@ components:
           type: string
           format: date-time
           example: "2025-07-19T09:20:09.040Z"
- 
+    
     ErrorResponse:
       type: object
       properties:
         errorCode:
           type: string
+          description: 에러 코드 식별자
+          example: U001
         reason:
           type: string
+          description: 사용자에게 보여줄 에러 메시지
+          example: 잘못된 요청입니다.
         data:
           type: object
-        example:
-          errorCode: BM001
-          reason: 이미 북마크한 카페입니다.
-          data: null
+          nullable: true
+          description: 추가적인 에러 관련 데이터
+          example: null
 
     RegisterRequest:
       type: object
