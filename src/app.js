@@ -29,7 +29,7 @@ const corsOptions = {
     "http://localhost:5173", // 프론트엔드 로컬 환경
     "https://loo-py.xyz", // 프론트엔드 배포 환경
     "http://13.209.89.251:3000",
-    "http://localhost:3000"
+    "http://localhost:3000",
   ],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
@@ -42,6 +42,9 @@ app.use(passport.initialize());
 
 app.use(responseHandler); // 응답 포맷 통일 미들웨어
 app.get("/", (req, res) => res.send("루피 백엔드 작동 중!"));
+app.get("/health", (req, res) => {
+  res.status(200).send("ok");
+});
 app.use("/api/v1/challenges", challengeRoutes);
 
 app.use("/api/v1/auth", authRouter);

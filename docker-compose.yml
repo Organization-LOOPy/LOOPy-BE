@@ -7,11 +7,10 @@ services:
       dockerfile: Dockerfile
     ports:
       - "3000:3000"
+    env_file:
+      - .env # .env 파일에 DATABASE_URL, JWT_SECRET 정의
     environment:
       - NODE_ENV=production
-      - DATABASE_URL=${DATABASE_URL}
-      - JWT_SECRET=${JWT_SECRET}
-
     volumes:
       - ./logs:/app/logs # 로그 디렉토리 마운트 (선택사항)
     restart: unless-stopped
