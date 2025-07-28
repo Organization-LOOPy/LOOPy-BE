@@ -235,7 +235,7 @@ export const mapSearchService = {
       });
     });
 
-    const cafes = await cafeSearchRepository.findCafesWithBookmarks(
+    const cafes = await cafeSearchRepository.findCafeWithBookmarks(
       whereConditions,
       userId
     );

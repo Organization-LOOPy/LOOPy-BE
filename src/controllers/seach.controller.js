@@ -13,6 +13,7 @@ export const cafeSearch = async (res, req, next) => {
     const { x, y, searchQuery, cursor } = req.query;
     const { storeFilter, takeOutFilter, menuFilter, addressInfo } = req.body;
 
+    //필수는 아님 -> 수정 필요
     if (!x || !y) {
       throw new MissingUserCoordinate();
     }
