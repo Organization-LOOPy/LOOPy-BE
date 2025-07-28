@@ -3,7 +3,7 @@ name: Deploy LOOPy-BE to EC2
 on:
   push:
     branches:
-      - main
+      - icebread
   workflow_dispatch:
 
 jobs:
