@@ -8,6 +8,7 @@ import {
   InvalidMenuDataError,
   InvalidPhotoUrlsError,
   CafeAlreadyCompletedError,
+  CafePhotoNotFoundError,
   UnauthCafeAccessError 
 } from '../errors/customErrors.js';
 
@@ -176,11 +177,48 @@ export const getMyCafe = async (userId) => {
 
 export const updateMyCafe = async (userId, cafeId, updateData) => {
     const cafe = await prisma.cafe.findUnique({where: {id: cafeId }});
-    if(!cafe)  throw new CafeNotExistError();
+    if(!cafe)  throw new CafePhotoNotFoundError();
     if(cafe.ownerId != userId)  throw new UnauthCafeAccessError();
 
     return await prisma.cafe.update({
         where: {id: cafeId },
         data: updateData,
     });
+};
+
+export const getCafePhoto = async (userId) => {
+  return await prisma.cafePhoto.findMany({
+    where: {
+      cafe: {
+        ownerId: userId,
+      },
+    },
+    orderBy: {
+      createdAt: 'desc',
+    }
+  });
+};
+
+export const deleteCafePhoto = async (userId, photoId) => {
+  const photo = await prisma.cafePhoto.findUnique({
+    where: { id: photoId },
+    include: {
+      cafe: true,
+    },
+  });
+
+  if (!photo) {
+    throw new CafePhotoNotFoundError(`해당 ID의 사진을 찾을 수 없습니다. (photoId: ${photoId})`);
+  }
+
+ if (!photo.cafe || photo.cafe.ownerId !== userId) {
+  throw new UnauthCafeAccessError(userId, photo.cafeId, photoId);
+}
+
+
+  await prisma.cafePhoto.delete({
+    where: { id: photoId },
+  });
+
+  return { message: '카페 이미지가 삭제되었습니다.', photoId };
 };

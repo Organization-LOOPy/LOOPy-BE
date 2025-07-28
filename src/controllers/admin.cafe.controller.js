@@ -1,8 +1,14 @@
-import { createMyCafeBasicInfo,
+import { 
+  createMyCafeBasicInfo,
   updateCafeOperationInfo,
   addCafeMenus,
   addCafePhotos,
-  finishCafeRegistration, getMyCafe, updateMyCafe } from "../services/admin.cafe.service.js";
+  finishCafeRegistration, 
+  getMyCafe, 
+  updateMyCafe,
+  getCafePhoto,
+  deleteCafePhoto  
+} from "../services/admin.cafe.service.js";
 
 import { CafeNotExistError, UnauthCafeAccessError } from '../errors/customErrors.js';
 import prisma from '../../prisma/client.js';
@@ -156,6 +162,33 @@ export const updateCafe = async (req, res, next) => {
 
     const result = await updateMyCafe(userId, cafeId, req.body);
     res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyCafePhoto = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const result = await getCafePhoto(userId);
+    res.status(200).json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteMyCafePhoto = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const photoId = parseInt(req.params.photoId);
+
+    const result = await deleteCafePhoto(userId, photoId);
+
+    return res.status(200).json({
+      resultType: 'SUCCESS',
+      error: null,
+      success: result,
+    });
   } catch (err) {
     next(err);
   }
