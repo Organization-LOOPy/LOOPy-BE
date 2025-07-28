@@ -3,7 +3,7 @@ name: Deploy LOOPy-BE to EC2
 on:
   push:
     branches:
-      - icebread
+      - main
   workflow_dispatch:
 
 jobs:
@@ -33,7 +33,7 @@ jobs:
             cd /opt/loopy-be
             
             echo "Pulling latest code..."
-            git pull origin icebread
+            git pull origin main
             
             echo "Stopping current container..."
             docker stop loopy-app || true
