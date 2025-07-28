@@ -1,8 +1,11 @@
 node_modules/
-.env
+
 pnpm-lock.yaml
 logs/
 
+.env
+.env.local
+.env.*.local
 # VSCode
 .vscode/
 src/credentials/*.json

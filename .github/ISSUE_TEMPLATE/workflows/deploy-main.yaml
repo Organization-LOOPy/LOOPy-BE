@@ -1,0 +1,111 @@
+name: Deploy LOOPy-BE to EC2
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Check for Prisma changes
+        uses: dorny/paths-filter@v3
+        id: prisma-changes
+        with:
+          filters: |
+            prisma: ["prisma/**"]
+
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          cat >>~/.ssh/config <<END
+          Host loopy-server
+            HostName ${{ secrets.EC2_HOST }}
+            User ubuntu
+            IdentityFile ~/.ssh/id_rsa
+            StrictHostKeyChecking no
+          END
+
+      - name: Copy project files to EC2
+        run: |
+          ssh loopy-server 'sudo mkdir -p /opt/loopy-be'
+          ssh loopy-server 'sudo chown ubuntu:ubuntu /opt/loopy-be'
+          rsync -avz --delete \
+            --exclude 'node_modules' \
+            --exclude '.git' \
+            --exclude '.env' \
+            --exclude '*.log' \
+            ./ loopy-server:/opt/loopy-be/
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh loopy-server '
+            cd /opt/loopy-be
+            
+            echo "🐳 현재 실행 중인 컨테이너 정리..."
+            docker-compose down || true
+            docker system prune -f || true
+            
+            echo "🔨 새로운 이미지 빌드 및 컨테이너 실행..."
+            docker-compose up -d --build
+            
+            echo "⏳ 컨테이너 시작 대기 중..."
+            sleep 10
+            
+            # Prisma 마이그레이션 (변경사항이 있을 때만)
+            if [ "${{ steps.prisma-changes.outputs.prisma }}" == "true" ]; then
+              echo "🔄 Prisma 마이그레이션 적용 중..."
+              docker-compose exec -T app pnpm exec prisma migrate deploy
+            fi
+            
+            echo "📊 컨테이너 상태 확인..."
+            docker-compose ps
+            
+            echo "📝 최근 로그 확인..."
+            docker-compose logs --tail=30 app
+          '
+
+      - name: Health Check
+        run: |
+          ssh loopy-server '
+            echo "🏥 서버 헬스체크 시작..."
+            
+            # 10초 대기 후 헬스체크
+            sleep 10
+            
+            # 컨테이너가 실행 중인지 확인
+            if docker-compose ps | grep -q "Up"; then
+              echo "✅ 컨테이너가 정상적으로 실행 중입니다."
+              
+              # 포트 3000으로 응답 확인 (간단하게)
+              if curl -f -s http://localhost:3000 > /dev/null 2>&1; then
+                echo "✅ 서버가 정상적으로 응답하고 있습니다!"
+                echo "🚀 LOOPy-BE 배포가 성공적으로 완료되었습니다!"
+              else
+                echo "⚠️  서버가 아직 응답하지 않지만 컨테이너는 실행 중입니다."
+                echo "📝 조금 더 기다려보세요."
+              fi
+            else
+              echo "❌ 컨테이너 실행에 실패했습니다!"
+              echo "📝 에러 로그:"
+              docker-compose logs app
+              exit 1
+            fi
+          '
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "📋 배포 완료 요약"
+          echo "- 프로젝트: LOOPy-BE"
+          echo "- 브랜치: main"
+          echo "- 서버: ${{ secrets.EC2_HOST }}"
+          echo "- 시간: $(date '+%Y-%m-%d %H:%M:%S')"
