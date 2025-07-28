@@ -1,7 +1,15 @@
 import express from 'express';
-import { postCafeBasicInfo, patchCafeOperationInfo, postCafeMenus, 
-    postCafePhotos, completeCafeRegistration, 
-    getCafe, updateCafe } from '../controllers/admin.cafe.controller.js';
+import { 
+    postCafeBasicInfo, 
+    patchCafeOperationInfo,
+    postCafeMenus, 
+    postCafePhotos, 
+    completeCafeRegistration, 
+    getCafe, 
+    updateCafe,
+    getMyCafePhoto,
+    deleteMyCafePhoto 
+} from '../controllers/admin.cafe.controller.js';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
 
 const router = express.Router();
@@ -16,5 +24,7 @@ router.patch('/:cafeId/complete',completeCafeRegistration);
 
 router.get('/myCafe', getCafe);
 router.patch('/myCafe/:cafeId', updateCafe);
+router.get('/photos', getMyCafePhoto);
+router.delete('/photos/:photoId', deleteMyCafePhoto);
 
 export default router;
