@@ -421,6 +421,15 @@ export class InvalidMenuDataError extends CustomError {
   }
 }
 
+export class RepresentativeLimitExceededError extends CustomError {
+  constructor() {
+    super(
+      '대표 메뉴는 최대 2개까지만 등록할 수 있습니다.',
+      'REPRESENTATIVE_LIMIT_EXCEEDED',
+      400
+    );
+  }
+}
 
 // 사진 등록
 export class InvalidPhotoUrlsError extends CustomError {

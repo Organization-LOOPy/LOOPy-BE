@@ -69,8 +69,9 @@ model KakaoAccount {
 model UserPreference {
   id                Int      @id @default(autoincrement())
   userId            Int      @unique @map("user_id")
-  preferredArea     String?  @map("preferred_area") @db.VarChar(100)
-  preferredKeywords Json?    @map("preferred_keywords")
+  preferredStore     Json?    @map("preferred_store")
+  preferredTakeout Json?    @map("preferred_tkeout")
+  preferredMenu      Json?    @map("preferred_menu")
   createdAt         DateTime @default(now()) @map("created_at")
 
   // Relations
@@ -319,6 +320,7 @@ model CafeMenu {
   description String?  @db.Text
   price       Int
   isSoldOut   Boolean  @default(false) @map("is_sold_out")
+  isRepresentative Boolean @default(false) @map("is_representative")
   photoUrl    String?  @map("photo_url") @db.Text
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")

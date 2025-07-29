@@ -2,7 +2,7 @@ import express from 'express';
 import { 
     postCafeBasicInfo, 
     patchCafeOperationInfo,
-    postCafeMenus, 
+    postCafeMenu, 
     postCafePhotos, 
     completeCafeRegistration, 
     getCafe, 
@@ -18,7 +18,7 @@ router.use(authenticateJWT);
 
 router.post('/basic-info', postCafeBasicInfo);
 router.patch('/:cafeId/operation', patchCafeOperationInfo);
-router.post('/:cafeId/menus', postCafeMenus);
+router.post('/:cafeId/menus', postCafeMenu);
 router.post('/:cafeId/photos', postCafePhotos);
 router.patch('/:cafeId/complete',completeCafeRegistration);
 

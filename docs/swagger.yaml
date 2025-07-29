@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://loopyxyz.duckdns.org/
+  - url: https://loopyxyz.duckdns.org
     description: 서버 배포 도메인 
 
 security:
@@ -82,7 +82,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SignupErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/auth/login:
     post:
@@ -118,7 +118,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoginErrorResponse'
+                $ref: '#/components/schemas/ErrorResponse'
 
 
   /api/v1/auth/logout:
@@ -367,17 +367,18 @@ paths:
   /api/v1/users/me/verify-phone:
     post:
       summary: SMS 인증 확인 및 전화번호 저장
-      description: Firebase에서 발급한 ID 토큰을 검증하여 인증된 사용자의 전화번호를 저장
+      description: Firebase에서 발급한 ID 토큰을 검증하여 인증된 사용자의 전화번호를 저장합니다. 이때 사용자 ID는 프론트에서 함께 전달되어야 합니다.
       tags:
         - Users
-      security:
-        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/PhoneVerificationRequest'
+            example:
+              idToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
+              userId: 12
       responses:
         '200':
           description: 전화번호 저장 성공
@@ -395,17 +396,17 @@ paths:
                   userId:
                     type: integer
                     example: 12
-                  nickname:
+                  phoneNumber:
                     type: string
-                    example: 테스트 사용자
+                    example: "+821012345678"
         '400':
-          description: 잘못된 요청 (idToken 누락 또는 유효하지 않음)
+          description: 잘못된 요청 (idToken 또는 userId 누락, 또는 전화번호 없음)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
-          description: 인증 실패
+          description: 인증 실패 (idToken 유효하지 않음)
           content:
             application/json:
               schema:
@@ -530,7 +531,7 @@ paths:
   /api/v1/users/me/preferences:
     patch:
       summary: 선호 키워드 저장
-      description: 인증된 사용자의 선호 키워드 목록을 저장하거나 업데이트
+      description: 인증된 사용자의 선호 키워드 목록을 저장하거나 업데이트합니다. 키워드는 카페 편의시설, 테이크아웃 혜택, 메뉴 특성 등으로 구분됩니다.
       tags:
         - Users
       security:
@@ -541,6 +542,8 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/UserKeywordPreferenceRequest'
+            example:
+              preferredKeywords: ["노트북", "1인석", "디카페인", "텀블러 할인"]
       responses:
         '200':
           description: 키워드 저장 성공
@@ -552,11 +555,29 @@ paths:
                   message:
                     type: string
                     example: 선호 키워드가 저장되었습니다.
-                  preferredKeywords:
-                    type: array
-                    items:
-                      type: string
-                    example: [ "노트북", "1인석", "디카페인" ]
+                  storeFilters:
+                    type: object
+                    example:
+                      노트북: true
+                      1인석: true
+                      단체석: false
+                      주차 가능: false
+                      예약 가능: false
+                      와이파이 제공: false
+                      애견 동반: false
+                      24시간 운영: false
+                  takeOutFilters:
+                    type: object
+                    example:
+                      텀블러 할인: true
+                      포장 할인: false
+                  menuFilters:
+                    type: object
+                    example:
+                      비건: false
+                      디카페인: true
+                      글루텐프리: false
+                      저당/무가당: false
         '400':
           description: 잘못된 요청 (키워드 형식 오류 등)
           content:
@@ -569,6 +590,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
 
   /api/v1/users/me/preferred-area:
     patch:
@@ -2000,10 +2022,12 @@ components:
           type: array
           items:
             type: string
+          description: 사용자가 선택한 키워드 문자열 목록
           example:
-            - 노트북
             - 1인석
+            - 노트북
             - 디카페인
+            - 텀블러 할인
 
     UserAgreementResponse:
       type: object
@@ -2195,11 +2219,14 @@ components:
       type: object
       required:
         - idToken
+        - userId
       properties:
         idToken:
           type: string
-          description: Firebase에서 발급된 ID 토큰
-          example: FIREBASE_ID_TOKEN
+          description: Firebase에서 발급받은 ID 토큰
+        userId:
+          type: integer
+          description: 백엔드에서 생성된 사용자 ID
     
     NicknameUpdateRequest:
       type: object

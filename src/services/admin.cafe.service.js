@@ -9,7 +9,8 @@ import {
   InvalidPhotoUrlsError,
   CafeAlreadyCompletedError,
   CafePhotoNotFoundError,
-  UnauthCafeAccessError 
+  UnauthCafeAccessError,
+  RepresentativeLimitExceededError, 
 } from '../errors/customErrors.js';
 
 export const createMyCafeBasicInfo = async (userId, basicInfo) => {
@@ -82,48 +83,53 @@ export const updateCafeOperationInfo = async (cafeId, operationInfo) => {
   });
 };
 
-export const addCafeMenus = async (cafeId, menus) => {
-  if (!Array.isArray(menus) || menus.length === 0) {
-    throw new InvalidMenuDataError('메뉴 배열이 비어있습니다.');
+export const addCafeMenu = async (cafeId, menu) => {
+  const requiredFields = ['name', 'price'];
+  const missing = requiredFields.filter((field) => !menu[field]);
+
+  if (missing.length > 0) {
+    throw new InvalidMenuDataError(missing);
   }
 
-  const duplicateNames = [];
-  for (const menu of menus) {
-    if (!menu.name || typeof menu.price !== 'number') {
-      throw new InvalidMenuDataError(`메뉴 필수 항목 누락 또는 잘못된 값: ${JSON.stringify(menu)}`);
-    }
+  const existingMenu = await prisma.cafeMenu.findFirst({
+    where: {
+      cafeId,
+      name: menu.name,
+    },
+  });
 
-    const existing = await prisma.cafeMenu.findFirst({
-      where: { cafeId, name: menu.name },
+  if (existingMenu) {
+    throw new DuplicateMenuNameError(menu.name);
+  }
+
+  const isRep = menu.isRepresentative === true;
+
+  if (isRep) {
+    const existingRepCount = await prisma.cafeMenu.count({
+      where: { cafeId, isRepresentative: true },
     });
 
-    if (existing) {
-      duplicateNames.push(menu.name);
+    if (existingRepCount >= 2) {
+      throw new RepresentativeLimitExceededError();
     }
   }
 
-  if (duplicateNames.length > 0) {
-    throw new DuplicateMenuNameError(duplicateNames);
-  }
+  const created = await prisma.cafeMenu.create({
+    data: {
+      cafeId,
+      name: menu.name,
+      price: menu.price,
+      photoUrl: menu.photoUrl,
+      description: menu.description,
+      isSoldOut: false,
+      category: menu.category || '기본',
+      isRepresentative: isRep,
+    },
+  });
 
-  const createdMenus = [];
-  for (const menu of menus) {
-    const created = await prisma.cafeMenu.create({
-      data: {
-        cafeId,
-        name: menu.name,
-        price: menu.price,
-        photoUrl: menu.photoUrl,
-        description: menu.description,
-        isSoldOut: false,
-        category: menu.category || '기본'
-      },
-    });
-    createdMenus.push(created);
-  }
-
-  return createdMenus;
+  return created;
 };
+
 
 export const addCafePhotos = async (cafeId, photoUrls) => {
   if (!Array.isArray(photoUrls) || photoUrls.length === 0) {
