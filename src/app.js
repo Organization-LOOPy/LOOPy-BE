@@ -36,7 +36,9 @@ const corsOptions = {
   exposedHeaders: ["x-access-token", "Content-Encoding"],
 };
 app.use(cors(corsOptions));
+setupSwagger(app);
 app.use(express.json());
+
 
 app.use(passport.initialize());
 
