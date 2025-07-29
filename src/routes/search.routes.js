@@ -8,6 +8,7 @@ import {
 } from "../controllers/seach.controller.js";
 
 const router = express.Router();
+
 //router.use(authenticateJWT);
 router.use(test);
 

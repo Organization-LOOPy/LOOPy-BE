@@ -170,7 +170,14 @@ export const cafeSearchService = {
       })),
     };
 
-    cafe.distance = getDistanceInMeters(cafe.latitude, cafe.longtitude, x, y);
+    const xNum = parseFloat(x);
+    const yNum = parseFloat(y);
+    cafeDetails.distance = getDistanceInMeters(
+      parseFloat(cafe.latitude),
+      parseFloat(cafe.longitude),
+      yNum,
+      xNum
+    );
 
     return cafeDetails;
   },

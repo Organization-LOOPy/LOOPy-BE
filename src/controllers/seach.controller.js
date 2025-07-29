@@ -8,7 +8,7 @@ import {
   mapSearchService,
 } from "../services/search.service.js";
 
-export const cafeSearch = async (res, req, next) => {
+export const cafeSearch = async (req, res, next) => {
   try {
     const { x, y, searchQuery, cursor } = req.query;
     const { storeFilter, takeOutFilter, menuFilter, addressInfo } = req.body;
@@ -42,7 +42,7 @@ export const cafeSearch = async (res, req, next) => {
   }
 };
 
-export const getCafeMapData = async (res, req, next) => {
+export const getCafeMapData = async (req, res, next) => {
   try {
     const { x, y, store, menu, takeout, region1, region2, region3 } = req.query;
     const userId = req.user.id;
@@ -71,16 +71,16 @@ export const getCafeMapData = async (res, req, next) => {
   }
 };
 
-export const cafeDetail = async (res, req, next) => {
+export const cafeDetail = async (req, res, next) => {
   try {
     const cafe = req.cafe;
-    const { x, y } = req.params;
+    const { x, y } = req.query;
 
     if (!x && !y) {
       throw new MissingUserCoordinate();
     }
 
-    const cafeDetails = await searchCafeService.getCafeDetails(cafe, x, y);
+    const cafeDetails = await cafeSearchService.getCafeDetails(cafe, x, y);
 
     logger.debug(`카페 검색 정보 조회 성공: ${cafeDetails.name}`);
     res.success(cafeDetails);
