@@ -194,6 +194,7 @@ export const mapSearchService = {
     region2,
     region3,
     userId,
+    zoom,
   }) {
     const refinedX = parseFloat(x);
     const refinedY = parseFloat(y);

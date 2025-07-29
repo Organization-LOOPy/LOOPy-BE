@@ -8,6 +8,8 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
+COPY .env .env
+
 # 비root 사용자 먼저 생성
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
