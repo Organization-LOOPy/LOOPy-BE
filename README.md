@@ -159,8 +159,3 @@ docker stats loopy-app
 # 헬스체크
 curl http://localhost:3000/health
 
-```
-  "singleQuote": true,
-  "tabWidth": 2
-}
-```
