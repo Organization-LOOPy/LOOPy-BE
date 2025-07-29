@@ -1,7 +1,7 @@
 import { 
   createMyCafeBasicInfo,
   updateCafeOperationInfo,
-  addCafeMenus,
+  addCafeMenu,
   addCafePhotos,
   finishCafeRegistration, 
   getMyCafe, 
@@ -71,27 +71,29 @@ export const patchCafeOperationInfo = async (req, res, next) => {
   }
 };
 
-export const postCafeMenus = async (req, res, next) => {
+export const postCafeMenu = async (req, res, next) => {
   try {
     const { cafeId } = req.params;
     const userId = req.user.id;
-    const menus = req.body.menus;
+    const menu = req.body;
 
-    const cafe = await prisma.cafe.findUnique({ where: { id: Number(cafeId) } });
-    if (!cafe) throw new CafeNotExistError(cafeId);
+    const cafeIdNum = Number(cafeId);
+    const cafe = await prisma.cafe.findUnique({ where: { id: cafeIdNum } });
+
+    if (!cafe) throw new CafeNotExistError(cafeIdNum);
     if (cafe.ownerId !== userId) throw new UnauthCafeAccessError();
 
-    const cafeMenus = await addCafeMenus(Number(cafeId), menus);
-    
+    const createdMenu = await addCafeMenu(cafeIdNum, menu);
 
-    res.status(201).json({
+    return res.status(201).json({
       message: '카페 메뉴가 등록되었습니다.',
-      cafeMenus
+      cafeMenu: createdMenu,
     });
   } catch (error) {
     next(error);
   }
 };
+
 
 export const postCafePhotos = async (req, res, next) => {
   try {
