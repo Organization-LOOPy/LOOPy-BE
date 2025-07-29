@@ -5,8 +5,10 @@ import {
   PreferenceSaveError,
   InvalidPreferredAreaError,
   BadRequestError,
+  QRCodeError,
 } from '../errors/customErrors.js';
 import { verifyPhoneNumber } from './firebase.service.js';
+import QRCode from 'qrcode';
 
 // 탈퇴(사용자 휴면 계정으로 전환)
 export const deactivateUserService = async (userId) => {
@@ -231,4 +233,20 @@ export const saveUserAgreementsService = async (userId, agreementData) => {
       userId: updated.userId.toString(),
     },
   };
+};
+
+export const generateQRCode = async (userId) => {
+  const qrData = `https://loopy://user/${userId}`;
+
+  try {
+    const based64Image = await QRCode.toDataURL(qrData, {
+      type: 'image/png',
+      margin: 2,
+      width: 200,
+    });
+
+    return based64Image;
+  } catch (err) {
+    throw new QRCodeError('QR 코드 생성 실패: ');
+  }
 };

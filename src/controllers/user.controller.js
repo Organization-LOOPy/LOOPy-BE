@@ -8,8 +8,10 @@ import {
   updateKakaoAlertService,
   updateFcmTokenService,
   savePhoneNumberAfterVerificationService,
-  saveUserAgreementsService
+  saveUserAgreementsService,
+  generateQRCode
 } from '../services/user.service.js';
+import { QRNotFoundError } from '../errors/customErrors.js' 
 
 export const deactivateUser = async (req, res, next) => {
   try {
@@ -108,6 +110,32 @@ export const saveUserAgreements = async (req, res, next) => {
   try {
     const result = await saveUserAgreementsService(req.user.id, req.body);
     return res.success(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUserQrCode = async (req, res, next) => {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      select: {
+        id: true,
+        qrCode: true,
+      },
+    });
+
+    if (!user?.qrCode) {
+      throw new QRNotFoundError();
+    }
+
+    res.status(200).json({
+      resultType: 'SUCCESS',
+      success: {
+        userId: user.id,
+        qrCodeImage: user.qrCode,
+      },
+    });
   } catch (err) {
     next(err);
   }

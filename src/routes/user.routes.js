@@ -11,7 +11,8 @@ import {
   updateKakaoAlert,
   updateFcmToken,
   savePhoneNumberAfterVerification,
-  saveUserAgreements
+  saveUserAgreements,
+  getUserQrCode
 } from '../controllers/user.controller.js';
 
 import {
@@ -47,5 +48,8 @@ router.post('/me/agreements', saveUserAgreements);
 router.get('/me/bookmarks', getBookmarkedCafes);
 router.post('/me/bookmarks', addBookmark);
 router.delete('/me/bookmarks/:cafeId', removeBookmark);
+
+// 사용자별 QR코드
+router.get('/me/qrcode', getUserQrCode); 
 
 export default router;
