@@ -1,12 +1,7 @@
-import dotenv from 'dotenv';
-dotenv.config();
-
-
-
 import passport from "passport";
 import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
 //import { PrismaClient } from '@prisma/client';
-import pkg from '@prisma/client';
+import pkg from "@prisma/client";
 const { PrismaClient } = pkg;
 
 const prisma = new PrismaClient();
@@ -20,7 +15,7 @@ const opts = {
 
 passport.use(
   new JwtStrategy(opts, async (jwtPayload, done) => {
-    console.log('🔥 [jwtPayload]:', jwtPayload);
+    console.log("🔥 [jwtPayload]:", jwtPayload);
     try {
       const user = await prisma.user.findUnique({
         where: { id: parseInt(jwtPayload.userId, 10) },
@@ -40,6 +35,5 @@ passport.use(
     }
   })
 );
-
 
 export default passport;

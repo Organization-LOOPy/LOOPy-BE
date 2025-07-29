@@ -47,8 +47,8 @@ app.get("/", (req, res) =>
 app.get("/health", (req, res) => {
   res.status(200).send("ok");
 });
-app.use("/api/v1/challenges", challengeRoutes);
 
+app.use("/api/v1/challenges", challengeRoutes);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/reviews", reviewRouter);
