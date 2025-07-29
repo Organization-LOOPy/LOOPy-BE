@@ -170,7 +170,14 @@ export const cafeSearchService = {
       })),
     };
 
-    cafe.distance = getDistanceInMeters(cafe.latitude, cafe.longtitude, x, y);
+    const xNum = parseFloat(x);
+    const yNum = parseFloat(y);
+    cafeDetails.distance = getDistanceInMeters(
+      parseFloat(cafe.latitude),
+      parseFloat(cafe.longitude),
+      yNum,
+      xNum
+    );
 
     return cafeDetails;
   },
@@ -187,6 +194,7 @@ export const mapSearchService = {
     region2,
     region3,
     userId,
+    zoom,
   }) {
     const refinedX = parseFloat(x);
     const refinedY = parseFloat(y);
@@ -235,7 +243,7 @@ export const mapSearchService = {
       });
     });
 
-    const cafes = await cafeSearchRepository.findCafesWithBookmarks(
+    const cafes = await cafeSearchRepository.findCafeWithBookmarks(
       whereConditions,
       userId
     );

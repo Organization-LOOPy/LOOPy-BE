@@ -1,4 +1,4 @@
-import passport from 'passport';
+import passport from "passport";
 
 export const authenticateJWT = (req, res, next) => {
   /* if (process.env.NODE_ENV === 'dev') {
@@ -18,10 +18,11 @@ export const authenticateJWT = (req, res, next) => {
     return next();
   }
     */
+  console.log("[DEBUG] JWT_SECRET:", process.env.JWT_SECRET);
 
-  passport.authenticate('jwt', { session: false }, (err, user, info) => {
+  passport.authenticate("jwt", { session: false }, (err, user, info) => {
     if (err || !user) {
-      return res.status(401).json({ message: '유효하지 않은 인증입니다.' });
+      return res.status(401).json({ message: "유효하지 않은 인증입니다." });
     }
 
     req.user = user;

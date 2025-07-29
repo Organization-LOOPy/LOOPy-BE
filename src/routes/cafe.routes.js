@@ -10,7 +10,7 @@ import {
   isCorrectCafeId,
   isMyCoupon,
   test,
-} from "../middlewares/cafe-middleware.js";
+} from "../middlewares/cafeMiddleware.js";
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
 
 const router = express.Router({ mergeParams: true });
