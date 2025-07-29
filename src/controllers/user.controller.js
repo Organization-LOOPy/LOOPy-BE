@@ -11,6 +11,7 @@ import {
   saveUserAgreementsService
 } from '../services/user.service.js';
 import { QRNotFoundError } from '../errors/customErrors.js' 
+import { decodeIdToken } from '../utils/tokenUtils.js';
 
 export const deactivateUser = async (req, res, next) => {
   try {
@@ -98,8 +99,15 @@ export const updateFcmToken = async (req, res, next) => {
 
 export const savePhoneNumberAfterVerification = async (req, res, next) => {
   try {
-    const result = await savePhoneNumberAfterVerificationService(req.user.id, req.body.idToken);
-    return res.success(result);
+    const { idToken } = req.body;
+    if (!idToken) {
+      throw new BadRequestError('idToken이 필요합니다.');
+    }
+    const decoded = decodeIdToken(idToken); 
+    const userId = decoded.sub;
+
+    const result = await savePhoneNumberAfterVerificationService(userId, idToken);
+    res.status(200).json(result);
   } catch (err) {
     next(err);
   }

@@ -24,6 +24,9 @@ import {
 
 const router = express.Router();
 
+// sms 인증 확인 후 전화번호 저장
+router.post('/me/verify-phone', savePhoneNumberAfterVerification);
+
 router.use(authenticateJWT);
 
 // 사용자 계정
@@ -37,9 +40,6 @@ router.patch('/me/preferences', updateUserPreferences);
 router.patch('/me/preferred-area', updatePreferredArea);
 router.patch('/me/kakao-alert', updateKakaoAlert);
 router.patch('/me/fcm-token', updateFcmToken);
-
-// 전화번호 저장
-router.post('/me/verify-phone', savePhoneNumberAfterVerification);
 
 // 약관 동의
 router.post('/me/agreements', saveUserAgreements);
