@@ -44,7 +44,8 @@ export const cafeSearch = async (req, res, next) => {
 
 export const getCafeMapData = async (req, res, next) => {
   try {
-    const { x, y, store, menu, takeout, region1, region2, region3 } = req.query;
+    const { x, y, store, menu, takeout, region1, region2, region3, zoom } =
+      req.query;
     const userId = req.user.id;
 
     if (!x || !y) {
@@ -60,6 +61,7 @@ export const getCafeMapData = async (req, res, next) => {
       region1,
       region2,
       region3,
+      zoom,
       userId,
     });
 
