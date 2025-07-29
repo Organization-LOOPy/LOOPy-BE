@@ -52,6 +52,10 @@ export const getCafeMapData = async (req, res, next) => {
       throw new MissingUserCoordinate();
     }
 
+    if (!zoom) {
+      throw new Error("줌 레벨이 필요합니다.");
+    }
+
     const results = await mapSearchService.searchCafesOnMap({
       x,
       y,
@@ -65,7 +69,7 @@ export const getCafeMapData = async (req, res, next) => {
       userId,
     });
 
-    logger.debug(`카페 검색 완료: ${results.totalCount}개`);
+    logger.debug(`카페 검색 완료: ${results.totalCount}개 (줌 레벨: ${zoom})`);
     res.success(results);
   } catch (err) {
     logger.error(`카페 검색 중 오류 발생: ${err.message}`);
