@@ -8,8 +8,7 @@ import {
   updateKakaoAlertService,
   updateFcmTokenService,
   savePhoneNumberAfterVerificationService,
-  saveUserAgreementsService,
-  generateQRCode
+  saveUserAgreementsService
 } from '../services/user.service.js';
 import { QRNotFoundError } from '../errors/customErrors.js' 
 
