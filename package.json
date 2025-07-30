@@ -3,7 +3,6 @@
   "version": "1.0.0",
   "description": "고객의 루틴에 나의 커피를 더하다",
   "main": "server.js",
-  
   "scripts": {
     "start": "node -r dotenv/config server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -24,7 +23,7 @@
   "homepage": "https://github.com/Organization-LOOPy/LOOPy-BE#readme",
   "dependencies": {
     "@aws-sdk/client-s3": "^3.848.0",
-    "@prisma/client": "6.12.0",
+    "@prisma/client": "6.13.0",
     "app-root-path": "^3.1.0",
     "aws-sdk": "^2.1692.0",
     "axios": "^1.10.0",
@@ -51,7 +50,7 @@
     "@types/uuid": "^10.0.0",
     "cross-env": "^7.0.3",
     "nodemon": "^3.1.10",
-    "prisma": "6.12.0"
+    "prisma": "6.13.0"
   },
   "pnpm": {
     "ignoredBuiltDependencies": [
