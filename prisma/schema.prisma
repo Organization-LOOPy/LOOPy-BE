@@ -151,20 +151,18 @@ model Challenge {
 }
 
 model ChallengeParticipant {
-  id            Int                           @id @default(autoincrement())
-  userId        Int                           @map("user_id")
-  challengeId   Int                           @map("challenge_id")
-  status        ChallengeParticipantStatus    @default(in_progress)
-  joinedAt      DateTime                      @map("joined_at")
-  completedAt   DateTime?                     @map("completed_at")
-  joinedCafeId  Int?                          @map("joined_cafe_id") // ✅ 참여 매장
-  createdAt     DateTime                      @default(now()) @map("created_at")
-  updatedAt     DateTime                      @updatedAt @map("updated_at")
+  id          Int                           @id @default(autoincrement())
+  userId      Int                           @map("user_id")
+  challengeId Int                           @map("challenge_id")
+  status      ChallengeParticipantStatus    @default(in_progress)
+  joinedAt    DateTime                      @map("joined_at")
+  completedAt DateTime?                     @map("completed_at")
+  createdAt   DateTime                      @default(now()) @map("created_at")
+  updatedAt   DateTime                      @updatedAt @map("updated_at")
 
   // Relations
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  challenge    Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  joinedCafe   Cafe?     @relation(fields: [joinedCafeId], references: [id], onDelete: SetNull) // ✅
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
 
   @@unique([userId, challengeId])
   @@map("challenge_participants")
@@ -317,7 +315,6 @@ model Cafe {
 model CafeMenu {
   id          Int      @id @default(autoincrement())
   cafeId      Int      @map("cafe_id")
-  category    String   @db.VarChar(100)
   name        String   @db.VarChar(255)
   description String?  @db.Text
   price       Int

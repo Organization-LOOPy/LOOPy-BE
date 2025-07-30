@@ -4,7 +4,7 @@ import prisma from "../../prisma/client.js";
 import {
   DuplicateEmailError,
   MissingFieldsError,
-  UserNotFoundError,
+  EmailNotFoundError,
   InvalidPasswordError,
   BadRequestError,
   InvalidRoleError,
@@ -124,7 +124,7 @@ export const signupService = async (body) => {
 // 이메일 기반 로그인
 export const loginService = async (email, password, requestedRole) => {
   const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) throw new UserNotFoundError(email);
+  if (!user) throw new EmailNotFoundError(email);
 
   const isPasswordValid = await bcrypt.compare(
     password,
