@@ -388,7 +388,6 @@ model CouponTemplate {
   id               Int        @id @default(autoincrement())
   cafeId           Int        @map("cafe_id")
   name             String     @db.VarChar(255)
-  validDays        Int        @map("valid_days")
   discountType     String     @map("discount_type") @db.VarChar(20) // "AMOUNT" | "PERCENTAGE"
   discountValue    Int        @map("discount_value") // 금액(원) 또는 퍼센트
   applicableMenuId Int?       @map("applicable_menu_id")

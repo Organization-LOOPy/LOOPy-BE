@@ -2,12 +2,21 @@ import { logger } from "../utils/logger.js";
 import prisma from "../../prisma/client.js";
 
 export const cafeSearchRepository = {
-  async findCafeByInfos(whereConditions, cursor, take = 10) {
+  async findCafeByInfos(whereConditions, cursor, userId, take = 10) {
+    console.log(
+      "Repository where conditions:",
+      JSON.stringify(whereConditions, null, 2)
+    );
+    console.log("Cursor:", cursor, "Type:", typeof cursor);
+
     const whereClause = { ...whereConditions };
 
-    if (cursor) {
-      whereClause.createdAt = { lt: cursor };
+    // cursor가 문자열이고 유효할 때만 추가
+    if (cursor && typeof cursor === "string" && cursor.trim() !== "") {
+      whereClause.createdAt = { lt: new Date(cursor) };
     }
+
+    console.log("Final whereClause:", JSON.stringify(whereClause, null, 2));
 
     const cafeList = await prisma.cafe.findMany({
       where: whereClause,
@@ -18,10 +27,11 @@ export const cafeSearchRepository = {
         keywords: true,
         latitude: true,
         longitude: true,
-        region1: true,
-        region2: true,
-        region3: true,
-        cafePhotos: {
+        region1DepthName: true,
+        region2DepthName: true,
+        region3DepthName: true,
+        createdAt: true,
+        photos: {
           orderBy: { displayOrder: "asc" },
           take: 1,
           select: {
@@ -29,32 +39,32 @@ export const cafeSearchRepository = {
             photoUrl: true,
           },
         },
+        // 북마크 정보 - 정확한 관계명 확인 필요
+        bookmarkedBy: userId
+          ? {
+              where: { userId: userId },
+              select: { id: true },
+            }
+          : false,
       },
       orderBy: {
         createdAt: "asc",
       },
-      take: take + 1, // 다음 페이지 존재 확인
+      take: take + 1,
     });
 
-    return cafeList;
-  },
+    // nextCursor 계산
+    const hasMore = cafeList.length > take;
+    const cafes = hasMore ? cafeList.slice(0, -1) : cafeList;
+    const nextCursor = hasMore
+      ? cafes[cafes.length - 1].createdAt.toISOString()
+      : null;
 
-  async findCafeWithBookmarks(whereConditions, userId) {
-    const cafes = await prisma.cafe.findMany({
-      where: whereConditions,
-      select: {
-        id: true,
-        latitude: true,
-        longitude: true,
-        userBookmarks: {
-          where: { userId: userId },
-          select: { id: true },
-        },
-      },
-      take: 30,
-    });
-
-    return cafes;
+    return {
+      cafes,
+      nextCursor,
+      hasMore,
+    };
   },
 };
 
