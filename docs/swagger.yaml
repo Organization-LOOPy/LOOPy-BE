@@ -38,7 +38,7 @@ paths:
     
   /api/v1/auth/signup:
     post:
-      summary: 이메일 회원가입
+      summary: 이메일 회원가입(고객)
       description: 사용자가 이메일, 비밀번호, 닉네임, 전화번호, 사용자 역할, 알림 수신 동의 및 약관 동의 정보를 제출하여 회원가입
       tags:
         - Auth
@@ -77,6 +77,54 @@ paths:
                     example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
                   user:
                     $ref: '#/components/schemas/UserProfile'
+        '400':
+          description: 잘못된 요청 (필수 항목 누락 또는 중복된 이메일 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/auth/signup:
+    post:
+      summary: 이메일 회원가입(사장)
+      description: 사용자가 이메일, 비밀번호, 닉네임, 전화번호, 사용자 역할, 알림 수신 동의 및 약관 동의 정보를 제출하여 회원가입
+      tags:
+        - Auth
+      security: [] 
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            example:
+              email: test@example.com
+              password: securepassword123
+              nickname: 테스터
+              phoneNumber: "01012345678"
+              role: CUSTOMER
+              allowKakaoAlert: true
+              agreements:
+                termsAgreed: true
+                privacyPolicyAgreed: true
+                marketingAgreed: false
+                locationPermission: true
+      responses:
+        '201':
+          description: 회원가입 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 회원가입 성공
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    $ref: '#/components/schemas/OwnerProfile'
         '400':
           description: 잘못된 요청 (필수 항목 누락 또는 중복된 이메일 등)
           content:
@@ -1555,6 +1603,18 @@ paths:
                   message: "서버 내부 오류가 발생했습니다"
                 success: null
 
+  
+    file when making changes.  Quit, or continue with caution.
+(2) An edit session for this file crashed.
+    If this is the case, use ":recover" or "vim -r /c/Users/kim27/Desktop/LOOPy-BE/.git/MERGE_MSG"
+    to recover the changes (see ":help recovery").
+    If you did this already, delete the swap file "/c/Users/kim27/Desktop/LOOPy-BE/.git/.MERGE_MSG.swp"
+    to avoid this message.
+
+Swap file "~/Desktop/LOOPy-BE/.git/.MERGE_MSG.swp" already exists!
+[O]pen Read-Only, (E)dit anyway, (R)ecover, (D)elete it, (Q)uit, (A)bort:
+Swap file "~/Desktop/LOOPy-BE/.git/.MERGE_MSG.swp" already exists!
+[O]pen Read-Only, (E)dit anyway, (R)ecover, (D)elete it, (Q)uit, (A)bort: 
   /api/v1/challenges:
     get:
       summary: 챌린지 목록 조회
@@ -2065,144 +2125,144 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/cafe/{cafeId}/review:
-  post:
-    tags:
-      - Review
-    summary: 리뷰 작성
-    description: 제목 20자 이상, 본문 500자 이상, 이미지 최대 5장까지 첨부 가능합니다.
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: cafeId
-        in: path
-        required: true
-        schema:
-          type: integer
-        description: 리뷰를 작성할 카페 ID
-    requestBody:
-      required: true
-      content:
-        multipart/form-data:
+    post:
+      tags:
+        - Review
+      summary: 리뷰 작성
+      description: 제목 20자 이상, 본문 500자 이상, 이미지 최대 5장까지 첨부 가능합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
           schema:
-            type: object
-            required:
-              - title
-              - content
-            properties:
-              title:
-                type: string
-                example: "카페 분위기가 너무 좋아요!"
-              content:
-                type: string
-                example: >
-                  커피 맛도 좋고 조용해서 공부하기 좋았어요. 다음에 또 방문할 예정입니다.
-              images:
-                type: array
-                items:
-                  type: string
-                  format: binary
-                description: 첨부 이미지 파일 (최대 5장)
-    responses:
-      '201':
-        description: 리뷰 작성 성공
+            type: integer
+          description: 리뷰를 작성할 카페 ID
+      requestBody:
+        required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
+              required:
+                - title
+                - content
               properties:
-                message:
+                title:
                   type: string
-                  example: 리뷰 작성 성공
-                review:
-                  $ref: '#/components/schemas/Review'
-      '400':
-        description: 잘못된 요청 (제목/본문 미입력, 유효성 실패 등)
-        content:
-          application/json:
-            examples:
-              제목 짧음:
-                value: { errorCode: "R001", reason: "제목은 최소 20자 이상이어야 합니다." }
-              본문 짧음:
-                value: { errorCode: "R002", reason: "본문은 최소 500자 이상이어야 합니다." }
-              필드 누락:
-                value: { errorCode: "R005", reason: "제목과 본문을 모두 입력해주세요." }
-              이미지 타입 오류:
-                value: { errorCode: "R006", reason: "이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: text/plain)" }
-              이미지 수량 초과:
-                value: { errorCode: "R007", reason: "이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: 6개)" }
-      '403':
-        description: 유효한 스탬프가 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R008", reason: "스탬프 적립을 시작하고 리뷰를 작성해보세요!" }
-      '500':
-        description: 서버 오류
+                  example: "카페 분위기가 너무 좋아요!"
+                content:
+                  type: string
+                  example: >
+                    커피 맛도 좋고 조용해서 공부하기 좋았어요. 다음에 또 방문할 예정입니다.
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  description: 첨부 이미지 파일 (최대 5장)
+      responses:
+        '201':
+          description: 리뷰 작성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 리뷰 작성 성공
+                  review:
+                    $ref: '#/components/schemas/Review'
+        '400':
+          description: 잘못된 요청 (제목/본문 미입력, 유효성 실패 등)
+          content:
+            application/json:
+              examples:
+                제목 짧음:
+                  value: { errorCode: "R001", reason: "제목은 최소 20자 이상이어야 합니다." }
+                본문 짧음:
+                  value: { errorCode: "R002", reason: "본문은 최소 500자 이상이어야 합니다." }
+                필드 누락:
+                  value: { errorCode: "R005", reason: "제목과 본문을 모두 입력해주세요." }
+                이미지 타입 오류:
+                  value: { errorCode: "R006", reason: "이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: text/plain)" }
+                이미지 수량 초과:
+                  value: { errorCode: "R007", reason: "이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: 6개)" }
+        '403':
+          description: 유효한 스탬프가 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R008", reason: "스탬프 적립을 시작하고 리뷰를 작성해보세요!" }
+        '500':
+          description: 서버 오류
 
   /api/v1/reviews/{reviewId}:
-  patch:
-    tags:
-      - Review
-    summary: 리뷰 수정
-    description: 본인의 리뷰만 수정할 수 있습니다.
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: reviewId
-        in: path
-        required: true
-        schema:
-          type: integer
-        description: 수정할 리뷰 ID
-    requestBody:
-      required: true
-      content:
-        application/json:
+    patch:
+      tags:
+        - Review
+      summary: 리뷰 수정
+      description: 본인의 리뷰만 수정할 수 있습니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
           schema:
-            type: object
-            required:
-              - title
-              - content
-            properties:
-              title:
-                type: string
-                example: "업데이트된 제목입니다."
-              content:
-                type: string
-                example: "내용도 새롭게 작성했습니다."
-    responses:
-      '200':
-        description: 리뷰 수정 성공
+            type: integer
+          description: 수정할 리뷰 ID
+      requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - title
+                - content
               properties:
-                message:
+                title:
                   type: string
-                  example: 리뷰 수정 성공
-                review:
-                  $ref: '#/components/schemas/Review'
-      '403':
-        description: 권한 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
-      '404':
-        description: 리뷰 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
-      '400':
-        description: 필수 필드 누락
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R005", reason: "제목과 본문을 모두 입력해주세요." }
-      '500':
-        description: 서버 오류
+                  example: "업데이트된 제목입니다."
+                content:
+                  type: string
+                  example: "내용도 새롭게 작성했습니다."
+      responses:
+        '200':
+          description: 리뷰 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 리뷰 수정 성공
+                  review:
+                    $ref: '#/components/schemas/Review'
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
+        '404':
+          description: 리뷰 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
+        '400':
+          description: 필수 필드 누락
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R005", reason: "제목과 본문을 모두 입력해주세요." }
+        '500':
+          description: 서버 오류
 
   delete:
     tags:
@@ -2245,63 +2305,387 @@ paths:
         description: 서버 오류
 
   /api/v1/users/me/reviews:
-  get:
-    tags:
-      - Review
-    summary: 내가 작성한 리뷰 목록 조회
-    description: 로그인한 사용자가 작성한 리뷰 목록을 페이지네이션 형식으로 조회합니다.
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: page
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 1
-        description: 조회할 페이지 번호
-      - name: limit
-        in: query
-        required: false
-        schema:
-          type: integer
-          default: 10
-        description: 페이지당 항목 수
-    responses:
-      '200':
-        description: 내가 쓴 리뷰 목록 조회 성공
+    get:
+      tags:
+        - Review
+      summary: 내가 작성한 리뷰 목록 조회
+      description: 로그인한 사용자가 작성한 리뷰 목록을 페이지네이션 형식으로 조회합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 1
+          description: 조회할 페이지 번호
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 10
+          description: 페이지당 항목 수
+      responses:
+        '200':
+          description: 내가 쓴 리뷰 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 내가 쓴 리뷰 목록 조회 성공
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserReviewSummary'
+                  pagination:
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                        example: 1
+                      limit:
+                        type: integer
+                        example: 10
+                      total:
+                        type: integer
+                        example: 27
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              example:
+                value: { errorCode: "AUTH001", reason: "JWT 토큰이 유효하지 않습니다." }
+        '500':
+          description: 서버 오류
+
+  /api/v1/owners/cafes/basic-info:
+    post:
+      tags: [Admin Cafe]
+      summary: 카페 기본 정보 등록
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
+              required:
+                - name
+                - address
+                - region1DepthName
+                - region2DepthName
+                - region3DepthName
+                - latitude
+                - longitude
+                - ownerName
               properties:
-                message:
+                name:
                   type: string
-                  example: 내가 쓴 리뷰 목록 조회 성공
-                data:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/UserReviewSummary'
-                pagination:
-                  type: object
-                  properties:
-                    page:
-                      type: integer
-                      example: 1
-                    limit:
-                      type: integer
-                      example: 10
-                    total:
-                      type: integer
-                      example: 27
-      '401':
-        description: 인증 실패
+                address:
+                  type: string
+                region1DepthName:
+                  type: string
+                region2DepthName:
+                  type: string
+                region3DepthName:
+                  type: string
+                latitude:
+                  type: number
+                  format: float
+                longitude:
+                  type: number
+                  format: float
+                ownerName:
+                  type: string
+                phone:
+                  type: string
+                websiteUrl:
+                  type: string
+                description:
+                  type: string
+            example:
+              name: "테스트카페"
+              address: "서울시 마포구 테스트로 123"
+              region1DepthName: "서울특별시"
+              region2DepthName: "마포구"
+              region3DepthName: "서교동"
+              latitude: 37.567167
+              longitude: 126.946347
+              ownerName: "홍길동"
+              phone: "01012345678"
+              websiteUrl: "https://testcafe.example.com"
+              description: "테스트용 카페입니다."
+      responses:
+        201:
+          description: 카페 기본 정보 등록 성공
+
+  /api/v1/owners/cafes/{cafeId}/operation:
+    patch:
+      tags: [Admin Cafe]
+      summary: 카페 운영 정보 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
         content:
           application/json:
+            schema:
+              type: object
+              required:
+                - businessHours
+              properties:
+                businessHours:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      day:
+                        type: string
+                      isClosed:
+                        type: boolean
+                      openTime:
+                        type: string
+                      closeTime:
+                        type: string
+                storeFilters:
+                  type: array
+                  items:
+                    type: string
+                takeOutFilters:
+                  type: array
+                  items:
+                    type: string
+                menuFilters:
+                  type: array
+                  items:
+                    type: string
+                keywords:
+                  type: array
+                  items:
+                    type: string
             example:
-              value: { errorCode: "AUTH001", reason: "JWT 토큰이 유효하지 않습니다." }
-      '500':
-        description: 서버 오류
+              businessHours:
+                - day: "월"
+                  isClosed: false
+                  openTime: "09:00"
+                  closeTime: "18:00"
+                - day: "화"
+                  isClosed: false
+                  openTime: "09:00"
+                  closeTime: "18:00"
+                - day: "수"
+                  isClosed: false
+                  openTime: "09:00"
+                  closeTime: "18:00"
+                - day: "목"
+                  isClosed: false
+                  openTime: "09:00"
+                  closeTime: "18:00"
+                - day: "금"
+                  isClosed: false
+                  openTime: "09:00"
+                  closeTime: "18:00"
+                - day: "토"
+                  isClosed: true
+                - day: "일"
+                  isClosed: true
+              storeFilters:
+                - "1인석"
+              takeOutFilters:
+                - "테이크아웃"
+              menuFilters:
+                - "디카페인"
+              keywords:
+                - "1인석"
+                - "사이즈업"
+      responses:
+        200:
+          description: 운영 정보 업데이트 성공
+
+  /api/v1/owners/cafes/{cafeId}/menus:
+    post:
+      tags: [Admin Cafe]
+      summary: 카페 메뉴 등록
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - price
+              properties:
+                name:
+                  type: string
+                price:
+                  type: integer
+                photoUrl:
+                  type: string
+                description:
+                  type: string
+                category:
+                  type: string
+                isRepresentative:
+                  type: boolean
+            example:
+              name: "아메리카노"
+              price: 4500
+              photoUrl: "https://example.com/images/americano.jpg"
+              description: "신선한 원두로 내린 아메리카노"
+              category: "커피"
+              isRepresentative: true
+      responses:
+        201:
+          description: 메뉴 등록 성공
+
+  /api/v1/owners/cafes/{cafeId}/photos:
+    post:
+      tags: [Admin Cafe]
+      summary: 카페 사진 등록
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [photoUrls]
+              properties:
+                photoUrls:
+                  type: array
+                  items:
+                    type: string
+                    example: "https://example.com/photo.jpg"
+            example:
+              photoUrls:
+                - "https://example.com/cafe1.jpg"
+                - "https://example.com/cafe2.jpg"
+                - "https://example.com/cafe3.jpg"
+      responses:
+        201:
+          description: 사진 등록 성공
+
+  /api/v1/owners/cafes/{cafeId}/complete:
+    patch:
+      tags: [Admin Cafe]
+      summary: 카페 등록 완료 처리
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        200:
+          description: 등록 완료
+
+  /api/v1/owners/cafes/myCafe:
+    get:
+      tags: [Admin Cafe]
+      summary: 내가 등록한 카페 조회
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 카페 조회 성공
+
+  /api/v1/owners/cafes/myCafe/{cafeId}:
+    patch:
+      tags: [Admin Cafe]
+      summary: 내가 등록한 카페 정보 수정
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+            example:
+              name: "루피커피 홍대점"
+              phone: "02-1234-5678"
+              address: "서울특별시 마포구 양화로 123"
+              region1DepthName: "서울특별시"
+              region2DepthName: "마포구"
+              region3DepthName: "서교동"
+              latitude: 37.5564
+              longitude: 126.9235
+              websiteUrl: "https://loopycafe.com"
+              description: "맛있는 디저트와 조용한 분위기의 루피카페입니다."
+      responses:
+        200:
+          description: 수정 성공
+
+  /api/v1/owners/cafes/photos:
+    get:
+      tags: [Admin Cafe]
+      summary: 내가 등록한 카페의 사진 조회
+      security:
+        - bearerAuth: []
+      responses:
+        200:
+          description: 사진 조회 성공
+
+  /api/v1/owners/cafes/photos/{photoId}:
+    delete:
+      tags: [Admin Cafe]
+      summary: 특정 카페 사진 삭제
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: photoId
+          in: path
+          required: true
+          description: 삭제할 사진의 ID
+          schema:
+            type: integer
+            example: 42
+      responses:
+        200:
+          description: 삭제 성공
+          content:
+            application/json:
+              example:
+                resultType: "SUCCESS"
+                error: null
+                success:
+                  message: "카페 이미지가 삭제되었습니다."
+                  photoId: 4
 
 components:
   securitySchemes:
@@ -2329,6 +2713,54 @@ components:
           type: string
           enum: [CUSTOMER, OWNER]
           example: CUSTOMER
+        status:
+          type: string
+          enum: [active, inactive]
+          example: active
+        allowKakaoAlert:
+          type: boolean
+          example: false
+        profileImageUrl:
+          type: string
+          nullable: true
+          example: null
+        fcmToken:
+          type: string
+          nullable: true
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-07-01T10:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2025-07-17T16:30:00.000Z"
+        inactivedAt:
+          type: string
+          format: date-time
+          nullable: true
+          example: null
+
+    OwnerProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "4"
+        email:
+          type: string
+          example: testOwner@example.com
+        phoneNumber:
+          type: string
+          example: "01012345679"
+        nickname:
+          type: string
+          example: 테스터(사장)
+        role:
+          type: string
+          enum: [CUSTOMER, OWNER]
+          example: OWNER
         status:
           type: string
           enum: [active, inactive]
