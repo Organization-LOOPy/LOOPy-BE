@@ -28,11 +28,16 @@ export const cafeRepository = {
         id: true,
         name: true,
         price: true,
+        isRepresentative: true,
         description: true,
         photoUrl: true,
         isSoldOut: true,
       },
+      orderBy: {
+        isRepresentative: "desc", //대표메뉴 맨 위로
+      },
     });
+
     if (!menu || menu.length === 0) {
       logger.error(`카페 ID: ${cafeId}에 대한 메뉴가 없습니다.`);
       throw new MenuNotFoundError(cafeId);
@@ -40,10 +45,6 @@ export const cafeRepository = {
 
     return menu;
   },
-  /* <- main pull 하고 수정하기 
-  async isBookmared(cafeId, userId) {
-    const bookmark = await prisma
-  } */
 };
 
 export const stampBookRepository = {
@@ -81,10 +82,10 @@ export const cafeCouponRepository = {
       select: {
         id: true,
         name: true,
-        validDays: true,
         discountType: true,
         discountValue: true,
         applicableMenu: true,
+        createdAt: true,
         expiredAt: true,
       },
     });
@@ -93,19 +94,13 @@ export const cafeCouponRepository = {
   },
 
   async issueCoupon(couponInfo, userId) {
-    const { id, validDays } = couponInfo;
-
-    if (typeof validDays !== "number" || isNaN(validDays)) {
-      throw new Error("쿠폰의 유효 일수가 잘못되었습니다.");
-    }
-
-    const expiredAt = new Date(Date.now() + validDays * 24 * 60 * 60 * 1000);
+    const { id, createdAt, expiredAt } = couponInfo;
 
     const coupon = await prisma.userCoupon.create({
       data: {
         userId,
         couponTemplateId: id,
-        expiredAt,
+        expiredAt: new Date(expiredAt),
         //사장님이 설정한 유효기간 후 만료
         acquisitionType: "promotion",
       },
@@ -117,10 +112,15 @@ export const cafeCouponRepository = {
           select: {
             id: true,
             name: true,
-            validDays: true,
             discountType: true,
             discountValue: true,
-            applicableMenu: true,
+            applicableMenu: {
+              select: {
+                name: true,
+                description: true,
+                photoUrl: true,
+              },
+            },
             expiredAt: true,
           },
         },
@@ -168,8 +168,8 @@ export const cafeReviewRepository = {
         images: true,
         user: {
           select: {
+            id: true,
             nickname: true,
-            profileUrl: true,
           },
         },
       },

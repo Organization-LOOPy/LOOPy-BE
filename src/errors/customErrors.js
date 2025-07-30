@@ -42,11 +42,18 @@ export class DuplicateEmailError extends CustomError {
   }
 }
 
-export class UserNotFoundError extends CustomError {
+export class EmailNotFoundError extends CustomError {
   constructor(email) {
     super("등록되지 않은 이메일입니다.", "USER_NOT_FOUND", 404, { email });
   }
 }
+
+export class UserNotFoundError extends CustomError {
+  constructor(userId) {
+    super("등록되지 않은 사용자입니다.", "USER_NOT_FOUND", 404, { userid });
+  }
+}
+
 
 export class InvalidPasswordError extends CustomError {
   constructor() {

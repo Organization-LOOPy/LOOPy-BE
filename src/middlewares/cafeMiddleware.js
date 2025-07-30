@@ -20,7 +20,7 @@ export const test = async (req, res, next) => {
     createdAt: new Date(),
     updatedAt: new Date(),
     inactivedAt: null,
-    profileImageUrl: "https://example.com/profile.jpg", // Review 조회 시 필요
+    //profileImageUrl: "https://example.com/profile.jpg", // Review 조회 시 필요
   };
 
   // req.user에 테스트 사용자 정보 추가

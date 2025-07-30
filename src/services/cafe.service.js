@@ -36,6 +36,7 @@ export const cafeService = {
         description: item.description,
         imgUrl: item.photoUrl,
         isSoldOut: item.isSoldOut,
+        isRepresentative: item.isRepresentative,
       })),
       coupons: coupons.map((coupon) => ({
         ...coupon,

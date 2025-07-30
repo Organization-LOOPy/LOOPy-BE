@@ -17,13 +17,13 @@ const router = express.Router();
 router.use(authenticateJWT);
 
 router.post('/basic-info', postCafeBasicInfo);
-router.patch('/:cafeId/operation', patchCafeOperationInfo);
-router.post('/:cafeId/menus', postCafeMenu);
-router.post('/:cafeId/photos', postCafePhotos);
-router.patch('/:cafeId/complete',completeCafeRegistration);
+router.patch('/operation', patchCafeOperationInfo);
+router.post('/menus', postCafeMenu);
+router.post('/photos', postCafePhotos);
+router.patch('/complete',completeCafeRegistration);
 
 router.get('/myCafe', getCafe);
-router.patch('/myCafe/:cafeId', updateCafe);
+router.patch('/myCafe', updateCafe);
 router.get('/photos', getMyCafePhoto);
 router.delete('/photos/:photoId', deleteMyCafePhoto);
 

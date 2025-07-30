@@ -9,11 +9,11 @@ import {
 
 const router = express.Router();
 
-//router.use(authenticateJWT);
-router.use(test);
+router.use(authenticateJWT);
+//router.use(test);
 
 //페이지네이션 구현 필요
-router.post("/search", cafeSearch); // 검색 + 카테고리필터
+router.post("/list", cafeSearch); // 검색 + 카테고리필터
 
 router.get("/map", getCafeMapData); // 지도 마커 데이터
 
