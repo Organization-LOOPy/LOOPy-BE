@@ -1475,19 +1475,13 @@ paths:
         - Cafe
       security:
         - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - id
-              properties:
-                id:
-                  type: integer
-                  description: 북마크할 카페의 ID
-                  example: 1
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 북마크할 카페 ID
       responses:
         '200':
           description: 북마크 생성 성공
@@ -1525,6 +1519,7 @@ paths:
                   data:
                     type: "null"
                     example: null
+
 
   /api/v1/search/{cafeId}:
     get:
