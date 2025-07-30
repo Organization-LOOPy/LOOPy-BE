@@ -106,7 +106,7 @@ do {
     },
   });
 
-  const token = createJwt(newUser.id, [requestedRole], requestedRole);
+  const token = createJwt(user.id, [requestedRole], requestedRole);
   return { redirectUrl: buildRedirectUrl(token, user.nickname) };
 };
 
