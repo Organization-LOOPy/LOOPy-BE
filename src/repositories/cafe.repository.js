@@ -28,11 +28,16 @@ export const cafeRepository = {
         id: true,
         name: true,
         price: true,
+        isRepresentative: true,
         description: true,
         photoUrl: true,
         isSoldOut: true,
       },
+      orderBy: {
+        isRepresentative: "desc", //대표메뉴 맨 위로
+      },
     });
+
     if (!menu || menu.length === 0) {
       logger.error(`카페 ID: ${cafeId}에 대한 메뉴가 없습니다.`);
       throw new MenuNotFoundError(cafeId);
@@ -40,10 +45,6 @@ export const cafeRepository = {
 
     return menu;
   },
-  /* <- main pull 하고 수정하기 
-  async isBookmared(cafeId, userId) {
-    const bookmark = await prisma
-  } */
 };
 
 export const stampBookRepository = {
