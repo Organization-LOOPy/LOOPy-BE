@@ -2,7 +2,7 @@ import { getHomeInfo } from '../services/customer.home.service.js';
  
 export const getHomeController = async (req, res, next) => {
   try {
-    const userId = Number(req.user.Id); 
+    const userId = Number(req.user.id); 
     console.log('[DEBUG] controller userId:', userId);
     const homeInfo = await getHomeInfo(Number(userId));
 

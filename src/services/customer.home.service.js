@@ -36,7 +36,7 @@ export const getHomeInfo = async (userId) => {
     },
   });
 
-  const currentPoint = await getCurrentPointByUserIdService(user.id);
+  const currentPoint = await getCurrentPointByUserIdService(numericUserId);
 
   const [thisMonthStampCount, totalStampCount] = await Promise.all([
   prisma.stamp.count({

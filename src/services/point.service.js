@@ -15,11 +15,7 @@ export const getCurrentPointByUserIdService = async (userId) => {
     _sum: { point: true },
   });
 
-  const total = result._sum.point;
-
-  if (total === null) {
-    throw new PointTransactionNotFoundError({ userId: parsedUserId });
-  }
+  const total = result._sum.point ?? 0;
 
   return total;
 };
