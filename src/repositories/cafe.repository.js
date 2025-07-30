@@ -82,7 +82,6 @@ export const cafeCouponRepository = {
       select: {
         id: true,
         name: true,
-        validDays: true,
         discountType: true,
         discountValue: true,
         applicableMenu: true,
@@ -101,7 +100,7 @@ export const cafeCouponRepository = {
       data: {
         userId,
         couponTemplateId: id,
-        expiredAt: expiredAt,
+        expiredAt: new Date(expiredAt),
         //사장님이 설정한 유효기간 후 만료
         acquisitionType: "promotion",
       },
@@ -115,7 +114,13 @@ export const cafeCouponRepository = {
             name: true,
             discountType: true,
             discountValue: true,
-            applicableMenu: true,
+            applicableMenu: {
+              select: {
+                name: true,
+                description: true,
+                photoUrl: true,
+              },
+            },
             expiredAt: true,
           },
         },
@@ -163,8 +168,8 @@ export const cafeReviewRepository = {
         images: true,
         user: {
           select: {
+            id: true,
             nickname: true,
-            profileUrl: true,
           },
         },
       },
