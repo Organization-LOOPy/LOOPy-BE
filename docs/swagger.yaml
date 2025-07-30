@@ -1475,6 +1475,13 @@ paths:
         - Cafe
       security:
         - bearerAuth: []
+      parameters:
+        - in: path
+          name: cafeId
+          required: true
+          schema:
+            type: integer
+          description: 북마크할 카페의 ID
       requestBody:
         required: true
         content:
