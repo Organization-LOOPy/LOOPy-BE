@@ -27,6 +27,14 @@ export const signupService = async (body) => {
     ]);
   }
 
+  if (!agreements?.termsAgreed || !agreements?.privacyPolicyAgreed || !agreements?.locationPermission) {
+    throw new MissingFieldsError([
+      'termsAgreed',
+      'privacyPolicyAgreed',
+      'locationPermission',
+    ]);
+  }
+
   if (!["CUSTOMER", "OWNER"].includes(role)) {
     throw new InvalidRoleError(role);
   }
@@ -61,7 +69,7 @@ export const signupService = async (body) => {
         userId: createdUser.id,
         termsAgreed: agreements.termsAgreed,
         privacyPolicyAgreed: agreements.privacyPolicyAgreed,
-        marketingAgreed: agreements.marketingAgreed,
+        marketingAgreed: agreements.marketingAgreed ?? false,
         locationPermission: agreements.locationPermission,
         agreedAt: new Date(),
       },
