@@ -31,7 +31,7 @@ export const cafeSearch = async (req, res, next) => {
     );
 
     logger.debug(`카페 검색 완료: ${JSON.stringify(results)}`);
-    return success(results);
+    res.success(results);
   } catch (err) {
     logger.error(`카페 검색 중 오류 발생: ${err.message}`);
     next(err);
