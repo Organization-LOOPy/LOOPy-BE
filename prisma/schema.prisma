@@ -26,7 +26,7 @@ model User {
   inactivedAt     DateTime?  @map("inactived_at")
 
   // Relations
-  roles UserRole[]
+  roles                 UserRole[]
   kakaoAccount          KakaoAccount?
   userPreferences       UserPreference?
   verificationCodes     VerificationCode[]
@@ -45,8 +45,8 @@ model User {
 }
 
 model UserRole {
-  id     Int       @id @default(autoincrement())
-  user   User      @relation(fields: [userId], references: [id])
+  id     Int      @id @default(autoincrement())
+  user   User     @relation(fields: [userId], references: [id])
   userId Int
   role   RoleType
 
@@ -55,7 +55,7 @@ model UserRole {
 }
 
 model KakaoAccount {
-  id        BigInt      @id @default(autoincrement())
+  id        BigInt   @id @default(autoincrement())
   userId    Int      @unique @map("user_id")
   socialId  String   @unique @map("social_id") @db.VarChar(255)
   createdAt DateTime @default(now()) @map("created_at")
@@ -67,12 +67,12 @@ model KakaoAccount {
 }
 
 model UserPreference {
-  id                Int      @id @default(autoincrement())
-  userId            Int      @unique @map("user_id")
-  preferredStore     Json?    @map("preferred_store")
+  id               Int      @id @default(autoincrement())
+  userId           Int      @unique @map("user_id")
+  preferredStore   Json?    @map("preferred_store")
   preferredTakeout Json?    @map("preferred_tkeout")
-  preferredMenu      Json?    @map("preferred_menu")
-  createdAt         DateTime @default(now()) @map("created_at")
+  preferredMenu    Json?    @map("preferred_menu")
+  createdAt        DateTime @default(now()) @map("created_at")
 
   // Relations
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -129,18 +129,18 @@ model UserBookmark {
 // ================================
 
 model Challenge {
-  id           Int         @id @default(autoincrement())
-  title        String      @db.VarChar(255)
-  description  String      @db.Text
-  thumbnailUrl String      @map("thumbnail_url") @db.Text
-  startDate    DateTime    @map("start_date") @db.Date
-  endDate      DateTime    @map("end_date") @db.Date
-  isActive     Boolean     @default(true) @map("is_active")
-  createdAt    DateTime    @default(now()) @map("created_at")
-  updatedAt    DateTime    @updatedAt @map("updated_at")
-  goalDescription String   @db.VarChar(255)   // 예: "3회 공부 인증하기"
-  goalCount       Int                            // 목표 도장 수 (ex. 3)
-  rewardPoint     Int                            // ex. 300
+  id              Int      @id @default(autoincrement())
+  title           String   @db.VarChar(255)
+  description     String   @db.Text
+  thumbnailUrl    String   @map("thumbnail_url") @db.Text
+  startDate       DateTime @map("start_date") @db.Date
+  endDate         DateTime @map("end_date") @db.Date
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+  goalDescription String   @db.VarChar(255) // 예: "3회 공부 인증하기"
+  goalCount       Int // 목표 도장 수 (ex. 3)
+  rewardPoint     Int // ex. 300
 
   // Relations
   participants   ChallengeParticipant[]
@@ -151,20 +151,20 @@ model Challenge {
 }
 
 model ChallengeParticipant {
-  id            Int                           @id @default(autoincrement())
-  userId        Int                           @map("user_id")
-  challengeId   Int                           @map("challenge_id")
-  status        ChallengeParticipantStatus    @default(in_progress)
-  joinedAt      DateTime                      @map("joined_at")
-  completedAt   DateTime?                     @map("completed_at")
-  joinedCafeId  Int?                          @map("joined_cafe_id") // ✅ 참여 매장
-  createdAt     DateTime                      @default(now()) @map("created_at")
-  updatedAt     DateTime                      @updatedAt @map("updated_at")
+  id           Int                        @id @default(autoincrement())
+  userId       Int                        @map("user_id")
+  challengeId  Int                        @map("challenge_id")
+  status       ChallengeParticipantStatus @default(in_progress)
+  joinedAt     DateTime                   @map("joined_at")
+  completedAt  DateTime?                  @map("completed_at")
+  joinedCafeId Int?                       @map("joined_cafe_id") // ✅ 참여 매장
+  createdAt    DateTime                   @default(now()) @map("created_at")
+  updatedAt    DateTime                   @updatedAt @map("updated_at")
 
   // Relations
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  challenge    Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  joinedCafe   Cafe?     @relation(fields: [joinedCafeId], references: [id], onDelete: SetNull) // ✅
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  challenge  Challenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  joinedCafe Cafe?     @relation("CafeToJoinedChallengeParticipants", fields: [joinedCafeId], references: [id], onDelete: SetNull)
 
   @@unique([userId, challengeId])
   @@map("challenge_participants")
@@ -212,32 +212,32 @@ model Badge {
 }
 
 model StampBook {
-  id            Int             @id @default(autoincrement())
-  userId        Int             @map("user_id")
-  cafeId        Int             @map("cafe_id")
-  currentCount  Int             @default(0) @map("current_count")
-  goalCount     Int             @map("goal_count")
-  rewardDetail  String          @map("reward_detail") @db.VarChar(255)
-  startedAt     DateTime        @map("started_at")
-  lastVisitedAt DateTime?       @map("last_visited_at")
-  expiresAt     DateTime        @map("expires_at")
-  extendedAt    DateTime?       @map("extended_at")
-  expiredAt     DateTime?       @map("expired_at")
-  completedAt   DateTime?       @map("completed_at")
-  convertedAt   DateTime?       @map("converted_at")
-  status        StampBookStatus
-  isCompleted   Boolean         @default(false) @map("is_completed")
-  isConverted   Boolean         @default(false) @map("is_converted")
-  createdAt     DateTime        @default(now()) @map("created_at")
-  updatedAt     DateTime        @updatedAt @map("updated_at")
-
-  @@unique([userId, cafeId])
+  id                Int                @id @default(autoincrement())
+  userId            Int                @map("user_id")
+  cafeId            Int                @map("cafe_id")
+  currentCount      Int                @default(0) @map("current_count")
+  goalCount         Int                @map("goal_count")
+  rewardDetail      String             @map("reward_detail") @db.VarChar(255)
+  startedAt         DateTime           @map("started_at")
+  lastVisitedAt     DateTime?          @map("last_visited_at")
+  expiresAt         DateTime           @map("expires_at")
+  extendedAt        DateTime?          @map("extended_at")
+  expiredAt         DateTime?          @map("expired_at")
+  completedAt       DateTime?          @map("completed_at")
+  convertedAt       DateTime?          @map("converted_at")
+  status            StampBookStatus
+  isCompleted       Boolean            @default(false) @map("is_completed")
+  isConverted       Boolean            @default(false) @map("is_converted")
+  round             Int                @default(1) @map("round")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
   // Relations
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   cafe              Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   stamps            Stamp[]
   pointTransactions PointTransaction[]
 
+  @@unique([userId, cafeId])
   @@map("stamp_books")
 }
 
@@ -278,28 +278,30 @@ model PointTransaction {
 // ================================
 
 model Cafe {
-  id             Int        @id @default(autoincrement())
-  name           String     @db.VarChar(255)
-  ownerId        Int       @unique @map("owner_id")
-  owner          User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  address        String     @db.VarChar(500)
-  region1DepthName String   @map("region_1depth_name") @db.VarChar(50)
-  region2DepthName String   @map("region_2depth_name") @db.VarChar(50)
-  region3DepthName String   @map("region_3depth_name") @db.VarChar(50)
-  latitude       Float
-  longitude      Float
-  ownerName      String     @map("owner_name") @db.VarChar(100)
-  businessHours  Json?    @map("business_hours")
-  phone          String?    @db.VarChar(20)
-  websiteUrl     String?    @map("website_url") @db.Text
-  description    String?    @db.Text
-  storeFilters   Json?      @map("store_filters")
-  takeOutFilters Json?      @map("take_out_filters")
-  menuFilters    Json?      @map("menu_filters")
-  keywords       Json?
-  status         CafeStatus @default(active)
-  createdAt      DateTime   @default(now()) @map("created_at")
-  updatedAt      DateTime   @updatedAt @map("updated_at")
+  id               Int        @id @default(autoincrement())
+  name             String     @db.VarChar(255)
+  ownerId          Int        @unique @map("owner_id")
+  owner            User       @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  address          String     @db.VarChar(500)
+  region1DepthName String     @map("region_1depth_name") @db.VarChar(50)
+  region2DepthName String     @map("region_2depth_name") @db.VarChar(50)
+  region3DepthName String     @map("region_3depth_name") @db.VarChar(50)
+  latitude         Float
+  longitude        Float
+  ownerName        String     @map("owner_name") @db.VarChar(100)
+  businessHours    Json?      @map("business_hours")
+  phone            String?    @db.VarChar(20)
+  websiteUrl       String?    @map("website_url") @db.Text
+  description      String?    @db.Text
+  storeFilters     Json?      @map("store_filters")
+  takeOutFilters   Json?      @map("take_out_filters")
+  menuFilters      Json?      @map("menu_filters")
+  keywords         Json?
+  status           CafeStatus @default(active)
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+
+  challengeParticipantsJoinedAt ChallengeParticipant[] @relation("CafeToJoinedChallengeParticipants")
 
   // Relations
   menu               CafeMenu[]
@@ -315,22 +317,22 @@ model Cafe {
 }
 
 model CafeMenu {
-  id          Int      @id @default(autoincrement())
-  cafeId      Int      @map("cafe_id")
-  category    String   @db.VarChar(100)
-  name        String   @db.VarChar(255)
-  description String?  @db.Text
-  price       Int
-  isSoldOut   Boolean  @default(false) @map("is_sold_out")
-  isRepresentative Boolean @default(false) @map("is_representative")
-  photoUrl    String?  @map("photo_url") @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  id               Int      @id @default(autoincrement())
+  cafeId           Int      @map("cafe_id")
+  category         String   @db.VarChar(100)
+  name             String   @db.VarChar(255)
+  description      String?  @db.Text
+  price            Int
+  isSoldOut        Boolean  @default(false) @map("is_sold_out")
+  isRepresentative Boolean  @default(false) @map("is_representative")
+  photoUrl         String?  @map("photo_url") @db.Text
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
 
   // Relations
   cafe            Cafe             @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   couponTemplates CouponTemplate[]
-   
+
   @@unique([cafeId, name])
   @@map("cafe_menu")
 }
@@ -387,41 +389,41 @@ model Notification {
 }
 
 model CouponTemplate {
-  id               Int        @id @default(autoincrement())
-  cafeId           Int        @map("cafe_id")
-  name             String     @db.VarChar(255)
-  validDays        Int        @map("valid_days")
-  discountType     String     @map("discount_type") @db.VarChar(20) // "AMOUNT" | "PERCENTAGE"
-  discountValue    Int        @map("discount_value") // 금액(원) 또는 퍼센트
-  applicableMenuId Int?       @map("applicable_menu_id")
-  isActive         Boolean    @default(true) @map("is_active")
-  expiredAt        DateTime   @map("expired_at")
-  createdAt        DateTime   @default(now()) @map("created_at")
-  
+  id               Int      @id @default(autoincrement())
+  cafeId           Int      @map("cafe_id")
+  name             String   @db.VarChar(255)
+  validDays        Int      @map("valid_days")
+  discountType     String   @map("discount_type") @db.VarChar(20) // "AMOUNT" | "PERCENTAGE"
+  discountValue    Int      @map("discount_value") // 금액(원) 또는 퍼센트
+  applicableMenuId Int?     @map("applicable_menu_id")
+  isActive         Boolean  @default(true) @map("is_active")
+  expiredAt        DateTime @map("expired_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+
   // Relations
-  cafe            Cafe           @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  applicableMenu  CafeMenu?      @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
-  userCoupons     UserCoupon[]
-  
+  cafe           Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  applicableMenu CafeMenu?    @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
+  userCoupons    UserCoupon[]
+
   @@map("coupon_templates")
 }
 
 model UserCoupon {
-  id                Int                   @id @default(autoincrement())
-  userId            Int                   @map("user_id")
-  couponTemplateId  Int                   @map("coupon_template_id")
-  acquisitionType   CouponAcquisitionType @map("acquisition_type")  // 획득 방법
-  status            CouponStatus          @default(active)
-  issuedAt          DateTime              @default(now()) @map("issued_at")
-  expiredAt         DateTime              @map("expired_at")
-  usedAt            DateTime?             @map("used_at")
-  createdAt         DateTime              @default(now()) @map("created_at")
-  updatedAt         DateTime              @updatedAt @map("updated_at")
+  id               Int                   @id @default(autoincrement())
+  userId           Int                   @map("user_id")
+  couponTemplateId Int                   @map("coupon_template_id")
+  acquisitionType  CouponAcquisitionType @map("acquisition_type") // 획득 방법
+  status           CouponStatus          @default(active)
+  issuedAt         DateTime              @default(now()) @map("issued_at")
+  expiredAt        DateTime              @map("expired_at")
+  usedAt           DateTime?             @map("used_at")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  updatedAt        DateTime              @updatedAt @map("updated_at")
 
   // Relations
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   couponTemplate CouponTemplate @relation(fields: [couponTemplateId], references: [id], onDelete: Cascade)
-  
+
   @@map("user_coupons")
 }
 
@@ -479,6 +481,6 @@ enum CouponStatus {
 }
 
 enum CouponAcquisitionType {
-  promotion  // 프로모션으로 획득
-  stamp      // 스탬프로 획득
+  promotion // 프로모션으로 획득
+  stamp // 스탬프로 획득
 }

@@ -1955,6 +1955,19 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/StampBookDetail'
+        '403':
+          description: 접근 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+        '404':
+          description: 리소스를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/stampbooks/{stampBookId}/stamps:
     post:
@@ -1996,87 +2009,111 @@ paths:
                     type: boolean
 
   /api/v1/stampbooks/{stampBookId}/convert:
-    post:
-      summary: 스탬프 → 포인트 환전
-      description: 완료된 스탬프북을 포인트로 환전
-      tags:
-        - Stamp
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: stampBookId
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: 환전 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  stampCount:
-                    type: integer
-                  pointAmount:
-                    type: integer
+  post:
+    summary: 스탬프 → 포인트 환전
+    description: 완료된 스탬프북을 포인트로 환전합니다. <br> 완료되지 않았거나 이미 환전된 스탬프북일 경우 에러가 발생합니다.
+    tags:
+      - Stamp
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: stampBookId
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: 환전 성공
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StampConversionSuccessResponse'
+      '400':
+        description: 잘못된 요청 (예: 완료되지 않은 스탬프북, 환전 불가능 상태)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: 접근 권한 없음
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: 스탬프북을 찾을 수 없음
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
 
-    delete:
-      summary: 환전 취소
-      description: 환전 후 3일 이내 환전 취소
-      tags:
-        - Stamp
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: stampBookId
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: 환전 취소 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  refundPoint:
-                    type: integer
+
+    # delete:
+    #   summary: 환전 취소
+    #   description: 환전 후 3일 이내 환전 취소
+    #   tags:
+    #     - Stamp
+    #   security:
+    #     - bearerAuth: []
+    #   parameters:
+    #     - in: path
+    #       name: stampBookId
+    #       required: true
+    #       schema:
+    #         type: integer
+    #   responses:
+    #     '200':
+    #       description: 환전 취소 성공
+    #       content:
+    #         application/json:
+    #           schema:
+    #             type: object
+    #             properties:
+    #               message:
+    #                 type: string
+    #               refundPoint:
+    #                 type: integer
 
   /api/v1/stampbooks/{stampBookId}/extend:
-    patch:
-      summary: 스탬프북 기간 연장
-      description: 진행 중인 스탬프북의 만료일을 14일 연장
-      tags:
-        - Stamp
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: stampBookId
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: 연장 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                  newExpiresAt:
-                    type: string
-                    format: date-time
+  patch:
+    summary: 스탬프북 기간 연장
+    description: 진행 중인(active) 스탬프북의 만료일을 1회에 한해 14일 연장합니다. 이미 연장된 경우 또는 완료된 스탬프북은 연장할 수 없습니다.
+    tags:
+      - Stamp
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: stampBookId
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: 연장 성공
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StampBookExtensionSuccessResponse'
+      '400':
+        description: 잘못된 요청 (예: 이미 연장된 스탬프북)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '403':
+        description: 접근 권한 없음
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '404':
+        description: 스탬프북을 찾을 수 없음
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/users/me/stampbooks/expiring:
     get:
@@ -2095,6 +2132,73 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/StampBookExpiring'
+
+  /api/v1/users/me/stampbooks/converted:
+    get:
+      summary: 환전 완료된 스탬프북 히스토리 조회
+      description: 사용자가 환전한 스탬프북 목록을 조회합니다. 최근 환전된 순으로 정렬되며, 각 스탬프북의 회차와 환전 일자를 포함합니다.
+      tags:
+        - Stamp
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 환전 히스토리 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConvertedStampBookHistoryResponse'
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/me/stamps/count:
+    get:
+    summary: 총 스탬프 수 조회
+    description: 로그인한 사용자가 보유한 전체 스탬프 개수를 반환합니다. 모든 스탬프북에 적립된 도장의 수를 합산한 값입니다.
+    tags:
+      - Stamp
+    security:
+      - bearerAuth: []
+    responses:
+      '200':
+        description: 총 스탬프 수 조회 성공
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TotalStampCountResponse'
+      '500':
+        description: 서버 오류
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/me/loopy-level:
+    get:
+      summary: 루피 레벨 조회
+      description: 사용자가 보유한 스탬프북 개수에 따라 루피 레벨을 계산합니다.
+      tags:
+        - Stamp
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 루피 레벨 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoopyLevelResponse'
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   
   /api/v1/notification/{notificationId}:
     get:
@@ -3463,6 +3567,9 @@ components:
               type: string
             address:
               type: string
+            image:
+              type: string
+              example: https://cdn.loopy.com/cafes/3.jpg
         currentCount:
           type: integer
         goalCount:
@@ -3473,29 +3580,55 @@ components:
           type: string
           format: date-time
 
-    StampBookListResponse:
-      type: array
-      items:
-        $ref: '#/components/schemas/StampBookListItem'
+
+    StampBookListSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: SUCCESS
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: 스탬프북 리스트 조회 성공
+        data:
+          $ref: '#/components/schemas/StampBookListResponse'
+
 
     Stamp:
       type: object
       properties:
         id:
           type: integer
+          example: 12
         stampedAt:
           type: string
           format: date-time
+          example: "2025-07-31T08:15:30.000Z"
         stampImageUrl:
           type: string
+          nullable: true
+          example: "https://cdn.loopy.com/stamps/12.png"
         source:
           type: string
+          example: "QR"
         note:
           type: string
+          nullable: true
+          example: "QR 인식이 잘 안됐어요"
         latitude:
           type: number
+          format: float
+          nullable: true
+          example: 37.5656
         longitude:
           type: number
+          format: float
+          nullable: true
+          example: 126.9784
+
 
     StampBookDetail:
       type: object
@@ -3557,6 +3690,15 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Stamp'
+        isExpiringSoon:
+          type: boolean
+          example: true
+        isExpired:
+          type: boolean
+          example: false
+        daysUntilExpiration:
+          type: integer
+          example: 2
 
     StampBookExpiring:
       type: object
@@ -3581,29 +3723,151 @@ components:
     StampConversionResult:
       type: object
       properties:
-        message:
-          type: string
         stampCount:
           type: integer
+          example: 5
         pointAmount:
           type: integer
+          example: 500
+        convertedAt:
+          type: string
+          format: date-time
+          example: "2025-07-31T09:10:30.000Z"
 
-    StampCancelConversionResult:
+    StampConversionSuccessResponse:
       type: object
       properties:
-        message:
+        status:
           type: string
-        refundPoint:
+          example: SUCCESS
+        code:
           type: integer
-
-    StampBookExtendResult:
-      type: object
-      properties:
+          example: 200
         message:
           type: string
+          example: 5개의 스탬프가 10포인트로 환전되었습니다.
+        data:
+          $ref: '#/components/schemas/StampConversionResult'
+
+    ConvertedStampBookHistoryItem:
+      type: object
+      properties:
+        stampBookId:
+          type: integer
+          example: 15
+        cafeName:
+          type: string
+          example: 블루보틀 연남점
+        address:
+          type: string
+          example: 서울특별시 마포구 연남동 123-45
+        round:
+          type: integer
+          example: 3
+        convertedAt:
+          type: string
+          format: date-time
+          example: "2025-07-31T13:45:00.000Z"
+
+    ConvertedStampBookHistoryResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: SUCCESS
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: 스탬프 히스토리 조회 성공
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConvertedStampBookHistoryItem'
+      
+    TotalStampCountResult:
+      type: object
+      properties:
+        totalStampCount:
+          type: integer
+          example: 42
+
+    TotalStampCountResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: SUCCESS
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: 총 스탬프 수 조회 성공
+        data:
+          $ref: '#/components/schemas/TotalStampCountResult'
+
+    LoopyLevelResult:
+      type: object
+      properties:
+        stampBookCount:
+          type: integer
+          example: 8
+        level:
+          type: integer
+          example: 2
+        label:
+          type: string
+          example: 차곡차곡 쌓는 수집가
+
+    LoopyLevelResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: SUCCESS
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: 루피 레벨 조회 성공
+        data:
+          $ref: '#/components/schemas/LoopyLevelResult'
+
+    StampBookExtensionResult:
+      type: object
+      properties:
         newExpiresAt:
           type: string
           format: date-time
+          example: "2025-08-14T00:00:00.000Z"
+        extendedAt:
+          type: string
+          format: date-time
+          example: "2025-07-31T10:00:00.000Z"
+        daysUntilExpiration:
+          type: integer
+          example: 14
+        isExpiringSoon:
+          type: boolean
+          example: false
+
+    StampBookExtensionSuccessResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          example: SUCCESS
+        code:
+          type: integer
+          example: 200
+        message:
+          type: string
+          example: 스탬프북이 14일 연장되었습니다.
+        data:
+          $ref: '#/components/schemas/StampBookExtensionResult'
 
     SystemNotificationDetail:
       type: object

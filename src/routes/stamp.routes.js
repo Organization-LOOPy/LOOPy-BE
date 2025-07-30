@@ -9,6 +9,7 @@ import {
   cancelStampConversion,
   extendStampBook,
   getExpiringStampBooks,
+  getConvertedStampbooks,
 } from '../controllers/stamp.controller.js';
 
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
@@ -54,6 +55,18 @@ router.patch(
   '/:stampBookId/extend',
   authenticateJWT,
   extendStampBook
+);
+
+router.get(
+  '/users/me/stampbooks/converted',
+  authenticate,
+  getConvertedStampbooks
+);
+
+router.get(
+  '/users/me/stamps/total',
+  authenticate,
+  getTotalStampCount
 );
 
 export default router;
