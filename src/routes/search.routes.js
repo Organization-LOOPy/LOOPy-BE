@@ -9,8 +9,8 @@ import {
 
 const router = express.Router();
 
-//router.use(authenticateJWT);
-router.use(test);
+router.use(authenticateJWT);
+//router.use(test);
 
 //페이지네이션 구현 필요
 router.post("/list", cafeSearch); // 검색 + 카테고리필터
