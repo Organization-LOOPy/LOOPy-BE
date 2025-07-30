@@ -69,6 +69,7 @@ model KakaoAccount {
 model UserPreference {
   id                Int      @id @default(autoincrement())
   userId            Int      @unique @map("user_id")
+  preferredArea    String?    @db.VarChar(255)
   preferredStore     Json?    @map("preferred_store")
   preferredTakeout Json?    @map("preferred_tkeout")
   preferredMenu      Json?    @map("preferred_menu")
@@ -315,7 +316,6 @@ model Cafe {
 model CafeMenu {
   id          Int      @id @default(autoincrement())
   cafeId      Int      @map("cafe_id")
-  category    String   @db.VarChar(100)
   name        String   @db.VarChar(255)
   description String?  @db.Text
   price       Int

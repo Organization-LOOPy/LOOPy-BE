@@ -122,7 +122,6 @@ export const addCafeMenu = async (cafeId, menu) => {
       photoUrl: menu.photoUrl,
       description: menu.description,
       isSoldOut: false,
-      category: menu.category || '기본',
       isRepresentative: isRep,
     },
   });

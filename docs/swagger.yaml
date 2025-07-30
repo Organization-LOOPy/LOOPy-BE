@@ -1064,7 +1064,6 @@ paths:
                       applicableMenu:
                         id: 1
                         cafeId: 1
-                        category: "커피"
                         name: "아메리카노"
                         description: "진한 에스프레소와 뜨거운 물을 더한 커피"
                         price: 4500
@@ -3068,8 +3067,6 @@ paths:
                   type: string
                 description:
                   type: string
-                category:
-                  type: string
                 isRepresentative:
                   type: boolean
             example:
@@ -3077,7 +3074,6 @@ paths:
               price: 4500
               photoUrl: "https://example.com/images/americano.jpg"
               description: "신선한 원두로 내린 아메리카노"
-              category: "커피"
               isRepresentative: true
       responses:
         201:

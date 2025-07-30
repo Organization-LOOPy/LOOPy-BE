@@ -1,16 +1,16 @@
-import { getMyInfo } from './user.service.js';
-import { getCurrentPointByUserIdService } from './point.service.js';
+import { getHomeInfo } from '../services/customer.home.service.js';
+ 
+export const getHomeController = async (req, res, next) => {
+  try {
+    const userId = Number(req.user.Id); 
+    console.log('[DEBUG] controller userId:', userId);
+    const homeInfo = await getHomeInfo(Number(userId));
 
-export const getHomePage = async (req, res, next) => {
-    try {
-        const user = await getMyInfoService(req.user.id);
-        const point = await getCurrentPointByUserIdService(req.user.id);
-
-        return res.success({
-      message: '현재 포인트 조회 성공',
-      currentPoint: point,
+    res.status(200).json({
+      message: '홈 정보 조회 성공',
+      data: homeInfo,
     });
-      } catch (err) {
-        next(err);
-      }
-}
+  } catch (err) {
+    next(err);
+  }
+};

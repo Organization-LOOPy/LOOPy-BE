@@ -3,15 +3,22 @@ import { PointTransactionNotFoundError } from '../errors/customErrors.js';
 
 // 현재 포인트 조회 
 export const getCurrentPointByUserIdService = async (userId) => {
+  const parsedUserId = Number(userId);
+  console.log('[DEBUG] Parsed userId:', parsedUserId); 
+
+  if (isNaN(parsedUserId)) {
+    throw new Error('userId가 유효한 숫자가 아닙니다.');
+  }
+
   const result = await prisma.pointTransaction.aggregate({
-    where: { userId: Number(userId) },
+    where: { userId: parsedUserId },
     _sum: { point: true },
   });
 
   const total = result._sum.point;
 
   if (total === null) {
-    throw new PointTransactionNotFoundError({ userId });
+    throw new PointTransactionNotFoundError({ userId: parsedUserId });
   }
 
   return total;
