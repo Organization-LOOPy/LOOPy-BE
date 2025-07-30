@@ -2,6 +2,32 @@
 
 고객의 루틴에 나의 커피를 더하다
 
+
+## 📌 기술 스택 (Tech Stack)
+
+- **언어**: Node.js
+- **프레임워크**: Express.js
+- **DB ORM**: Prisma
+- **데이터베이스**: MySQL
+- **인증**: JWT, Kakao OAuth
+- **기타**: 환경 변수 관리 (`dotenv`, `cross-env`)
+
+---
+
+## 📂 프로젝트 구조 (간략화)
+
+```
+ 📦 src/
+┣ 📂controllers/         # 요청 처리 (req/res)
+┣ 📂services/            # 비즈니스 로직
+┣ 📂repositories/        # DB 모델 접근
+┣ 📂routes/              # 라우터 정의 (REST API endpoint 분기)
+┣ 📂middlewares/         # 인증, 에러 핸들링, 로깅 등
+┣ 📂utils/               # 공통 함수, 헬퍼
+┣ 📂config/              # 환경 설정 (DB, dotenv 등)
+┣ 📂loaders/             # 서버, DB 등 초기 설정 (선택)
+┗ 📜app.js               # 앱 초기화 (Express 세팅)
+```
 # 🚀 프로젝트 세팅 가이드
 
 ## 의존성 설치
@@ -95,47 +121,41 @@ console.log 대신 사용, 개발/배포 환경마다 다르게 로그를 관리
 **morganMiddleware** - HTTP요청 로그 기록
 
 info: GET /user 304 - - 1.382 ms 이런 형식으로 로그 기록
-
-## 📌 기술 스택 (Tech Stack)
-
-- **언어**: Node.js
-- **프레임워크**: Express.js
-- **DB ORM**: Prisma
-- **데이터베이스**: MySQL
-- **인증**: JWT, Kakao OAuth
-- **기타**: 환경 변수 관리 (`dotenv`, `cross-env`)
-
 ---
 
-## 📂 프로젝트 구조 (간략화)
+### 서버 관리 명령어
+
+```bash
+# EC2 SSH 접속 후
+cd /opt/loopy-be
+
+# 컨테이너 상태 확인
+docker ps
+
+# 로그 확인
+docker logs loopy-app -f
+
+# 수동 재시작 
+docker restart loopy-app
+
+# 수동 배포 
+git pull origin main
+docker stop loopy-app
+docker rm loopy-app
+docker build -t loopy-app
+docker run -d -p 3000:3000 --name loopy-app --env-file .env your-app
 
 ```
- 📦 src/
-┣ 📂controllers/         # 요청 처리 (req/res)
-┣ 📂services/            # 비즈니스 로직
-┣ 📂repositories/        # DB 모델 접근
-┣ 📂routes/              # 라우터 정의 (REST API endpoint 분기)
-┣ 📂middlewares/         # 인증, 에러 핸들링, 로깅 등
-┣ 📂utils/               # 공통 함수, 헬퍼
-┣ 📂config/              # 환경 설정 (DB, dotenv 등)
-┣ 📂loaders/             # 서버, DB 등 초기 설정 (선택)
-┗ 📜app.js               # 앱 초기화 (Express 세팅)
-```
 
----
+### 모니터링
 
-## 자동 포맷 (Prettier 기본 설정)
+```bash
+# 실시간 로그 모니터링
+docker logs -f loopy-app
 
-팀원 모두 VSCode에 Prettier 확장 설치
+# 시스템 리소스 확인
+docker stats loopy-app
 
-→ 저장 시 자동 포맷 되도록 설정
+# 헬스체크
+curl http://localhost:3000/health
 
-.prettierrc (루트에 생성)
-
-```
-{
-  "semi": true,
-  "singleQuote": true,
-  "tabWidth": 2
-}
-```

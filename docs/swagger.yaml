@@ -863,109 +863,187 @@ paths:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
 
+
   /api/v1/cafes/{cafeId}:
     get:
-      summary: 카페 상세 정보 조회
-      description: 카페 ID를 기반으로 상세 정보, 메뉴, 사진, 쿠폰, 스탬프북, 즐겨찾기 여부를 조회합니다.
       tags:
         - Cafe
-      parameters:
-        - in: path
-          name: cafeId
-          required: true          
-          schema:
-           type: integer
-          description: 조회할 카페의 ID
+      summary: 카페 상세 정보 조회
+      description: 카페 ID를 기반으로 상세 정보, 메뉴, 사진, 쿠폰, 스탬프북, 즐겨찾기 여부를 조회합니다
+      operationId: getCafeDetail
       security:
-        - bearerAuth: []
+        - BearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          description: 조회할 카페의 ID
+          required: true
+          schema:
+            type: integer
+            example: 1
       responses:
         '200':
-          description: 성공적으로 카페 정보를 반환함
+          description: 성공적으로 카페 상세 정보를 조회했습니다
           content:
             application/json:
               schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: SUCCESS
-                  error:
-                    type: "null"
-                    example: null
-                  success:
-                    type: object
-                    properties:
-                      cafe:
-                        type: object
-                        properties:
-                          id: { type: integer, example: 1 }
-                          name: { type: string, example: 로스터리 카페 }
-                          address: { type: string, example: 서울시 강남구 테헤란로 123 }
-                          businessHours: { type: string, example: 평일 07:00-22:00, 주말 08:00-23:00 }
-                          phone: { type: string, example: 02-1234-5678 }
-                          websiteUrl: { type: string, format: uri, example: https://roastery-cafe.com }
-                          description: { type: string }
-                          storeFilters:
-                            type: object
-                            additionalProperties: { type: boolean }
-                          takeOutFilters:
-                            type: object
-                            additionalProperties: { type: boolean }
-                          menuFilters:
-                            type: object
-                            additionalProperties: { type: boolean }
-                          keywords:
-                            type: array
-                            items: { type: string }
-                      photos:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id: { type: integer }
-                            url: { type: string, format: uri }
-                            displayOrder: { type: integer }
-                      menu:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id: { type: integer }
-                            name: { type: string }
-                            price: { type: integer }
-                            description: { type: string }
-                            imgUrl: { type: string, format: uri }
-                            isSoldOut: { type: boolean }
-                      coupons:
-                        type: array
-                        items:
-                          type: object
-                          properties:
-                            id: { type: integer }
-                            name: { type: string }
-                            validDays: { type: integer }
-                            discountType: { type: string, enum: [fixed, percentage] }
-                            discountValue: { type: number }
-                            applicableMenu: { type: "null" }
-                            expiredAt: { type: string, format: date-time }
-                      stampBook:
-                        type: object
-                        properties:
-                          id: { type: integer }
-                          currentCount: { type: integer }
-                          goalCount: { type: integer }
-                          expiresAt: { type: string, format: date-time }
-                          stampBookId: { type: integer }
-                      bookmark:
-                        type: object
-                        properties:
-                          isBookmarked: { type: boolean }
+                $ref: '#/components/schemas/CafeDetailResponse'
+              example:
+                resultType: "SUCCESS"
+                error: null
+                success:
+                  cafe:
+                    id: 1
+                    name: "로스터리 카페"
+                    address: "서울시 강남구 테헤란로 123"
+                    businessHours:
+                      - day: "MONDAY"
+                        isClosed: false
+                        openTime: "09:00"
+                        closeType: "21:00"
+                        breakStart: "14:00"
+                        breakEnd: "15:00"
+                      - day: "TUESDAY"
+                        isClosed: true
+                    phone: "02-1234-5678"
+                    websiteUrl: "https://roastery-cafe.com"
+                    description: "신선한 원두를 직접 로스팅하는 스페셜티 커피 전문점입니다."
+                    storeFilters:
+                      "1인석": true
+                      "단체석": false
+                      "노트북석": true
+                      "애견 동반": false
+                      "예약 가능": false
+                      "주차 가능": true
+                      "24시간 운영": false
+                      "와이파이 제공": true
+                    takeOutFilters:
+                      "포장 할인": false
+                      "텀블러 할인": true
+                    menuFilters:
+                      "비건": false
+                      "디카페인": true
+                      "글루텐프리": true
+                      "저당/무가당": true
+                    keywords:
+                      - "커피"
+                      - "로스팅"
+                  photos:
+                    - id: 1
+                      url: "https://example.com/photos/roastery-exterior.jpg"
+                      displayOrder: 1
+                    - id: 2
+                      url: "https://example.com/photos/roastery-interior.jpg"
+                      displayOrder: 2
+                    - id: 3
+                      url: "https://example.com/photos/roastery-counter.jpg"
+                      displayOrder: 3
+                    - id: 4
+                      url: "https://example.com/photos/roastery-beans.jpg"
+                      displayOrder: 4
+                    - id: 5
+                      url: "https://example.com/photos/roastery-seating.jpg"
+                      displayOrder: 5
+                  menu:
+                    - id: 1
+                      name: "시그니처 아메리카노"
+                      price: 4500
+                      description: "하우스 블렌드 원두로 추출한 깔끔한 아메리카노"
+                      imgUrl: "https://example.com/menu/signature-americano.jpg"
+                      isSoldOut: false
+                    - id: 2
+                      name: "바닐라 라떼"
+                      price: 5500
+                      description: "마다가스카르 바닐라 시럽이 들어간 부드러운 라떼"
+                      imgUrl: "https://example.com/menu/vanilla-latte.jpg"
+                      isSoldOut: false
+                    - id: 3
+                      name: "케냐 AA 핸드드립"
+                      price: 7000
+                      description: "산미가 살아있는 케냐 원두 핸드드립"
+                      imgUrl: "https://example.com/menu/kenya-drip.jpg"
+                      isSoldOut: true
+                    - id: 4
+                      name: "티라미수"
+                      price: 6500
+                      description: "이탈리아 전통 방식으로 만든 수제 티라미수"
+                      imgUrl: "https://example.com/menu/tiramisu.jpg"
+                      isSoldOut: false
+                    - id: 5
+                      name: "콜드브루"
+                      price: 5000
+                      description: "18시간 저온추출한 시원한 콜드브루"
+                      imgUrl: "https://example.com/menu/coldbrew.jpg"
+                      isSoldOut: false
+                  coupons:
+                    - id: 1
+                      name: "시그니처 아메리카노 무료"
+                      validDays: 30
+                      discountType: "fixed"
+                      discountValue: 4500
+                      applicableMenu: null
+                      expiredAt: "2025-12-31T23:59:59.000Z"
+                    - id: 2
+                      name: "전 메뉴 15% 할인"
+                      validDays: 7
+                      discountType: "percentage"
+                      discountValue: 15
+                      applicableMenu: null
+                      expiredAt: "2025-11-30T23:59:59.000Z"
+                    - id: 5
+                      name: "디저트 무료 쿠폰"
+                      validDays: 60
+                      discountType: "fixed"
+                      discountValue: 6500
+                      applicableMenu: null
+                      expiredAt: "2026-02-28T23:59:59.000Z"
+                  stampBook:
+                    id: 1
+                    currentCount: 3
+                    goalCount: 10
+                    expiresAt: "2025-12-31T23:59:59.000Z"
+                    stampBookId: 1
+                  bookmark:
+                    isBookmarked: false
         '401':
           description: 인증 실패 (토큰 누락 또는 만료)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeDetailErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "UNAUTHORIZED"
+                  message: "유효하지 않은 토큰입니다"
+                success: null
         '404':
           description: 존재하지 않는 카페
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeDetailErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "CAFE_NOT_FOUND"
+                  message: "해당 카페를 찾을 수 없습니다"
+                success: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeDetailErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "INTERNAL_SERVER_ERROR"
+                  message: "서버 내부 오류가 발생했습니다"
+                success: null
 
-  /api/v1/cafe/{cafeId}/review:
+
+  /api/v1/cafes/{cafeId}/review:
     get:
       summary: 카페 리뷰 목록 조회 (페이징 지원)
       description: 카페 ID를 기반으로 리뷰를 커서 기반 페이징 방식으로 조회합니다.
@@ -1030,7 +1108,7 @@ paths:
         '404':
           description: 해당 카페 또는 리뷰 없음
   
-  /api/v1/coupon:
+  /api/v1/cafes/{cafeId}/coupon:
     post:
       summary: 쿠폰 발급
       description: 사용자가 쿠폰 템플릿을 기반으로 프로모션 쿠폰을 발급받습니다.
@@ -1108,7 +1186,7 @@ paths:
         '401':
           description: 인증 실패 (JWT 누락 또는 유효하지 않음)  
 
-  /api/v1/bookmark:
+  /api/v1/cafes/{cafeId}/bookmark:
     post:
       summary: 카페 북마크 생성
       description: 사용자가 특정 카페를 북마크합니다. 이미 북마크된 카페는 중복 저장되지 않습니다.
@@ -1166,11 +1244,317 @@ paths:
                   data:
                     type: "null"
                     example: null
-        '401':
-          description: 인증 실패 (JWT 누락 또는 유효하지 않음)
 
-                  success:
-                    $ref: '#/components/schemas/ReviewListResponse'
+  /api/v1/search/{cafeId}:
+    get:
+      tags:
+        - search
+      summary: 카페 정보 조회
+      description: 카페 ID로 특정 카페의 상세 정보를 조회합니다
+      operationId: getCafeInfo
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          description: 카페 고유 ID
+          required: true
+          schema:
+            type: string
+            example: "1"
+        - name: x
+          in: query
+          description: X 좌표 (경도)
+          required: false
+          schema:
+            type: number
+            format: double
+            example: 127.027610
+        - name: y
+          in: query
+          description: Y 좌표 (위도)
+          required: false
+          schema:
+            type: number
+            format: double
+            example: 37.497942
+      responses:
+        '200':
+          description: 성공적으로 카페 정보를 조회했습니다
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeSearchResponse'
+              example:
+                resultType: "SUCCESS"
+                error: null
+                success:
+                  id: "1"
+                  name: "로스터리 카페"
+                  keywords:
+                    - "커피"
+                    - "로스팅"
+                  photos:
+                    - id: "1"
+                      url: "https://example.com/photos/roastery-exterior.jpg"
+                      displayOrder: 1
+                    - id: "2"
+                      url: "https://example.com/photos/roastery-interior.jpg"
+                      displayOrder: 2
+                    - id: "3"
+                      url: "https://example.com/photos/roastery-counter.jpg"
+                      displayOrder: 3
+                    - id: "4"
+                      url: "https://example.com/photos/roastery-beans.jpg"
+                      displayOrder: 4
+                    - id: "5"
+                      url: "https://example.com/photos/roastery-seating.jpg"
+                      displayOrder: 5
+                  distance: 100
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeSearchErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "INVALID_PARAMETER"
+                  message: "유효하지 않은 좌표입니다"
+                success: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeSearchErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "UNAUTHORIZED"
+                  message: "유효하지 않은 토큰입니다"
+                success: null
+        '404':
+          description: 카페를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeSearchErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "CAFE_NOT_FOUND"
+                  message: "해당 위치에서 카페를 찾을 수 없습니다"
+                success: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeSearchErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "INTERNAL_SERVER_ERROR"
+                  message: "서버 내부 오류가 발생했습니다"
+                success: null
+
+  /api/v1/search/map:
+    get:
+      tags:
+        - search
+      summary: 지도 기반 카페 검색
+      description: 좌표와 줌 레벨을 기반으로 주변 카페를 검색하고 다양한 필터를 적용합니다
+      operationId: searchCafesOnMap
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: x
+          in: query
+          description: X 좌표 (경도)
+          required: true
+          schema:
+            type: number
+            format: double
+            example: 127.027926
+        - name: y
+          in: query
+          description: Y 좌표 (위도)
+          required: true
+          schema:
+            type: number
+            format: double
+            example: 37.497175
+        - name: zoom
+          in: query
+          description: 지도 줌 레벨
+          required: true
+          schema:
+            type: integer
+            example: 3
+            minimum: 1
+            maximum: 20
+        - name: store
+          in: query
+          description: 매장 필터 (콤마로 구분된 값들)
+          required: false
+          schema:
+            type: string
+            example: "wifi,parking"
+            enum: 
+              - single_seat
+              - group_seat
+              - laptop_seat
+              - pet_friendly
+              - reservation
+              - parking
+              - 24hours
+              - wifi
+          explode: false
+          style: form
+        - name: menu
+          in: query
+          description: 메뉴 필터 (콤마로 구분된 값들)
+          required: false
+          schema:
+            type: string
+            example: "vegan,decaf"
+            enum:
+              - vegan
+              - decaf
+              - gluten_free
+              - sugar_free
+          explode: false
+          style: form
+        - name: takeout
+          in: query
+          description: 테이크아웃 필터 (콤마로 구분된 값들)
+          required: false
+          schema:
+            type: string
+            example: "package_discount,tumbler_discount"
+            enum:
+              - package_discount
+              - tumbler_discount
+          explode: false
+          style: form
+      responses:
+        '200':
+          description: 성공적으로 카페 목록을 조회했습니다
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeMapSearchResponse'
+              examples:
+                basic_search:
+                  summary: 기본 검색 (필터 없음)
+                  value:
+                    resultType: "SUCCESS"
+                    error: null
+                    success:
+                      cafes:
+                        - id: 10
+                          name: "스타벅스 강남역점"
+                          latitude: 37.497175
+                          longitude: 127.027926
+                          isBookmarked: false
+                        - id: 11
+                          name: "투썸플레이스 강남점"
+                          latitude: 37.498234
+                          longitude: 127.029871
+                          isBookmarked: false
+                        - id: 13
+                          name: "카페베네 강남역점"
+                          latitude: 37.495876
+                          longitude: 127.025431
+                          isBookmarked: false
+                      totalCount: 3
+                      searchRadius: 320
+                      zoomLevel: "3"
+                      center:
+                        x: 127.027926
+                        y: 37.497175
+                filtered_search:
+                  summary: 필터 적용 검색 (wifi 필터)
+                  value:
+                    resultType: "SUCCESS"
+                    error: null
+                    success:
+                      cafes:
+                        - id: 10
+                          name: "스타벅스 강남역점"
+                          latitude: 37.497175
+                          longitude: 127.027926
+                          isBookmarked: false
+                        - id: 11
+                          name: "투썸플레이스 강남점"
+                          latitude: 37.498234
+                          longitude: 127.029871
+                          isBookmarked: false
+                        - id: 13
+                          name: "카페베네 강남역점"
+                          latitude: 37.495876
+                          longitude: 127.025431
+                          isBookmarked: false
+                        - id: 12
+                          name: "블루보틀 강남점"
+                          latitude: 37.499123
+                          longitude: 127.030945
+                          isBookmarked: false
+                        - id: 14
+                          name: "로컬카페 '소소한하루'"
+                          latitude: 37.500456
+                          longitude: 127.032187
+                          isBookmarked: false
+                        - id: 1
+                          name: "로스터리 카페"
+                          latitude: 37.5009
+                          longitude: 127.0363
+                          isBookmarked: true
+                      totalCount: 6
+                      searchRadius: 2560
+                      zoomLevel: "6"
+                      center:
+                        x: 127.027926
+                        y: 37.497175
+        '400':
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeMapSearchErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "INVALID_PARAMETER"
+                  message: "유효하지 않은 좌표 또는 줌 레벨입니다"
+                success: null
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeMapSearchErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "UNAUTHORIZED"
+                  message: "유효하지 않은 토큰입니다"
+                success: null
+        '500':
+          description: 서버 내부 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CafeMapSearchErrorResponse'
+              example:
+                resultType: "ERROR"
+                error:
+                  code: "INTERNAL_SERVER_ERROR"
+                  message: "서버 내부 오류가 발생했습니다"
+                success: null
+
   /api/v1/challenges:
     get:
       summary: 챌린지 목록 조회
@@ -2117,6 +2501,586 @@ components:
           format: date-time
           example: "2025-07-19T09:20:09.040Z"
     
+    CafeSearchResponse:
+      type: object
+      required:
+        - resultType
+        - error
+        - success
+      properties:
+        resultType:
+          type: string
+          enum: [SUCCESS, ERROR]
+          description: 응답 결과 타입
+        error:
+          type: object
+          nullable: true
+          description: 에러 정보 (성공시 null)
+        success:
+          $ref: '#/components/schemas/CafeSearchInfo'
+          nullable: true
+          description: 카페 정보 (실패시 null)
+
+    CafeSearchErrorResponse:
+      type: object
+      required:
+        - resultType
+        - error
+        - success
+      properties:
+        resultType:
+          type: string
+          enum: [ERROR]
+          description: 응답 결과 타입
+        error:
+          $ref: '#/components/schemas/CafeSearchErrorInfo'
+          description: 에러 정보
+        success:
+          type: object
+          nullable: true
+          description: 성공 데이터 (에러시 null)
+
+    CafeSearchErrorInfo:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: 에러 코드
+          example: "INVALID_PARAMETER"
+        message:
+          type: string
+          description: 에러 메시지
+          example: "유효하지 않은 파라미터입니다"
+
+    CafeSearchInfo:
+      type: object
+      required:
+        - id
+        - name
+        - keywords
+        - photos
+        - distance
+      properties:
+        id:
+          type: string
+          description: 카페 고유 ID
+          example: "1"
+        name:
+          type: string
+          description: 카페 이름
+          example: "로스터리 카페"
+        keywords:
+          type: array
+          items:
+            type: string
+          description: 카페 키워드 목록
+          example: ["커피", "로스팅"]
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/CafeSearchPhoto'
+          description: 카페 사진 목록
+        distance:
+          type: integer
+          description: 현재 위치에서 카페까지의 거리 (미터)
+          example: 100
+
+    CafeSearchPhoto:
+      type: object
+      required:
+        - id
+        - url
+        - displayOrder
+      properties:
+        id:
+          type: string
+          description: 사진 고유 ID
+          example: "1"
+        url:
+          type: string
+          format: uri
+          description: 사진 URL
+          example: "https://example.com/photos/roastery-exterior.jpg"
+        displayOrder:
+          type: integer
+          description: 사진 표시 순서
+          example: 1
+          minimum: 1
+
+    CafeMapSearchResponse:
+      type: object
+      required:
+        - resultType
+        - error
+        - success
+      properties:
+        resultType:
+          type: string
+          enum: [SUCCESS, ERROR]
+          description: 응답 결과 타입
+        error:
+          type: object
+          nullable: true
+          description: 에러 정보 (성공시 null)
+        success:
+          $ref: '#/components/schemas/CafeMapSearchResult'
+          nullable: true
+          description: 검색 결과 (실패시 null)
+
+    CafeMapSearchErrorResponse:
+      type: object
+      required:
+        - resultType
+        - error
+        - success
+      properties:
+        resultType:
+          type: string
+          enum: [ERROR]
+          description: 응답 결과 타입
+        error:
+          $ref: '#/components/schemas/CafeMapSearchErrorInfo'
+          description: 에러 정보
+        success:
+          type: object
+          nullable: true
+          description: 성공 데이터 (에러시 null)
+
+    CafeMapSearchErrorInfo:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: 에러 코드
+          example: "INVALID_PARAMETER"
+        message:
+          type: string
+          description: 에러 메시지
+          example: "유효하지 않은 파라미터입니다"
+
+    CafeMapSearchResult:
+      type: object
+      required:
+        - cafes
+        - totalCount
+        - searchRadius
+        - zoomLevel
+        - center
+      properties:
+        cafes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CafeMapSearchItem'
+          description: 검색된 카페 목록
+        totalCount:
+          type: integer
+          description: 총 검색된 카페 수
+          example: 3
+        searchRadius:
+          type: integer
+          description: 검색 반경 (미터)
+          example: 320
+        zoomLevel:
+          type: string
+          description: 지도 줌 레벨
+          example: "3"
+        center:
+          $ref: '#/components/schemas/CafeMapSearchCenter'
+          description: 검색 중심점 좌표
+
+    CafeMapSearchItem:
+      type: object
+      required:
+        - id
+        - name
+        - latitude
+        - longitude
+        - isBookmarked
+      properties:
+        id:
+          type: integer
+          description: 카페 고유 ID
+          example: 10
+        name:
+          type: string
+          description: 카페 이름
+          example: "스타벅스 강남역점"
+        latitude:
+          type: number
+          format: double
+          description: 위도
+          example: 37.497175
+        longitude:
+          type: number
+          format: double
+          description: 경도
+          example: 127.027926
+        isBookmarked:
+          type: boolean
+          description: 북마크 여부
+          example: false
+
+    CafeMapSearchCenter:
+      type: object
+      required:
+        - x
+        - y
+      properties:
+        x:
+          type: number
+          format: double
+          description: 중심점 X 좌표 (경도)
+          example: 127.027926
+        y:
+          type: number
+          format: double
+          description: 중심점 Y 좌표 (위도)
+          example: 37.497175
+
+    CafeDetailResponse:
+      type: object
+      required:
+        - resultType
+        - error
+        - success
+      properties:
+        resultType:
+          type: string
+          enum: [SUCCESS, ERROR]
+          description: 응답 결과 타입
+        error:
+          type: object
+          nullable: true
+          description: 에러 정보 (성공시 null)
+        success:
+          $ref: '#/components/schemas/CafeDetailResult'
+          nullable: true
+          description: 카페 상세 정보 (실패시 null)
+
+    CafeDetailErrorResponse:
+      type: object
+      required:
+        - resultType
+        - error
+        - success
+      properties:
+        resultType:
+          type: string
+          enum: [ERROR]
+          description: 응답 결과 타입
+        error:
+          $ref: '#/components/schemas/CafeDetailErrorInfo'
+          description: 에러 정보
+        success:
+          type: object
+          nullable: true
+          description: 성공 데이터 (에러시 null)
+
+    CafeDetailErrorInfo:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: string
+          description: 에러 코드
+          example: "UNAUTHORIZED"
+        message:
+          type: string
+          description: 에러 메시지
+          example: "유효하지 않은 토큰입니다"
+
+    CafeDetailResult:
+      type: object
+      required:
+        - cafe
+        - photos
+        - menu
+        - coupons
+        - stampBook
+        - bookmark
+      properties:
+        cafe:
+          $ref: '#/components/schemas/CafeDetailInfo'
+        photos:
+          type: array
+          items:
+            $ref: '#/components/schemas/CafeDetailPhoto'
+          description: 카페 사진 목록
+        menu:
+          type: array
+          items:
+            $ref: '#/components/schemas/CafeDetailMenuItem'
+          description: 메뉴 목록
+        coupons:
+          type: array
+          items:
+            $ref: '#/components/schemas/CafeDetailCoupon'
+          description: 쿠폰 목록
+        stampBook:
+          $ref: '#/components/schemas/CafeDetailStampBook'
+          description: 스탬프북 정보
+        bookmark:
+          $ref: '#/components/schemas/CafeDetailBookmark'
+          description: 북마크 정보
+
+    CafeDetailInfo:
+      type: object
+      required:
+        - id
+        - name
+        - address
+        - businessHours
+        - phone
+        - websiteUrl
+        - description
+        - storeFilters
+        - takeOutFilters
+        - menuFilters
+        - keywords
+      properties:
+        id:
+          type: integer
+          description: 카페 고유 ID
+          example: 1
+        name:
+          type: string
+          description: 카페 이름
+          example: "로스터리 카페"
+        address:
+          type: string
+          description: 카페 주소
+          example: "서울시 강남구 테헤란로 123"
+        businessHours:
+          type: array
+          items:
+            $ref: '#/components/schemas/CafeDetailBusinessHour'
+          description: 영업시간 정보
+        phone:
+          type: string
+          description: 전화번호
+          example: "02-1234-5678"
+        websiteUrl:
+          type: string
+          format: uri
+          description: 웹사이트 URL
+          example: "https://roastery-cafe.com"
+        description:
+          type: string
+          description: 카페 설명
+          example: "신선한 원두를 직접 로스팅하는 스페셜티 커피 전문점입니다."
+        storeFilters:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: 매장 필터 정보
+          example:
+            "1인석": true
+            "단체석": false
+            "노트북석": true
+        takeOutFilters:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: 테이크아웃 필터 정보
+          example:
+            "포장 할인": false
+            "텀블러 할인": true
+        menuFilters:
+          type: object
+          additionalProperties:
+            type: boolean
+          description: 메뉴 필터 정보
+          example:
+            "비건": false
+            "디카페인": true
+        keywords:
+          type: array
+          items:
+            type: string
+          description: 카페 키워드
+          example: ["커피", "로스팅"]
+
+    CafeDetailBusinessHour:
+      type: object
+      required:
+        - day
+        - isClosed
+      properties:
+        day:
+          type: string
+          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          description: 요일
+          example: "MONDAY"
+        isClosed:
+          type: boolean
+          description: 휴무 여부
+          example: false
+        openTime:
+          type: string
+          description: 오픈 시간
+          example: "09:00"
+        closeTime:
+          type: string
+          description: 마감 시간
+          example: "21:00"
+        breakStart:
+          type: string
+          description: 브레이크 타임 시작
+          example: "14:00"
+        breakEnd:
+          type: string
+          description: 브레이크 타임 종료
+          example: "15:00"
+
+    CafeDetailPhoto:
+      type: object
+      required:
+        - id
+        - url
+        - displayOrder
+      properties:
+        id:
+          type: integer
+          description: 사진 ID
+          example: 1
+        url:
+          type: string
+          format: uri
+          description: 사진 URL
+          example: "https://example.com/photos/roastery-exterior.jpg"
+        displayOrder:
+          type: integer
+          description: 표시 순서
+          example: 1
+
+    CafeDetailMenuItem:
+      type: object
+      required:
+        - id
+        - name
+        - price
+        - description
+        - imgUrl
+        - isSoldOut
+      properties:
+        id:
+          type: integer
+          description: 메뉴 ID
+          example: 1
+        name:
+          type: string
+          description: 메뉴 이름
+          example: "시그니처 아메리카노"
+        price:
+          type: integer
+          description: 가격
+          example: 4500
+        description:
+          type: string
+          description: 메뉴 설명
+          example: "하우스 블렌드 원두로 추출한 깔끔한 아메리카노"
+        imgUrl:
+          type: string
+          format: uri
+          description: 메뉴 이미지 URL
+          example: "https://example.com/menu/signature-americano.jpg"
+        isSoldOut:
+          type: boolean
+          description: 품절 여부
+          example: false
+
+    CafeDetailCoupon:
+      type: object
+      required:
+        - id
+        - name
+        - validDays
+        - discountType
+        - discountValue
+        - applicableMenu
+        - expiredAt
+      properties:
+        id:
+          type: integer
+          description: 쿠폰 ID
+          example: 1
+        name:
+          type: string
+          description: 쿠폰 이름
+          example: "시그니처 아메리카노 무료"
+        validDays:
+          type: integer
+          description: 유효 기간 (일)
+          example: 30
+        discountType:
+          type: string
+          enum: [fixed, percentage]
+          description: 할인 타입
+          example: "fixed"
+        discountValue:
+          type: number
+          description: 할인 값
+          example: 4500
+        applicableMenu:
+          type: object
+          nullable: true
+          description: 적용 가능 메뉴
+          example: null
+        expiredAt:
+          type: string
+          format: date-time
+          description: 만료일시
+          example: "2025-12-31T23:59:59.000Z"
+
+    CafeDetailStampBook:
+      type: object
+      required:
+        - id
+        - currentCount
+        - goalCount
+        - expiresAt
+        - stampBookId
+      properties:
+        id:
+          type: integer
+          description: 스탬프북 ID
+          example: 1
+        currentCount:
+          type: integer
+          description: 현재 스탬프 개수
+          example: 3
+        goalCount:
+          type: integer
+          description: 목표 스탬프 개수
+          example: 10
+        expiresAt:
+          type: string
+          format: date-time
+          description: 만료일시
+          example: "2025-12-31T23:59:59.000Z"
+        stampBookId:
+          type: integer
+          description: 스탬프북 ID
+          example: 1
+
+    CafeDetailBookmark:
+      type: object
+      required:
+        - isBookmarked
+      properties:
+        isBookmarked:
+          type: boolean
+          description: 북마크 여부
+          example: false
+
     ErrorResponse:
       type: object
       properties:

@@ -1,5 +1,5 @@
 import express from "express";
-import { test, isCorrectCafeId } from "../middlewares/cafe-middleware.js";
+import { test, isCorrectCafeId } from "../middlewares/cafeMiddleware.js";
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
 import {
   cafeSearch,
@@ -8,6 +8,7 @@ import {
 } from "../controllers/seach.controller.js";
 
 const router = express.Router();
+
 //router.use(authenticateJWT);
 router.use(test);
 

@@ -8,11 +8,12 @@ import {
   mapSearchService,
 } from "../services/search.service.js";
 
-export const cafeSearch = async (res, req, next) => {
+export const cafeSearch = async (req, res, next) => {
   try {
     const { x, y, searchQuery, cursor } = req.query;
     const { storeFilter, takeOutFilter, menuFilter, addressInfo } = req.body;
 
+    //필수는 아님 -> 수정 필요
     if (!x || !y) {
       throw new MissingUserCoordinate();
     }
@@ -41,13 +42,18 @@ export const cafeSearch = async (res, req, next) => {
   }
 };
 
-export const getCafeMapData = async (res, req, next) => {
+export const getCafeMapData = async (req, res, next) => {
   try {
-    const { x, y, store, menu, takeout, region1, region2, region3 } = req.query;
+    const { x, y, store, menu, takeout, region1, region2, region3, zoom } =
+      req.query;
     const userId = req.user.id;
 
     if (!x || !y) {
       throw new MissingUserCoordinate();
+    }
+
+    if (!zoom) {
+      throw new Error("줌 레벨이 필요합니다.");
     }
 
     const results = await mapSearchService.searchCafesOnMap({
@@ -59,10 +65,11 @@ export const getCafeMapData = async (res, req, next) => {
       region1,
       region2,
       region3,
+      zoom,
       userId,
     });
 
-    logger.debug(`카페 검색 완료: ${results.totalCount}개`);
+    logger.debug(`카페 검색 완료: ${results.totalCount}개 (줌 레벨: ${zoom})`);
     res.success(results);
   } catch (err) {
     logger.error(`카페 검색 중 오류 발생: ${err.message}`);
@@ -70,16 +77,16 @@ export const getCafeMapData = async (res, req, next) => {
   }
 };
 
-export const cafeDetail = async (res, req, next) => {
+export const cafeDetail = async (req, res, next) => {
   try {
     const cafe = req.cafe;
-    const { x, y } = req.params;
+    const { x, y } = req.query;
 
     if (!x && !y) {
       throw new MissingUserCoordinate();
     }
 
-    const cafeDetails = await searchCafeService.getCafeDetails(cafe, x, y);
+    const cafeDetails = await cafeSearchService.getCafeDetails(cafe, x, y);
 
     logger.debug(`카페 검색 정보 조회 성공: ${cafeDetails.name}`);
     res.success(cafeDetails);

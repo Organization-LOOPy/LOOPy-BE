@@ -39,7 +39,6 @@ app.use(cors(corsOptions));
 setupSwagger(app);
 app.use(express.json());
 
-
 app.use(passport.initialize());
 
 app.use(responseHandler); // 응답 포맷 통일 미들웨어
@@ -49,13 +48,13 @@ app.get("/", (req, res) =>
 app.get("/health", (req, res) => {
   res.status(200).send("ok");
 });
-app.use("/api/v1/challenges", challengeRoutes);
 
+app.use("/api/v1/challenges", challengeRoutes);
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/reviews", reviewRouter);
 app.use("/api/v1/search", searchRouter);
-app.use("/api/v1/cafe/:cafeId", cafeRouter);
+app.use("/api/v1/cafes/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
 app.use("/api/v1/stampbooks", stampbookRouter);

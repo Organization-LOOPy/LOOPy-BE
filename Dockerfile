@@ -8,6 +8,7 @@ RUN npm install -g pnpm
 
 WORKDIR /app
 
+
 # 비root 사용자 먼저 생성
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
@@ -35,4 +36,4 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
-CMD ["pnpm", "start"]
+CMD sh -c "npx prisma migrate deploy && pnpm start"
