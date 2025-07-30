@@ -558,3 +558,49 @@ export const getLoopyLevelInfo = async (req, res, next) => {
     next(err);
   }
 };
+
+// [기능 11] 특정 카페에 대한 내 스탬프북 현황 조회
+// 사용 화면: [카페 상세 페이지 > 내 스탬프 현황]
+// 조건: 로그인한 유저가 해당 카페에 대해 보유한 스탬프북이 있어야 함
+
+export const getMyStampByCafe = async (req, res, next) => {
+  const userId = req.user.id;
+  const cafeId = parseInt(req.params.cafeId);
+
+  try {
+    const stampbook = await prisma.stampBook.findFirst({
+      where: {
+        userId,
+        cafeId,
+        isConverted: false,
+      },
+      select: {
+        id: true,
+        currentCount: true,
+        goalCount: true,
+        expiresAt: true,
+      },
+    });
+
+    if (!stampbook) {
+      return res.status(404).json({
+        resultType: 'FAIL',
+        error: '해당 카페에 대한 스탬프북이 없습니다.',
+        success: null,
+      });
+    }
+
+    return res.status(200).json({
+      resultType: 'SUCCESS',
+      error: null,
+      success: {
+        stampBookId: stampbook.id,
+        currentCount: stampbook.currentCount,
+        goalCount: stampbook.goalCount,
+        expiresAt: stampbook.expiresAt,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
