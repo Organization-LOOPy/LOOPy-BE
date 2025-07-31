@@ -8,8 +8,6 @@ import {
   KakaoCodeMissingError,
  } from '../errors/customErrors.js';
 
-const prisma = new PrismaClient();
-
 // 공통 util 함수
 const buildRedirectUrl = (token, nickname) =>
   `${process.env.FRONT_LOGIN_SUCCESS_URI}?token=${token}&nickname=${encodeURIComponent(nickname.slice(0, 50))}`;
