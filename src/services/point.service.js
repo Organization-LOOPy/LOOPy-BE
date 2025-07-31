@@ -41,11 +41,7 @@ export const getPointTransactionsByUserId = async (userId) => {
       },
     },
   });
-
-  if (!transactions || transactions.length === 0) {
-    throw new PointTransactionNotFoundError({ userId });
-  }
-
+  
   return transactions.map((tx) => ({
     id: tx.id,
     point: tx.point,

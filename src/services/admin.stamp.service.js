@@ -66,13 +66,13 @@ export const createStampPolicy = async (userId, policyData) => {
       cafeId: cafe.id,
       selectedImageUrl,
       conditionType,
-      amountPerStamp: conditionType === 'AMOUNT' ? amountPerStamp : null,
-      countPerStamp: conditionType === 'COUNT' ? countPerStamp : null,
+      stampPerAmount: conditionType === 'AMOUNT' ? amountPerStamp : null,
+      stampPerCount: conditionType === 'COUNT' ? countPerStamp : null,
       rewardType,
       discountAmount: rewardType === 'DISCOUNT' ? discountAmount : null,
       menuId: rewardType === 'FREE_DRINK' ? menuId : null,
       hasExpiry,
-      expiryDate: hasExpiry ? new Date(expiryDate) : null,
+      rewardExpiresAt: hasExpiry ? new Date(expiryDate) : null,
     },
   });
 

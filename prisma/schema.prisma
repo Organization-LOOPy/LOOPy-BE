@@ -341,7 +341,7 @@ model Cafe {
   takeOutFilters   Json?      @map("take_out_filters")
   menuFilters      Json?      @map("menu_filters")
   keywords         Json?
-  status           CafeStatus @default(active)
+  status           CafeStatus @default(inactive)
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @updatedAt @map("updated_at")
 
