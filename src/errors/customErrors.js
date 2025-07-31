@@ -60,9 +60,15 @@ export class EmailNotFoundError extends CustomError {
   }
 }
 
+export class UserIdError extends CustomError {
+  constructor(userId) {
+    super("유효하지 않은 userId", "USER_ID_NOT_FOUND", 404, { userId });
+  }
+}
+
 export class UserNotFoundError extends CustomError {
   constructor(userId) {
-    super("등록되지 않은 사용자입니다.", "USER_NOT_FOUND", 404, { userid });
+    super("등록되지 않은 사용자입니다.", "USER_NOT_FOUND", 404, { userId });
   }
 }
 
