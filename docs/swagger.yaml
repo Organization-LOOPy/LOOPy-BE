@@ -3655,6 +3655,161 @@ paths:
                 success:
                   message: "카페 이미지가 삭제되었습니다."
                   photoId: 4
+  
+  /api/v1/owner/stamps/stamp-images:
+    post:
+      summary: 스탬프 사진 등록
+      description: 사장님이 스탬프 이미지를 업로드합니다. 기본 스탬프 외 추가 업로드는 최대 2개까지 가능합니다.
+      tags:
+        - Stamps
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                stampImage:
+                  type: string
+                  format: binary
+                  description: 업로드할 이미지 파일 (jpg, png 등)
+      responses:
+        '201':
+          description: 스탬프 이미지 업로드 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지가 업로드되었습니다.
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 3
+                      cafeId:
+                        type: integer
+                        example: 4
+                      imageUrl:
+                        type: string
+                        example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1690819200000_stamp.jpg
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: 2025-07-31T14:10:00.000Z
+
+  /api/v1/owner/stamps/policy:
+    post:
+      summary: 스탬프 정책 등록
+      description: 사장님이 스탬프 적립 조건과 리워드 정책을 설정합니다.
+      tags:
+        - Stamps
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                conditionType:
+                  type: string
+                  enum: [금액 기준, 횟수 기준]
+                  example: 금액 기준
+                conditionDetail:
+                  type: object
+                  description: 적립 조건 상세 정보
+                  oneOf:
+                    - properties:
+                        amountThreshold:
+                          type: integer
+                          example: 5000
+                        stampCount:
+                          type: integer
+                          example: 1
+                    - properties:
+                        drinkCount:
+                          type: integer
+                          example: 10
+                        stampPerPurchase:
+                          type: integer
+                          example: 1
+                rewardType:
+                  type: string
+                  enum: [금액 할인, 무료 음료]
+                  example: 금액 할인
+                rewardDetail:
+                  type: object
+                  description: 리워드 상세 정보
+                  oneOf:
+                    - properties:
+                        discountAmount:
+                          type: integer
+                          example: 1000
+                    - properties:
+                        menuId:
+                          type: integer
+                          example: 3
+                isRewardPeriodLimited:
+                  type: boolean
+                  example: true
+                rewardExpiredAt:
+                  type: string
+                  format: date
+                  example: 2025-12-31
+      responses:
+        '201':
+          description: 스탬프 정책 등록 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 정책이 성공적으로 등록되었습니다.
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      cafeId:
+                        type: integer
+                        example: 4
+                      conditionType:
+                        type: string
+                        example: 금액 기준
+                      conditionDetail:
+                        type: object
+                        example:
+                          amountThreshold: 5000
+                          stampCount: 1
+                      rewardType:
+                        type: string
+                        example: 금액 할인
+                      rewardDetail:
+                        type: object
+                        example:
+                          discountAmount: 1000
+                      isRewardPeriodLimited:
+                        type: boolean
+                        example: true
+                      rewardExpiredAt:
+                        type: string
+                        format: date-time
+                        example: 2025-12-31T00:00:00.000Z
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: 2025-07-31T14:22:00.000Z
+
 
 components:
   securitySchemes:
