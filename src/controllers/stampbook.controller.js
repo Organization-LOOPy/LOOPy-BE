@@ -1,4 +1,3 @@
-// stampbook.controller.js
 import { stampBookService } from "../services/stampbook.service.js";
 
 export const issueRewardCoupon = async (req, res, next) => {

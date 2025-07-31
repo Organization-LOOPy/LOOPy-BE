@@ -5,9 +5,9 @@ import {
 
 export const handleKakaoRedirect = async (req, res, next) => {
   try {
-    const { code, token, role } = req.query;
-    const redirectUrl = await handleKakaoRedirectService(code, token, role);
-    return res.redirect(redirectUrl);
+    const { code, token } = req.query;
+    const result = await handleKakaoRedirectService(code, token);
+    return res.redirect(result.redirectUrl);
   } catch (err) {
     next(err);
   }
@@ -15,8 +15,8 @@ export const handleKakaoRedirect = async (req, res, next) => {
 
 export const handleKakaoLinkCallback = async (req, res, next) => {
   try {
-    const redirectUrl = await handleKakaoLinkCallbackService(req.query, req.user?.id);
-    return res.redirect(redirectUrl);
+    const result = await handleKakaoLinkCallbackService(req.query, req.user?.id);
+    return res.redirect(result.redirectUrl);
   } catch (err) {
     next(err);
   }

@@ -1,13 +1,12 @@
 import prisma from '../../prisma/client.js';
 import {
+  BadRequestError,
   UserNotFoundError,
   InvalidNicknameError,
   PreferenceSaveError,
   InvalidPreferredAreaError,
-  BadRequestError,
   QRCodeError,
 } from '../errors/customErrors.js';
-import { verifyPhoneNumber } from './firebase.service.js';
 import QRCode from 'qrcode';
 
 // 탈퇴(사용자 휴면 계정으로 전환)
@@ -91,24 +90,43 @@ export const updateNicknameService = async (userId, nickname) => {
 
 // 선호 키워드 설정 
 export const updateUserPreferencesService = async (userId, preferredKeywords = []) => {
-  const VALID_KEYWORDS = [
-    '노트북', '1인석', '단체석', '주차 가능', '예약 가능',
-    '와이파이 제공', '애견 동반', '24시간 운영', '텀블러 할인',
-    '포장 할인', '비건', '저당/무가당', '글루텐프리', '디카페인',
-  ];
+  const STORE_KEYWORDS = ['노트북', '1인석', '단체석', '주차 가능', '예약 가능', '와이파이 제공', '애견 동반', '24시간 운영'];
+  const TAKEOUT_KEYWORDS = ['텀블러 할인', '포장 할인'];
+  const MENU_KEYWORDS = ['비건', '저당/무가당', '글루텐프리', '디카페인'];
 
-  const sanitized = preferredKeywords.filter((k) => VALID_KEYWORDS.includes(k));
+  // 유효 키워드만 필터링
+  const allValidKeywords = [...STORE_KEYWORDS, ...TAKEOUT_KEYWORDS, ...MENU_KEYWORDS];
+  const sanitized = preferredKeywords.filter((k) => allValidKeywords.includes(k));
+
+  // Map 구조로 변환
+  const preferredStore = Object.fromEntries(STORE_KEYWORDS.map((k) => [k, sanitized.includes(k)]));
+  const preferredTakeout = Object.fromEntries(TAKEOUT_KEYWORDS.map((k) => [k, sanitized.includes(k)]));
+  const preferredMenu = Object.fromEntries(MENU_KEYWORDS.map((k) => [k, sanitized.includes(k)]));
 
   try {
     const updated = await prisma.userPreference.upsert({
       where: { userId },
-      update: { preferredKeywords: sanitized },
-      create: { userId, preferredKeywords: sanitized },
+      update: {
+        preferredStore,
+        preferredTakeout,
+        preferredMenu,
+      },
+      create: {
+        userId,
+        preferredStore,
+        preferredTakeout,
+        preferredMenu,
+      },
     });
 
-    return updated.preferredKeywords;
+    
+    return {
+      preferredStore: updated.preferredStore,
+      preferredTakeout: updated.preferredTakeout,
+      preferredMenu: updated.preferredMenu,
+    };
   } catch (err) {
-    throw new PreferenceSaveError('키워드 저장 오류', err);
+    throw new PreferenceSaveError('선호 키워드 저장 오류', err);
   }
 };
 
@@ -164,12 +182,10 @@ export const updateFcmTokenService = async (userId, fcmToken) => {
 };
 
 // 전화번호 인증 토큰 확인 후 저장 
-export const savePhoneNumberAfterVerificationService = async (userId, idToken) => {
-  if (!idToken || !userId) {
-    throw new BadRequestError('idToken 또는 사용자 정보가 없습니다.');
+export const savePhoneNumberAfterVerificationService = async (userId, phoneNumber) => {
+  if (!userId || !phoneNumber) {
+    throw new BadRequestError();
   }
-
-  const phoneNumber = await verifyPhoneNumber(idToken);
 
   const existing = await prisma.user.findUnique({ where: { phoneNumber } });
 

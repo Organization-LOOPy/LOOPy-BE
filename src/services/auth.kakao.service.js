@@ -1,11 +1,12 @@
 import axios from 'axios';
 import jwt from 'jsonwebtoken';
-import { PrismaClient } from '@prisma/client';
-import { KakaoAlreadyLinkedError, KakaoCodeMissingError,
-  MissingRoleError, InvalidRoleError 
+import prisma from '../../prisma/client.js';
+import { 
+  KakaoAccessTokenMissingError,
+  KakaoUserIdMissingError,
+  KakaoAlreadyLinkedError, 
+  KakaoCodeMissingError,
  } from '../errors/customErrors.js';
-
-const prisma = new PrismaClient();
 
 // 공통 util 함수
 const buildRedirectUrl = (token, nickname) =>
@@ -15,16 +16,12 @@ const createJwt = (userId, roles, currentRole) =>
   jwt.sign({ userId: userId.toString(), roles, currentRole }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 // 카카오 소셜 로그인
-export const handleKakaoRedirectService = async (code, tokenFromQuery, roleFromQuery) => {
+export const handleKakaoRedirectService = async (code, tokenFromQuery) => {
   if (!code) throw new KakaoCodeMissingError();
-  if (!roleFromQuery) throw new MissingRoleError();
 
-  const requestedRole = roleFromQuery.toUpperCase();
-  if (!['CUSTOMER', 'OWNER'].includes(requestedRole)) {
-    throw new InvalidRoleError();
-  }
+  const requestedRole = 'CUSTOMER'; 
 
-  const redirectUri = `${process.env.KAKAO_REDIRECT_URI}?role=${roleFromQuery}`;
+  const redirectUri = process.env.KAKAO_REDIRECT_URI;
 
   const tokenRes = await axios.post('https://kauth.kakao.com/oauth/token', null, {
     params: {
@@ -36,6 +33,10 @@ export const handleKakaoRedirectService = async (code, tokenFromQuery, roleFromQ
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
   });
 
+  if (!tokenRes.data?.access_token) {
+  throw new KakaoAccessTokenMissingError();
+}
+
   const accessToken = tokenRes.data.access_token;
 
   const userRes = await axios.get('https://kapi.kakao.com/v2/user/me', {
@@ -43,6 +44,9 @@ export const handleKakaoRedirectService = async (code, tokenFromQuery, roleFromQ
   });
 
   const kakaoUser = userRes.data;
+  if (!kakaoUser?.id) {
+  throw new KakaoUserIdMissingError();
+}
   const socialId = kakaoUser.id.toString();
   const email = kakaoUser.kakao_account?.email ?? null;
   const nickname = kakaoUser.properties?.nickname ?? '카카오유저';
@@ -100,13 +104,13 @@ do {
       kakaoAccount: {
         create: { socialId },
       },
-      userRole: {
+      roles: {
         create: { role: requestedRole },
       },
     },
   });
 
-  const token = createJwt(newUser.id, [requestedRole], requestedRole);
+  const token = createJwt(user.id, [requestedRole], requestedRole);
   return { redirectUrl: buildRedirectUrl(token, user.nickname) };
 };
 

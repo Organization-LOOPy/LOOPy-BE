@@ -1,8 +1,5 @@
 import { logger } from "../utils/logger.js";
-import {
-  MissingUserCoordinate,
-  MissingSearchQuery,
-} from "../errors/customErrors.js";
+import { MissingUserCoordinate } from "../errors/customErrors.js";
 import {
   cafeSearchService,
   mapSearchService,
@@ -10,32 +7,31 @@ import {
 
 export const cafeSearch = async (req, res, next) => {
   try {
+    const userId = req.user.id;
     const { x, y, searchQuery, cursor } = req.query;
     const { storeFilter, takeOutFilter, menuFilter, addressInfo } = req.body;
 
-    //필수는 아님 -> 수정 필요
+    // 필수는 아님 -> 수정 필요
     if (!x || !y) {
       throw new MissingUserCoordinate();
     }
-    if (!searchQuery) {
-      throw new MissingSearchQuery();
-    }
 
-    const results = await cafeSearchService.findCafeList({
-      cursor,
+    const results = await cafeSearchService.findCafeList(
+      cursor, // 이미 문자열
       x,
       y,
       searchQuery,
-      storeFilters,
-      takeOutFilters,
-      menuFilters,
-      region1: addressInfo.region_1depth_name,
-      region2: addressInfo.region_2depth_name,
-      region3: addressInfo.region_3depth_name,
-    });
+      storeFilter, // storeFilter (s 없음)
+      takeOutFilter, // takeOutFilter (s 없음)
+      menuFilter, // menuFilter (s 없음)
+      addressInfo?.region_1depth_name,
+      addressInfo?.region_2depth_name,
+      addressInfo?.region_3depth_name,
+      userId
+    );
 
-    logger.debug(`카페 검색 완료: ${results}`);
-    return success(results);
+    logger.debug(`카페 검색 완료: ${JSON.stringify(results)}`);
+    res.success(results);
   } catch (err) {
     logger.error(`카페 검색 중 오류 발생: ${err.message}`);
     next(err);
@@ -52,6 +48,10 @@ export const getCafeMapData = async (req, res, next) => {
       throw new MissingUserCoordinate();
     }
 
+    if (!zoom) {
+      throw new Error("줌 레벨이 필요합니다.");
+    }
+
     const results = await mapSearchService.searchCafesOnMap({
       x,
       y,
@@ -65,7 +65,7 @@ export const getCafeMapData = async (req, res, next) => {
       userId,
     });
 
-    logger.debug(`카페 검색 완료: ${results.totalCount}개`);
+    logger.debug(`카페 검색 완료: ${results.totalCount}개 (줌 레벨: ${zoom})`);
     res.success(results);
   } catch (err) {
     logger.error(`카페 검색 중 오류 발생: ${err.message}`);

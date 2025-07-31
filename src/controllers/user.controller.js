@@ -8,10 +8,10 @@ import {
   updateKakaoAlertService,
   updateFcmTokenService,
   savePhoneNumberAfterVerificationService,
-  saveUserAgreementsService,
-  generateQRCode
+  saveUserAgreementsService
 } from '../services/user.service.js';
 import { QRNotFoundError } from '../errors/customErrors.js' 
+import { verifyPhoneNumber } from '../services/firebase.service.js';
 
 export const deactivateUser = async (req, res, next) => {
   try {
@@ -55,9 +55,12 @@ export const updateNickname = async (req, res, next) => {
 export const updateUserPreferences = async (req, res, next) => {
   try {
     const result = await updateUserPreferencesService(req.user.id, req.body.preferredKeywords);
+
     return res.success({
       message: '선호 키워드가 저장되었습니다.',
-      preferredKeywords: result,
+      storeFilters: result.preferredStore,
+      takeOutFilters: result.preferredTakeout,
+      menuFilters: result.preferredMenu,
     });
   } catch (err) {
     next(err);
@@ -99,7 +102,16 @@ export const updateFcmToken = async (req, res, next) => {
 
 export const savePhoneNumberAfterVerification = async (req, res, next) => {
   try {
-    const result = await savePhoneNumberAfterVerificationService(req.user.id, req.body.idToken);
+    const { idToken, userId } = req.body;
+
+    if (!idToken || !userId) {
+      throw new BadRequestError('idToken 또는 userId가 필요합니다.');
+    }
+
+    const phoneNumber = await verifyPhoneNumber(idToken);
+
+    const result = await savePhoneNumberAfterVerificationService(userId, phoneNumber);
+
     return res.success(result);
   } catch (err) {
     next(err);

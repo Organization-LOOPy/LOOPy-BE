@@ -30,6 +30,18 @@ export class InternalServerError extends CustomError {
 }
 
 // 사용자 인증 관련
+export class KakaoAccessTokenMissingError extends CustomError {
+  constructor() {
+    super('카카오 access_token 응답 누락', 'KAKAO_ACCESS_TOKEN_MISSING', 500);
+  }
+}
+
+export class KakaoUserIdMissingError extends CustomError {
+  constructor() {
+    super('카카오 사용자 정보에 ID가 없습니다', 'KAKAO_USER_ID_MISSING', 500);
+  }
+}
+
 export class TokenMissingError extends CustomError {
   constructor() {
     super("인증 토큰이 누락되었습니다.", "TOKEN_MISSING", 401);
@@ -42,11 +54,18 @@ export class DuplicateEmailError extends CustomError {
   }
 }
 
-export class UserNotFoundError extends CustomError {
+export class EmailNotFoundError extends CustomError {
   constructor(email) {
     super("등록되지 않은 이메일입니다.", "USER_NOT_FOUND", 404, { email });
   }
 }
+
+export class UserNotFoundError extends CustomError {
+  constructor(userId) {
+    super("등록되지 않은 사용자입니다.", "USER_NOT_FOUND", 404, { userid });
+  }
+}
+
 
 export class InvalidPasswordError extends CustomError {
   constructor() {
@@ -421,6 +440,15 @@ export class InvalidMenuDataError extends CustomError {
   }
 }
 
+export class RepresentativeLimitExceededError extends CustomError {
+  constructor() {
+    super(
+      '대표 메뉴는 최대 2개까지만 등록할 수 있습니다.',
+      'REPRESENTATIVE_LIMIT_EXCEEDED',
+      400
+    );
+  }
+}
 
 // 사진 등록
 export class InvalidPhotoUrlsError extends CustomError {

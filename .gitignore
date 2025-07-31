@@ -2,7 +2,7 @@ node_modules/
 
 pnpm-lock.yaml
 logs/
-.pem
+umc.pem
 
 .env
 .env.local

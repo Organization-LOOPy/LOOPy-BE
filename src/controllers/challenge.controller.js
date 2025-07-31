@@ -72,53 +72,65 @@ export const getChallengeDetail = async (req, res, next) => {
   const userId = req.user.id;
 
   try {
-    // 1. 챌린지 기본 정보 + 참여 가능 카페 + 참여 여부 정보 포함 조회
+    // 1. 챌린지 기본 정보 + 참여 가능 카페 정보 조회
     const challenge = await prisma.challenge.findUnique({
-      where: { id: Number(challengeId) }, // 챌린지 ID로 단건 조회
+      where: { id: Number(challengeId) },
       include: {
         availableCafes: {
           include: {
-            cafe: true, // 참여 가능한 카페 정보 포함 (id, name, address 등)
-          },
-        },
-        participants: {
-          where: {
-            userId: userId, // 현재 로그인 유저가 해당 챌린지에 참여 중인지 확인
-          },
-          select: {
-            id: true, // 참여 여부만 확인하므로 ID만 select
+            cafe: true, // 참여 가능한 카페 정보 포함 (image도 포함됨)
           },
         },
       },
     });
 
-    // 2. 유효하지 않은 챌린지 ID일 경우
+    // 2. 챌린지가 존재하지 않으면 404 반환
     if (!challenge) {
       return next(new ChallengeNotFoundError("해당 챌린지를 찾을 수 없습니다."));
     }
 
-    // 3. 참여 여부 확인
-    const isParticipated = challenge.participants.length > 0;
+    // 3. 로그인 유저가 참여 중인지 확인
+    const participation = await prisma.challengeParticipant.findUnique({
+      where: {
+        userId_challengeId: {
+          userId,
+          challengeId: Number(challengeId),
+        },
+      },
+      include: {
+        joinedCafe: true, // 참여 매장 정보 포함
+      },
+    });
+
+    const isParticipated = !!participation;
+    const joinedCafe = participation?.joinedCafe
+      ? {
+          id: participation.joinedCafe.id,
+          name: participation.joinedCafe.name,
+        }
+      : null;
 
     // 4. 응답 포맷 구성
     res.success({
       id: challenge.id,
-      title: challenge.title, // 챌린지 제목
-      description: challenge.description, // 챌린지 본문 설명
-      thumbnailUrl: challenge.thumbnailUrl, // 썸네일 이미지
-      startDate: challenge.startDate, // 시작일
-      endDate: challenge.endDate, // 종료일
-      goalDescription: challenge.goalDescription, // 목표 설명 (ex. “3회 공부 인증하기”)
-      goalCount: challenge.goalCount, // 목표 도장 수 (ex. 3)
-      rewardPoint: challenge.rewardPoint, // 보상 포인트 (ex. 300p)
-      isParticipated, // 로그인 유저의 참여 여부 (true/false)
+      title: challenge.title,
+      description: challenge.description,
+      thumbnailUrl: challenge.thumbnailUrl,
+      startDate: challenge.startDate,
+      endDate: challenge.endDate,
+      goalDescription: challenge.goalDescription,
+      goalCount: challenge.goalCount,
+      rewardPoint: challenge.rewardPoint,
+      isParticipated,
+      joinedCafe,
       availableCafes: challenge.availableCafes.map((entry) => ({
         id: entry.cafe.id,
         name: entry.cafe.name,
         address: entry.cafe.address,
-        region1DepthName: entry.cafe.region1DepthName, // 시/도
-        region2DepthName: entry.cafe.region2DepthName, // 구/군
-        region3DepthName: entry.cafe.region3DepthName, // 동/읍/면
+        image: entry.cafe.image,
+        region1DepthName: entry.cafe.region1DepthName,
+        region2DepthName: entry.cafe.region2DepthName,
+        region3DepthName: entry.cafe.region3DepthName,
       })),
     });
   } catch (err) {
@@ -136,11 +148,12 @@ export const getChallengeDetail = async (req, res, next) => {
 
 export const participateInChallenge = async (req, res, next) => {
   const { challengeId } = req.params;
+  const { joinedCafeId } = req.body; // ✅ 프론트에서 선택한 매장 ID
   const userId = req.user.id;
 
   try {
     const challenge = await prisma.challenge.findUnique({
-      where: { id: Number(challengeId) }, // 해당 챌린지 조회
+      where: { id: Number(challengeId) },
     });
 
     if (!challenge || !challenge.isActive) {
@@ -152,7 +165,7 @@ export const participateInChallenge = async (req, res, next) => {
       throw new BadRequestError("챌린지 기간이 아닙니다.");
     }
 
-    // 유저가 이미 참여 중인지 확인
+    // 이미 참여했는지 확인
     const existing = await prisma.challengeParticipant.findUnique({
       where: {
         userId_challengeId: {
@@ -166,11 +179,24 @@ export const participateInChallenge = async (req, res, next) => {
       throw new BadRequestError("이미 참여 중인 챌린지입니다.");
     }
 
+    // 선택한 매장이 실제 참여 가능한 매장인지 유효성 검사 (선택 사항)
+    const isValidCafe = await prisma.challengeAvailableCafe.findFirst({
+      where: {
+        challengeId: Number(challengeId),
+        cafeId: joinedCafeId,
+      },
+    });
+
+    if (!isValidCafe) {
+      throw new BadRequestError("해당 매장은 참여 가능한 매장이 아닙니다.");
+    }
+
     // 참여 등록
     await prisma.challengeParticipant.create({
       data: {
         userId,
         challengeId: Number(challengeId),
+        joinedCafeId, // ✅ 참여 매장 저장
         joinedAt: now,
       },
     });
