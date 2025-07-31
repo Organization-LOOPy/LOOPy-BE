@@ -19,6 +19,7 @@ import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
 import adminCafeRouter from "./routes/admin.cafe.routes.js";
 import adminStampRouter from "./routes/admin.stamp.routes.js";
+//import couponRouter from './routes/coupon.routes.js';
 import customerPageRouter from "./routes/customer.page.routes.js";
 
 
@@ -57,7 +58,7 @@ app.use("/api/v1/challenges", challengeRoutes);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
-app.use("/api/v1/reviews", reviewRouter);
+app.use("/api/v1", reviewRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafes/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
@@ -67,6 +68,7 @@ app.use("/api/v1/stampbooks", stampbookRouter);
 // 사장용
 app.use("/api/v1/owners/cafes", adminCafeRouter);
 app.use("/api/v1/owner/stamps", adminStampRouter);
+//app.use("/api/v1/owners/cafes/:cafeId/coupons", couponRouter);
 
 // 페이지GET
 app.use("/api/v1/pages", customerPageRouter);
