@@ -157,7 +157,7 @@ model ChallengeParticipant {
   status       ChallengeParticipantStatus @default(in_progress)
   joinedAt     DateTime                   @map("joined_at")
   completedAt  DateTime?                  @map("completed_at")
-  joinedCafeId Int?                       @map("joined_cafe_id") // ✅ 참여 매장
+  joinedCafeId Int?                       @map("joined_cafe_id") 
   createdAt    DateTime                   @default(now()) @map("created_at")
   updatedAt    DateTime                   @updatedAt @map("updated_at")
 
