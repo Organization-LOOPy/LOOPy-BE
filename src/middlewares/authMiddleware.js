@@ -1,4 +1,6 @@
 import passport from "passport";
+import { NotAuthenticatedError } from "../errors/customErrors.js";
+
 
 export const authenticateJWT = (req, res, next) => {
   /* if (process.env.NODE_ENV === 'dev') {
@@ -22,7 +24,7 @@ export const authenticateJWT = (req, res, next) => {
 
   passport.authenticate("jwt", { session: false }, (err, user, info) => {
     if (err || !user) {
-      return res.status(401).json({ message: "유효하지 않은 인증입니다." });
+      return next(new NotAuthenticatedError());
     }
 
     req.user = user;
