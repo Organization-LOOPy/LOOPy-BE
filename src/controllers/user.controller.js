@@ -120,7 +120,7 @@ export const savePhoneNumberAfterVerification = async (req, res, next) => {
 
 export const saveUserAgreements = async (req, res, next) => {
   try {
-    const result = await saveUserAgreementsService(req.user.id, req.body);
+    const result = await saveUserAgreementsService(req.body.userId, req.body);
     return res.success(result);
   } catch (err) {
     next(err);
