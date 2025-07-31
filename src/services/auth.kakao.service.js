@@ -104,7 +104,7 @@ do {
       kakaoAccount: {
         create: { socialId },
       },
-      userRole: {
+      roles: {
         create: { role: requestedRole },
       },
     },
