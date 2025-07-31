@@ -467,11 +467,9 @@ enum CafeStatus {
 }
 
 enum NotificationType {
-  system
-  challenge
-  stamp
-  coupon
-  review
+  cafe   // 단골 카페 사장이 보낸 알림
+  stamp  // 스탬프 정책 변경시 알림
+  review // 스탬프 찍으면, 리뷰 작성하라고 알림
 }
 
 enum DiscountType {
