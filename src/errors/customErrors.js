@@ -30,6 +30,18 @@ export class InternalServerError extends CustomError {
 }
 
 // 사용자 인증 관련
+export class KakaoAccessTokenMissingError extends CustomError {
+  constructor() {
+    super('카카오 access_token 응답 누락', 'KAKAO_ACCESS_TOKEN_MISSING', 500);
+  }
+}
+
+export class KakaoUserIdMissingError extends CustomError {
+  constructor() {
+    super('카카오 사용자 정보에 ID가 없습니다', 'KAKAO_USER_ID_MISSING', 500);
+  }
+}
+
 export class TokenMissingError extends CustomError {
   constructor() {
     super("인증 토큰이 누락되었습니다.", "TOKEN_MISSING", 401);

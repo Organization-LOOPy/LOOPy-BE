@@ -5,8 +5,8 @@ import {
 
 export const handleKakaoRedirect = async (req, res, next) => {
   try {
-    const { code, token, role } = req.query;
-    const result = await handleKakaoRedirectService(code, token, role);
+    const { code, token } = req.query;
+    const result = await handleKakaoRedirectService(code, token);
     return res.redirect(result.redirectUrl);
   } catch (err) {
     next(err);
