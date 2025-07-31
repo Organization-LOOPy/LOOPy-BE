@@ -18,8 +18,9 @@ import challengeRoutes from "./routes/challenge.routes.js";
 import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
 import adminCafeRouter from "./routes/admin.cafe.routes.js";
-
+import adminStampRouter from "./routes/admin.stamp.routes.js";
 import customerPageRouter from "./routes/customer.page.routes.js";
+
 
 const app = express();
 
@@ -53,6 +54,7 @@ app.get("/health", (req, res) => {
 
 // 고객용
 app.use("/api/v1/challenges", challengeRoutes);
+
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1/reviews", reviewRouter);
@@ -64,6 +66,7 @@ app.use("/api/v1/stampbooks", stampbookRouter);
 
 // 사장용
 app.use("/api/v1/owners/cafes", adminCafeRouter);
+app.use("/api/v1/owner/stamps", adminStampRouter);
 
 // 페이지GET
 app.use("/api/v1/pages", customerPageRouter);

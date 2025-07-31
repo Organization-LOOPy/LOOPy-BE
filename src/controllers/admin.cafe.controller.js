@@ -44,17 +44,10 @@ export const postCafeBasicInfo = async (req, res, next) => {
 
 export const patchCafeOperationInfo = async (req, res, next) => {
   try {
-    const { cafeId } = req.params;
     const userId = req.user.id;
     const operationInfo = req.body;
 
-    const cafe = await prisma.cafe.findFirst({
-      where: { ownerId: userId }
-    });
-    if (!cafe) throw new CafeNotExistError();
-    if (cafe.ownerId !== userId) throw new UnauthCafeAccessError();
-
-    const updatedCafe = await updateCafeOperationInfo(Number(cafeId), operationInfo);
+    const updatedCafe = await updateCafeOperationInfo(userId, operationInfo);
 
     res.status(200).json({
       message: '카페 운영 정보가 업데이트되었습니다.',
@@ -65,8 +58,8 @@ export const patchCafeOperationInfo = async (req, res, next) => {
         storeFilters: updatedCafe.storeFilters,
         takeOutFilters: updatedCafe.takeOutFilters,
         menuFilters: updatedCafe.menuFilters,
-        keywords: updatedCafe.keywords
-      }
+        keywords: updatedCafe.keywords,
+      },
     });
   } catch (error) {
     next(error);
@@ -75,24 +68,18 @@ export const patchCafeOperationInfo = async (req, res, next) => {
 
 export const postCafeMenu = async (req, res, next) => {
   try {
-    const { cafeId } = req.params;
+    console.log('[DEBUG] req.file:', req.file);
+    console.log('[DEBUG] req.body:', req.body);
+
     const userId = req.user.id;
-    const menu = req.body;
+    const createdMenu = await addCafeMenu(userId, req.body, req.file);
 
-    const cafe = await prisma.cafe.findFirst({
-      where: { ownerId: userId }
-    });
-
-    if (!cafe) throw new CafeNotExistError();
-
-    const createdMenu = await addCafeMenu(cafe.id, menu);
-
-    return res.status(201).json({
+    res.status(201).json({
       message: '카페 메뉴가 등록되었습니다.',
-      cafeMenu: createdMenu,
+      data: createdMenu,
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 
@@ -102,6 +89,7 @@ export const postCafePhotos = async (req, res, next) => {
     const { cafeId } = req.params;
     const userId = req.user.id;
     const { photoUrls } = req.body;
+
 
     const cafe = await prisma.cafe.findFirst({
       where: { ownerId: userId }
