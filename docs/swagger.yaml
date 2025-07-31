@@ -412,54 +412,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/verify-phone:
-    post:
-      summary: SMS 인증 확인 및 전화번호 저장
-      description: Firebase에서 발급한 ID 토큰을 검증하여 인증된 사용자의 전화번호를 저장합니다. 이때 사용자 ID는 프론트에서 함께 전달되어야 합니다.
-      tags:
-        - Users
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/PhoneVerificationRequest'
-            example:
-              idToken: "eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCJ9..."
-              userId: 12
-      responses:
-        '200':
-          description: 전화번호 저장 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  success:
-                    type: boolean
-                    example: true
-                  message:
-                    type: string
-                    example: 전화번호 등록 완료
-                  userId:
-                    type: integer
-                    example: 12
-                  phoneNumber:
-                    type: string
-                    example: "+821012345678"
-        '400':
-          description: 잘못된 요청 (idToken 또는 userId 누락, 또는 전화번호 없음)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 인증 실패 (idToken 유효하지 않음)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
   /api/v1/users/me:
     get:
       summary: 사용자 정보 조회
