@@ -2885,6 +2885,69 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v1/cafes/{cafeId}/my-stamp:
+  get:
+    summary: 카페 내 내 스탬프 현황 조회
+    description: 로그인한 사용자가 특정 카페에 대해 보유한 스탬프북의 도장 개수, 목표 개수, 만료일 정보를 조회합니다.
+    tags:
+      - Stamp
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: cafeId
+        required: true
+        schema:
+          type: integer
+        description: 조회할 대상 카페 ID
+    responses:
+      '200':
+        description: 조회 성공
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                resultType:
+                  type: string
+                  example: SUCCESS
+                error:
+                  type: string
+                  nullable: true
+                  example: null
+                success:
+                  type: object
+                  properties:
+                    stampBookId:
+                      type: integer
+                      example: 23
+                      description: 해당 카페의 스탬프북 ID
+                    currentCount:
+                      type: integer
+                      example: 4
+                      description: 현재 도장 수
+                    goalCount:
+                      type: integer
+                      example: 10
+                      description: 목표 도장 수
+                    expiresAt:
+                      type: string
+                      format: date
+                      example: 2025-08-15
+                      description: 스탬프북 만료일
+      '404':
+        description: 해당 카페에 대한 스탬프북 없음
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+      '500':
+        description: 서버 오류
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+
   /api/v1/stampbooks/{cafeId}/coupon:
     post:
       tags:

@@ -10,6 +10,7 @@ import {
   extendStampBook,
   getExpiringStampBooks,
   getConvertedStampbooks,
+  getMyStampByCafe,
 } from '../controllers/stamp.controller.js';
 
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
@@ -67,6 +68,11 @@ router.get(
   '/users/me/stamps/total',
   authenticate,
   getTotalStampCount
+);
+
+router.get('/cafes/:cafeId/my-stamp',
+  authenticate,
+  getMyStampByCafe
 );
 
 export default router;
