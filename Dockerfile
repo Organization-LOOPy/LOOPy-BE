@@ -23,7 +23,8 @@ COPY . .
 RUN pnpm exec prisma generate
 
 # 로그 디렉토리 생성 및 권한 설정
-RUN mkdir -p /app/logs
+RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app
+USER nodejs
 
 # 모든 파일 소유권을 nodejs 사용자로 변경 (마지막에!)
 RUN chown -R nodejs:nodejs /app
