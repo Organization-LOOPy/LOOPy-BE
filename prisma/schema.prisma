@@ -389,17 +389,17 @@ model Notification {
 }
 
 model CouponTemplate {
-  id               Int      @id @default(autoincrement())
-  cafeId           Int      @map("cafe_id")
-  name             String   @db.VarChar(255)
-  validDays        Int      @map("valid_days")
-  discountType     String   @map("discount_type") @db.VarChar(20) // "AMOUNT" | "PERCENTAGE"
-  discountValue    Int      @map("discount_value") // 금액(원) 또는 퍼센트
-  applicableMenuId Int?     @map("applicable_menu_id")
-  isActive         Boolean  @default(true) @map("is_active")
-  expiredAt        DateTime @map("expired_at")
-  createdAt        DateTime @default(now()) @map("created_at")
-
+  id               Int          @id @default(autoincrement())
+  cafeId           Int          @map("cafe_id")
+  name             String       @db.VarChar(255)
+  validDays        Int          @map("valid_days")
+  discountType     DiscountType @map("type") // "DISCOUNT" | "FREE_ITEM" | "SIZE_UP"
+  discountValue    Int?         @map("discount_value")       // DISCOUNT일 때만 사용
+  applicableMenuId Int?         @map("applicable_menu_id")   // FREE_ITEM, SIZE_UP일 때만 사용
+  isActive         Boolean      @default(true) @map("is_active")
+  expiredAt        DateTime     @map("expired_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  
   // Relations
   cafe           Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   applicableMenu CafeMenu?    @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
@@ -467,11 +467,15 @@ enum CafeStatus {
 }
 
 enum NotificationType {
-  system
-  challenge
-  stamp
-  coupon
-  review
+  cafe   // 단골 카페 사장이 보낸 알림
+  stamp  // 스탬프 정책 변경시 알림
+  review // 스탬프 찍으면, 리뷰 작성하라고 알림
+}
+
+enum DiscountType {
+  DISCOUNT     // 금액 할인
+  FREE_ITEM    // 특정 메뉴 무료 제공
+  SIZE_UP      // 사이즈 업그레이드
 }
 
 enum CouponStatus {
