@@ -77,7 +77,7 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
   });
 
   if (!cafe) {
-    throw new Error('등록된 카페를 찾을 수 없습니다.');
+    throw new CafeNotExistError();
   }
 
   return await prisma.cafe.update({
@@ -104,7 +104,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
     where: { ownerId: userId },
   });
 
-  if (!cafe) throw new Error('등록된 카페가 없습니다.');
+  if (!cafe) throw new CafeNotExistError();
 
   const existingMenu = await prisma.cafeMenu.findFirst({
     where: {
@@ -147,14 +147,14 @@ export const addCafeMenu = async (userId, menuData, file) => {
 };
 
 
-export const addCafePhotos = async (cafeId, photoUrls) => {
-  if (!Array.isArray(photoUrls) || photoUrls.length === 0) {
-    throw new InvalidPhotoUrlsError('photoUrls가 비어 있거나 배열이 아닙니다.');
+export const addCafePhotos = async (cafeId, photoDataArray) => {
+  if (!Array.isArray(photoDataArray) || photoDataArray.length === 0) {
+    throw new InvalidPhotoUrlsError('사진 데이터가 비어 있거나 배열이 아닙니다.');
   }
 
   const createdPhotos = [];
 
-  for (const [index, url] of photoUrls.entries()) {
+  for (const { url, displayOrder } of photoDataArray) {
     if (typeof url !== 'string' || !url.startsWith('http')) {
       throw new InvalidPhotoUrlsError(`유효하지 않은 사진 URL: ${url}`);
     }
@@ -163,7 +163,7 @@ export const addCafePhotos = async (cafeId, photoUrls) => {
       data: {
         cafeId,
         photoUrl: url,
-        displayOrder: index,
+        displayOrder,
       },
     });
 
@@ -230,7 +230,7 @@ export const deleteCafePhoto = async (userId, photoId) => {
   });
 
   if (!photo) {
-    throw new CafePhotoNotFoundError(`해당 ID의 사진을 찾을 수 없습니다. (photoId: ${photoId})`);
+    throw new CafePhotoNotFoundError();
   }
 
  if (!photo.cafe || photo.cafe.ownerId !== userId) {
