@@ -17,6 +17,7 @@ import challengeRoutes from "./routes/challenge.routes.js";
 
 import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
+
 import adminCafeRouter from "./routes/admin.cafe.routes.js";
 import adminStampRouter from "./routes/admin.stamp.routes.js";
 //import couponRouter from './routes/coupon.routes.js';
@@ -64,7 +65,10 @@ app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafes/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
-app.use("/api/v1/stampbooks", stampbookRouter);
+app.use('/api/v1/users', stampbookRouter);
+app.use("/api/v1", stampbookRouter);
+app.use("/api/v1/users/me/stampbooks", stampbookRouter);
+//app.use("/api/v1/users/me", stampbookRouter);
 
 // 사장용
 app.use("/api/v1/owners/cafes", adminCafeRouter);
