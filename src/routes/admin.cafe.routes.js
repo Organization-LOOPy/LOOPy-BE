@@ -11,6 +11,8 @@ import {
     deleteMyCafePhoto 
 } from '../controllers/admin.cafe.controller.js';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
+import multer from 'multer';
+const upload = multer({ storage: multer.memoryStorage() });
 
 const router = express.Router();
 
@@ -18,7 +20,11 @@ router.use(authenticateJWT);
 
 router.post('/basic-info', postCafeBasicInfo);
 router.patch('/operation', patchCafeOperationInfo);
-router.post('/menus', postCafeMenu);
+router.post(
+  '/menus',
+  upload.single('menuImage'),
+  postCafeMenu
+);
 router.post('/photos', postCafePhotos);
 router.patch('/complete',completeCafeRegistration);
 

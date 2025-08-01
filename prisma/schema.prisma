@@ -69,6 +69,7 @@ model KakaoAccount {
 model UserPreference {
   id               Int      @id @default(autoincrement())
   userId           Int      @unique @map("user_id")
+  preferredArea     String?
   preferredStore   Json?    @map("preferred_store")
   preferredTakeout Json?    @map("preferred_tkeout")
   preferredMenu    Json?    @map("preferred_menu")
@@ -257,6 +258,49 @@ model Stamp {
   @@map("stamps")
 }
 
+model StampPolicy {
+  id                Int       @id @default(autoincrement())
+  cafeId            Int       @unique @map("cafe_id")
+  selectedImageUrl  String    @map("selected_image_url") @db.Text
+
+  // 적립 조건
+  conditionType     ConditionType        @map("condition_type") 
+  minAmount         Int?                 @map("min_amount")  
+  stampPerAmount    Int?                 @map("stamp_per_amount")
+  drinkCount        Int?                 @map("drink_count")    
+  stampPerCount     Int?                 @map("stamp_per_count")  
+
+  // 리워드
+  rewardType        RewardType   @map("reward_type") 
+  discountAmount    Int?         @map("discount_amount")  
+  menuId            Int?         @map("menu_id")          
+
+  rewardDescription String    @map("reward_description") @db.VarChar(255)
+  hasExpiry         Boolean   @default(false) @map("has_expiry")
+  rewardExpiresAt   DateTime? @map("reward_expires_at")   
+
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  // Relations
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  menu     CafeMenu? @relation(fields: [menuId], references: [id], onDelete: SetNull)
+
+  @@map("stamp_policies")
+}
+
+model StampImage {
+  id        Int      @id @default(autoincrement())
+  cafeId    Int      @map("cafe_id")
+  imageUrl  String   @map("image_url") @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  // Relations
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@map("stamp_images")
+}
+
 model PointTransaction {
   id          Int                  @id @default(autoincrement())
   userId      Int                  @map("user_id")
@@ -297,7 +341,7 @@ model Cafe {
   takeOutFilters   Json?      @map("take_out_filters")
   menuFilters      Json?      @map("menu_filters")
   keywords         Json?
-  status           CafeStatus @default(active)
+  status           CafeStatus @default(inactive)
   createdAt        DateTime   @default(now()) @map("created_at")
   updatedAt        DateTime   @updatedAt @map("updated_at")
 
@@ -312,6 +356,8 @@ model Cafe {
   notifications      Notification[]
   CouponTemplate     CouponTemplate[]
   bookmarkedBy       UserBookmark[]
+  stampPolicies StampPolicy[]
+  stampImages StampImage[]
 
   @@map("cafes")
 }
@@ -319,7 +365,6 @@ model Cafe {
 model CafeMenu {
   id               Int      @id @default(autoincrement())
   cafeId           Int      @map("cafe_id")
-  category         String   @db.VarChar(100)
   name             String   @db.VarChar(255)
   description      String?  @db.Text
   price            Int
@@ -332,6 +377,7 @@ model CafeMenu {
   // Relations
   cafe            Cafe             @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   couponTemplates CouponTemplate[]
+  stampPolicies StampPolicy[]
 
   @@unique([cafeId, name])
   @@map("cafe_menu")
@@ -389,17 +435,17 @@ model Notification {
 }
 
 model CouponTemplate {
-  id               Int      @id @default(autoincrement())
-  cafeId           Int      @map("cafe_id")
-  name             String   @db.VarChar(255)
-  validDays        Int      @map("valid_days")
-  discountType     String   @map("discount_type") @db.VarChar(20) // "AMOUNT" | "PERCENTAGE"
-  discountValue    Int      @map("discount_value") // 금액(원) 또는 퍼센트
-  applicableMenuId Int?     @map("applicable_menu_id")
-  isActive         Boolean  @default(true) @map("is_active")
-  expiredAt        DateTime @map("expired_at")
-  createdAt        DateTime @default(now()) @map("created_at")
-
+  id               Int          @id @default(autoincrement())
+  cafeId           Int          @map("cafe_id")
+  name             String       @db.VarChar(255)
+  validDays        Int          @map("valid_days")
+  discountType     DiscountType @map("type") // "DISCOUNT" | "FREE_ITEM" | "SIZE_UP"
+  discountValue    Int?         @map("discount_value")       // DISCOUNT일 때만 사용
+  applicableMenuId Int?         @map("applicable_menu_id")   // FREE_ITEM, SIZE_UP일 때만 사용
+  isActive         Boolean      @default(true) @map("is_active")
+  expiredAt        DateTime     @map("expired_at")
+  createdAt        DateTime     @default(now()) @map("created_at")
+  
   // Relations
   cafe           Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   applicableMenu CafeMenu?    @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
@@ -467,11 +513,15 @@ enum CafeStatus {
 }
 
 enum NotificationType {
-  system
-  challenge
-  stamp
-  coupon
-  review
+  cafe   // 단골 카페 사장이 보낸 알림
+  stamp  // 스탬프 정책 변경시 알림
+  review // 스탬프 찍으면, 리뷰 작성하라고 알림
+}
+
+enum DiscountType {
+  DISCOUNT     // 금액 할인
+  FREE_ITEM    // 특정 메뉴 무료 제공
+  SIZE_UP      // 사이즈 업그레이드
 }
 
 enum CouponStatus {
@@ -483,4 +533,15 @@ enum CouponStatus {
 enum CouponAcquisitionType {
   promotion // 프로모션으로 획득
   stamp // 스탬프로 획득
+}
+
+enum ConditionType {
+  AMOUNT  // 금액 기준
+  COUNT   // 횟수 기준
+}
+
+enum RewardType {
+  DISCOUNT     // 금액 할인
+  SIZE_UP      // 사이즈업
+  FREE_DRINK   // 무료 음료
 }

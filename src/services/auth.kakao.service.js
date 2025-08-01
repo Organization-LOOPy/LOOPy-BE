@@ -49,7 +49,12 @@ export const handleKakaoRedirectService = async (code, tokenFromQuery) => {
 }
   const socialId = kakaoUser.id.toString();
   const email = kakaoUser.kakao_account?.email ?? null;
-  const nickname = kakaoUser.properties?.nickname ?? '카카오유저';
+  let nickname = kakaoUser.properties?.nickname;
+
+  if (!nickname || nickname.trim() === '') {
+    const randomSuffix = Math.floor(1000 + Math.random() * 9000);
+    nickname = `카카오유저${randomSuffix}`;
+  }
 
   let loggedInUserId = null;
   if (tokenFromQuery) {

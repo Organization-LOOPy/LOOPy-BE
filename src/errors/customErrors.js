@@ -60,9 +60,15 @@ export class EmailNotFoundError extends CustomError {
   }
 }
 
+export class UserIdError extends CustomError {
+  constructor(userId) {
+    super("유효하지 않은 userId", "USER_ID_NOT_FOUND", 404, { userId });
+  }
+}
+
 export class UserNotFoundError extends CustomError {
   constructor(userId) {
-    super("등록되지 않은 사용자입니다.", "USER_NOT_FOUND", 404, { userid });
+    super("등록되지 않은 사용자입니다.", "USER_NOT_FOUND", 404, { userId });
   }
 }
 
@@ -462,7 +468,14 @@ export class InvalidPhotoUrlsError extends CustomError {
   }
 }
 
-// 4. 등록 완료
+// 4. 스탬프 정책
+export class InvalidStampPolicyError extends CustomError {
+  constructor(reason = '잘못된 스탬프 정책 요청입니다.', data = null) {
+    super(reason, 'INVALID_STAMP_POLICY', 400, data);
+  }
+}
+
+// 5. 등록 완료
 export class CafeAlreadyCompletedError extends CustomError {
   constructor(cafeId) {
     super(
@@ -474,6 +487,7 @@ export class CafeAlreadyCompletedError extends CustomError {
   }
 }
 
+// 사장 카페 사진 등록
 export class CafePhotoNotFoundError extends CustomError {
   constructor(photoId) {
     super(
@@ -517,6 +531,8 @@ export class QRNotFoundError extends CustomError {
     );
   }
 }
+
+
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;

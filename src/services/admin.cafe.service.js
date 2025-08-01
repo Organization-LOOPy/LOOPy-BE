@@ -12,6 +12,7 @@ import {
   UnauthCafeAccessError,
   RepresentativeLimitExceededError, 
 } from '../errors/customErrors.js';
+import { uploadToS3 } from '../utils/s3.js';
 
 export const createMyCafeBasicInfo = async (userId, basicInfo) => {
   const { name, address, region1DepthName, region2DepthName, region3DepthName, latitude, longitude, ownerName } = basicInfo;
@@ -55,7 +56,7 @@ const parseIfString = (value) => {
   return value;
 };
 
-export const updateCafeOperationInfo = async (cafeId, operationInfo) => {
+export const updateCafeOperationInfo = async (userId, operationInfo) => {
   const parsedHours = parseIfString(operationInfo.businessHours);
 
   if (!Array.isArray(parsedHours)) {
@@ -71,8 +72,16 @@ export const updateCafeOperationInfo = async (cafeId, operationInfo) => {
     }
   }
 
+  const cafe = await prisma.cafe.findUnique({
+    where: { ownerId: userId },
+  });
+
+  if (!cafe) {
+    throw new Error('등록된 카페를 찾을 수 없습니다.');
+  }
+
   return await prisma.cafe.update({
-    where: { id: cafeId },
+    where: { id: cafe.id },
     data: {
       businessHours: parsedHours,
       storeFilters: parseIfString(operationInfo.storeFilters),
@@ -83,46 +92,54 @@ export const updateCafeOperationInfo = async (cafeId, operationInfo) => {
   });
 };
 
-export const addCafeMenu = async (cafeId, menu) => {
+export const addCafeMenu = async (userId, menuData, file) => {
   const requiredFields = ['name', 'price'];
-  const missing = requiredFields.filter((field) => !menu[field]);
+  const missing = requiredFields.filter((field) => !menuData[field]);
 
   if (missing.length > 0) {
     throw new InvalidMenuDataError(missing);
   }
 
+  const cafe = await prisma.cafe.findUnique({
+    where: { ownerId: userId },
+  });
+
+  if (!cafe) throw new Error('등록된 카페가 없습니다.');
+
   const existingMenu = await prisma.cafeMenu.findFirst({
     where: {
-      cafeId,
-      name: menu.name,
+      cafeId: cafe.id,
+      name: menuData.name,
     },
   });
 
   if (existingMenu) {
-    throw new DuplicateMenuNameError(menu.name);
+    throw new DuplicateMenuNameError(menuData.name);
   }
 
-  const isRep = menu.isRepresentative === true;
+  const isRep = menuData.isRepresentative === true;
 
   if (isRep) {
-    const existingRepCount = await prisma.cafeMenu.count({
-      where: { cafeId, isRepresentative: true },
+    const repCount = await prisma.cafeMenu.count({
+      where: { cafeId: cafe.id, isRepresentative: true },
     });
+    if (repCount >= 2) throw new RepresentativeLimitExceededError();
+  }
 
-    if (existingRepCount >= 2) {
-      throw new RepresentativeLimitExceededError();
-    }
+  let photoUrl = null;
+  if (file) {
+    photoUrl = await uploadToS3(file);
   }
 
   const created = await prisma.cafeMenu.create({
     data: {
-      cafeId,
-      name: menu.name,
-      price: menu.price,
-      photoUrl: menu.photoUrl,
-      description: menu.description,
-      isSoldOut: false,
+      cafeId: cafe.id,
+      name: menuData.name,
+      price: parseInt(menuData.price, 10),
+      description: menuData.description,
       isRepresentative: isRep,
+      isSoldOut: false,
+      photoUrl,
     },
   });
 
