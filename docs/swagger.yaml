@@ -3154,45 +3154,45 @@ paths:
         '500':
           description: 서버 오류
 
-  delete:
-    tags:
-      - Review
-    summary: 리뷰 삭제
-    description: 본인이 작성한 리뷰만 삭제할 수 있습니다.
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: reviewId
-        in: path
-        required: true
-        schema:
-          type: integer
-        description: 삭제할 리뷰 ID
-    responses:
-      '200':
-        description: 리뷰 삭제 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: 리뷰 삭제 성공!
-      '403':
-        description: 권한 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
-      '404':
-        description: 리뷰 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
-      '500':
-        description: 서버 오류
+    delete:
+      tags:
+        - Review
+      summary: 리뷰 삭제
+      description: 본인이 작성한 리뷰만 삭제할 수 있습니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 삭제할 리뷰 ID
+      responses:
+        '200':
+          description: 리뷰 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 리뷰 삭제 성공!
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
+        '404':
+          description: 리뷰 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
+        '500':
+          description: 서버 오류
 
   /api/v1/users/me/reviews:
     get:
