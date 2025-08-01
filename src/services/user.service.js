@@ -187,14 +187,19 @@ export const savePhoneNumberAfterVerificationService = async (userId, phoneNumbe
     throw new BadRequestError();
   }
 
-  const existing = await prisma.user.findUnique({ where: { phoneNumber } });
+   // 전화번호가 이미 있는지 확인
+  const existing = await prisma.user.findUnique({
+    where: { phoneNumber },
+  });
 
-  if (existing && existing.id !== Number(userId)) {
-    throw new DuplicateEmailError({ phoneNumber });
+  //  다른 사용자면 에러
+  if (existing && existing.id !== parsedUserId) {
+    throw new DuplicateEmailError({ phoneNumber }); // 409
   }
 
+  // 동일한 사용자라면 가능하게
   const updatedUser = await prisma.user.update({
-    where: { id: Number(userId) },
+    where: { id: parsedUserId },
     data: { phoneNumber },
   });
 
