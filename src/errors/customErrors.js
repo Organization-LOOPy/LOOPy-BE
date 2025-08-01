@@ -30,6 +30,13 @@ export class InternalServerError extends CustomError {
 }
 
 // 사용자 인증 관련
+
+export class NotFoundPhoneError extends CustomError {
+  constructor(reason = 'phoneNumber가 필요합니다.', data = null) {
+    super(reason, 'NOT_FOUND_PHONE_NUMBER', 404, data);
+  }
+}
+
 export class KakaoAccessTokenMissingError extends CustomError {
   constructor() {
     super('카카오 access_token 응답 누락', 'KAKAO_ACCESS_TOKEN_MISSING', 500);
@@ -494,6 +501,18 @@ export class InvalidPhotoUrlsError extends CustomError {
 export class InvalidStampPolicyError extends CustomError {
   constructor(reason = '잘못된 스탬프 정책 요청입니다.', data = null) {
     super(reason, 'INVALID_STAMP_POLICY', 400, data);
+  }
+}
+
+export class StampImageLimitExceededError extends CustomError {
+  constructor(reason = '스탬프 이미지는 최대 2개까지만 업로드할 수 있습니다..', data = null) {
+    super(reason, 'INVALID_STAMP_IMAGE', 400, data);
+  }
+}
+
+export class NoStampImageError extends CustomError {
+  constructor(reason = '업로드할 이미지가 없습니다.', data = null) {
+    super(reason, 'NOT_FOUND_STAMP_IMAGE', 404, data);
   }
 }
 

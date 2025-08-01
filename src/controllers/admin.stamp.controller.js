@@ -1,15 +1,10 @@
 import { uploadStampImagesService } from '../services/admin.stamp.service.js';
 import { createStampPolicy } from '../services/admin.stamp.service.js';
+
 export const uploadStampImages = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const files = req.files;
-
-    if (!files || files.length === 0) {
-      return res.status(400).json({ message: '이미지 파일이 없습니다.' });
-    }
-
-    const imageUrls = await uploadStampImagesService(userId, files);
+    const imageUrls = await uploadStampImagesService(userId, req.files);
 
     res.status(201).json({
       message: '스탬프 이미지 업로드 성공',

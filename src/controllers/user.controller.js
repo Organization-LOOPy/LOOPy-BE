@@ -8,9 +8,12 @@ import {
   updateKakaoAlertService,
   updateFcmTokenService,
   savePhoneNumberAfterVerificationService,
-  saveUserAgreementsService
+  saveUserAgreementsService,
 } from '../services/user.service.js';
-import { QRNotFoundError } from '../errors/customErrors.js' 
+import { 
+  QRNotFoundError,
+  NotFoundPhoneError 
+} from '../errors/customErrors.js' 
 import { verifyPhoneNumber } from '../services/firebase.service.js';
 
 export const deactivateUser = async (req, res, next) => {
@@ -113,6 +116,23 @@ export const savePhoneNumberAfterVerification = async (req, res, next) => {
     const result = await savePhoneNumberAfterVerificationService(userId, phoneNumber);
 
     return res.success(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const notifyPhoneVerification = async (req, res, next) => {
+  try {
+    const { phoneNumber } = req.body;
+
+    if (!phoneNumber) {
+      throw new NotFoundPhoneError();
+    }
+
+    return res.success({
+      message: '전화번호 인증 확인됨',
+      phoneNumber,
+    });
   } catch (err) {
     next(err);
   }

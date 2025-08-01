@@ -274,7 +274,6 @@ model StampPolicy {
   discountAmount    Int?         @map("discount_amount")  
   menuId            Int?         @map("menu_id")          
 
-  rewardDescription String    @map("reward_description") @db.VarChar(255)
   hasExpiry         Boolean   @default(false) @map("has_expiry")
   rewardExpiresAt   DateTime? @map("reward_expires_at")   
 

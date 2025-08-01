@@ -67,7 +67,7 @@ app.use("/api/v1/points", pointRouter);
 app.use("/api/v1", stampbookRouter);
 
 // 사장용
-app.use("/api/v1/owners/cafes", adminCafeRouter);
+app.use("/api/v1/owner/cafes", adminCafeRouter);
 app.use("/api/v1/owner/stamps", adminStampRouter);
 //app.use("/api/v1/owners/cafes/:cafeId/coupons", couponRouter);
 
