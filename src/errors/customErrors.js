@@ -475,6 +475,18 @@ export class InvalidStampPolicyError extends CustomError {
   }
 }
 
+export class StampImageLimitExceededError extends CustomError {
+  constructor(reason = '스탬프 이미지는 최대 2개까지만 업로드할 수 있습니다..', data = null) {
+    super(reason, 'INVALID_STAMP_IMAGE', 400, data);
+  }
+}
+
+export class NoStampImageError extends CustomError {
+  constructor(reason = '업로드할 이미지가 없습니다.', data = null) {
+    super(reason, 'NOT_FOUND_STAMP_IMAGE', 404, data);
+  }
+}
+
 // 5. 등록 완료
 export class CafeAlreadyCompletedError extends CustomError {
   constructor(cafeId) {

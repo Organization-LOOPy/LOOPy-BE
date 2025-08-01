@@ -1,9 +1,14 @@
 import prisma from '../../prisma/client.js';
 import { uploadToS3 } from '../utils/s3.js';
-import { CafeNotFoundError, InvalidStampPolicyError } from '../errors/customErrors.js';
+import { 
+  CafeNotFoundError, 
+  InvalidStampPolicyError,
+  StampImageLimitExceededError, 
+  NoStampImageError,
+} from '../errors/customErrors.js';
 
 export const uploadStampImagesService = async (userId, files) => {
-  const cafe = await prisma.cafe.findUnique({
+  const cafe = await prisma.cafe.findFirst({
     where: { ownerId: userId },
   });
 
@@ -11,8 +16,12 @@ export const uploadStampImagesService = async (userId, files) => {
 
   const existing = await prisma.stampImage.count({ where: { cafeId: cafe.id } });
   if (existing + files.length > 2) {
-    throw new Error('스탬프 이미지는 최대 2개까지만 업로드할 수 있습니다.');
+    throw new StampImageLimitExceededError();
   }
+
+  if (!files || files.length === 0) {
+  throw new NoStampImageError();
+}
 
   const uploadedUrls = await Promise.all(
     files.map(async (file) => {
@@ -39,8 +48,10 @@ export const createStampPolicy = async (userId, policyData) => {
   const {
     selectedImageUrl,
     conditionType,
-    amountPerStamp,
-    countPerStamp,
+    amountThreshold,
+    stampCountAmount,
+    drinkCount,
+    stampCountDrink,
     rewardType,
     discountAmount,
     menuId,
@@ -48,31 +59,44 @@ export const createStampPolicy = async (userId, policyData) => {
     expiryDate
   } = policyData;
 
-  // 1. 카페 존재 및 소유 확인
+
+  // 1. 카페 확인
   const cafe = await prisma.cafe.findFirst({
     where: { ownerId: userId },
   });
   if (!cafe) throw new InvalidStampPolicyError('해당 사용자의 카페를 찾을 수 없습니다.');
 
-  // 2. 기존 정책 있는 경우 예외처리
+  // 2. 기존 정책 있는 경우 예외
   const existing = await prisma.stampPolicy.findFirst({
     where: { cafeId: cafe.id },
   });
   if (existing) throw new InvalidStampPolicyError('이미 등록된 스탬프 정책이 존재합니다.');
 
-  // 3. 스탬프 정책 저장
+  const stampPerAmount =
+    conditionType === 'AMOUNT' ? stampCountAmount : null;
+  const stampPerCount =
+    conditionType === 'COUNT' ? stampCountDrink : null;
+  const discount =
+    rewardType === 'DISCOUNT' ? discountAmount : null;
+  const rewardMenuId =
+    rewardType === 'FREE_DRINK' ? menuId : null;
+  const rewardExpiresAt =
+    hasExpiry && expiryDate ? new Date(expiryDate) : null;
+
   const created = await prisma.stampPolicy.create({
     data: {
       cafeId: cafe.id,
       selectedImageUrl,
       conditionType,
-      stampPerAmount: conditionType === 'AMOUNT' ? amountPerStamp : null,
-      stampPerCount: conditionType === 'COUNT' ? countPerStamp : null,
+      minAmount: conditionType === 'AMOUNT' ? amountThreshold : null,
+      drinkCount: conditionType === 'COUNT' ? drinkCount : null,
+      stampPerAmount,
+      stampPerCount,
       rewardType,
-      discountAmount: rewardType === 'DISCOUNT' ? discountAmount : null,
-      menuId: rewardType === 'FREE_DRINK' ? menuId : null,
+      discountAmount: discount,
+      menuId: rewardMenuId,
       hasExpiry,
-      rewardExpiresAt: hasExpiry ? new Date(expiryDate) : null,
+      rewardExpiresAt,
     },
   });
 
