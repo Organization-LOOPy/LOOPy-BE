@@ -3257,7 +3257,7 @@ paths:
         '500':
           description: 서버 오류
 
-  /api/v1/owners/cafes/basic-info:
+  /api/v1/owner/cafes/basic-info:
     post:
       tags: [Admin Cafe]
       summary: 카페 기본 정보 등록
@@ -3319,7 +3319,7 @@ paths:
         201:
           description: 카페 기본 정보 등록 성공
 
-  /api/v1/owners/cafes/operation:
+  /api/v1/owner/cafes/operation:
     patch:
       tags: [Admin Cafe]
       summary: 카페 운영 정보 수정
@@ -3401,7 +3401,7 @@ paths:
         200:
           description: 운영 정보 업데이트 성공
 
-  /api/v1/owners/cafes/menus:
+  /api/v1/owner/cafes/menus:
     post:
       summary: 카페 메뉴 등록
       description: 사장님이 카페의 메뉴를 등록합니다. 이미지 파일은 S3에 업로드됩니다.
@@ -3480,7 +3480,7 @@ paths:
         '409':
           description: 메뉴 이름 중복 또는 대표 메뉴 초과
 
-  /api/v1/owners/cafes/photos:
+  /api/v1/owner/cafes/photos:
     post:
       tags: [Admin Cafe]
       summary: 카페 사진 등록
@@ -3508,7 +3508,7 @@ paths:
         201:
           description: 사진 등록 성공
 
-  /api/v1/owners/cafes/complete:
+  /api/v1/owner/cafes/complete:
     patch:
       tags: [Admin Cafe]
       summary: 카페 등록 완료 처리
@@ -3518,7 +3518,7 @@ paths:
         200:
           description: 등록 완료
 
-  /api/v1/owners/cafes/photos:
+  /api/v1/owner/cafes/photos:
     get:
       tags: [Admin Cafe]
       summary: 내가 등록한 카페의 사진 조회
@@ -3528,7 +3528,7 @@ paths:
         200:
           description: 사진 조회 성공
 
-  /api/v1/owners/cafes/photos/{photoId}:
+  /api/v1/owner/cafes/photos/{photoId}:
     delete:
       tags: [Admin Cafe]
       summary: 특정 카페 사진 삭제
@@ -3554,7 +3554,7 @@ paths:
                   message: "카페 이미지가 삭제되었습니다."
                   photoId: 4
 
-  /api/v1/owners/cafes/myCafe:
+  /api/v1/owner/cafes/myCafe:
     get:
       tags: [Admin Cafe]
       summary: 내가 등록한 카페 조회

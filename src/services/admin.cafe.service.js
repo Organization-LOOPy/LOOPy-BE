@@ -259,7 +259,7 @@ export const getMyCafeMenus = async (userId) => {
       id: true,
       name: true,
       price: true,
-      imageUrl: true,
+      photoUrl: true,
       isSignature: true,
     },
   });
