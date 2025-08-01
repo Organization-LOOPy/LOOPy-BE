@@ -217,7 +217,7 @@ model StampBook {
   userId            Int                @map("user_id")
   cafeId            Int                @map("cafe_id")
   currentCount      Int                @default(0) @map("current_count")
-  goalCount         Int                @map("goal_count")
+  goalCount         Int                @default(10) @map("goal_count")
   rewardDetail      String             @map("reward_detail") @db.VarChar(255)
   startedAt         DateTime           @map("started_at")
   lastVisitedAt     DateTime?          @map("last_visited_at")
@@ -238,7 +238,6 @@ model StampBook {
   stamps            Stamp[]
   pointTransactions PointTransaction[]
 
-  @@unique([userId, cafeId])
   @@map("stamp_books")
 }
 
@@ -438,9 +437,9 @@ model CouponTemplate {
   cafeId           Int          @map("cafe_id")
   name             String       @db.VarChar(255)
   validDays        Int          @map("valid_days")
-  discountType     DiscountType @map("type") // "DISCOUNT" | "FREE_ITEM" | "SIZE_UP"
+  discountType     DiscountType @map("type") // "DISCOUNT" | "FREE_DRINK" | "SIZE_UP"
   discountValue    Int?         @map("discount_value")       // DISCOUNT일 때만 사용
-  applicableMenuId Int?         @map("applicable_menu_id")   // FREE_ITEM, SIZE_UP일 때만 사용
+  applicableMenuId Int?         @map("applicable_menu_id")   // FREE_DRINK, SIZE_UP일 때만 사용
   isActive         Boolean      @default(true) @map("is_active")
   expiredAt        DateTime     @map("expired_at")
   createdAt        DateTime     @default(now()) @map("created_at")
@@ -519,7 +518,7 @@ enum NotificationType {
 
 enum DiscountType {
   DISCOUNT     // 금액 할인
-  FREE_ITEM    // 특정 메뉴 무료 제공
+  FREE_DRINK    // 특정 메뉴 무료 제공
   SIZE_UP      // 사이즈 업그레이드
 }
 

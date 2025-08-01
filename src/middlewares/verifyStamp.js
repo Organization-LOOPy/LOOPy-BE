@@ -17,7 +17,7 @@ export const verifyStamp = async (req, res, next) => {
 
     // 없으면 인증 실패
     if (!stampBook) {
-      return next(new NotAuthenticatedError());
+      return next(new NoActiveStampError(userId, cafeId));
     }
     
     // 2. 스탬프가 적어도 1개 이상 있는지 확인

@@ -1,6 +1,7 @@
 import pkg from '@prisma/client';
 import { logger } from "../utils/logger.js";
 import { ChallengeNotFoundError } from "../errors/customErrors.js";
+import { BadRequestError} from "../errors/customErrors.js";
 
 const { PrismaClient } = pkg;
 const prisma = new PrismaClient();

@@ -34,6 +34,7 @@ const corsOptions = {
     "https://loo-py.xyz", // 프론트엔드 배포 환경
     "http://13.209.89.251:3000",
     "http://localhost:3000",
+    "https://loopyxyz.duckdns.org",
   ],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
@@ -63,7 +64,7 @@ app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafes/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
-app.use("/api/v1/stampbooks", stampbookRouter);
+app.use("/api/v1", stampbookRouter);
 
 // 사장용
 app.use("/api/v1/owner/cafes", adminCafeRouter);
