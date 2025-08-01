@@ -35,6 +35,56 @@ paths:
                   success:
                     type: string
                     example: 루피 백엔드 작동 중!
+  
+  /api/v1/users/me/verify-phone:
+    post:
+      tags:
+        - Auth
+      summary: 전화번호 인증 완료 통보
+      description: 프론트에서 Firebase를 통해 전화번호 인증을 완료한 후, 백엔드에 인증 완료 사실을 알리기 위한 용도의 API입니다. 사용자 식별 없이 성공 응답만 반환합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+                  example: "010-1234-5678"
+      responses:
+        '200':
+          description: 전화번호 인증 완료 확인 응답
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 전화번호 인증 확인됨
+                  phoneNumber:
+                    type: string
+                    example: "010-1234-5678"
+        '400':
+          description: 잘못된 요청 (phoneNumber 누락)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: BAD_REQUEST
+                  reason:
+                    type: string
+                    example: phoneNumber가 필요합니다.
+                  data:
+                    type: object
+                    nullable: true
+
     
   /api/v1/auth/signup:
     post:
@@ -2754,7 +2804,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/notifications:
+  /api/v1/users/me/notification:
   get:
     tags:
       - Notifications
@@ -2984,6 +3034,47 @@ paths:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v1/user-coupons/{userCouponId}:
+    patch:
+      tags:
+        - UserCoupons
+      summary: 쿠폰 사용 처리
+      description: 사용자가 보유한 쿠폰을 사용 처리합니다. 사용된 쿠폰은 더 이상 사용할 수 없습니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userCouponId
+          in: path
+          required: true
+          description: 사용 처리할 쿠폰 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 쿠폰 사용 처리 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 쿠폰 사용 처리 성공
+                  coupon:
+                    $ref: '#/components/schemas/UserCoupon'
+        '400':
+          description: 이미 사용되었거나 만료된 쿠폰
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 쿠폰을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v1/cafe/{cafeId}/review:
       post:
         tags:
@@ -2997,40 +3088,10 @@ paths:
             in: path
             required: true
             schema:
-            type: integer
+              type: integer
             description: 리뷰를 작성할 카페 ID
         requestBody:
           required: true
-
-              type: object
-              required:
-                - title
-                - content
-              properties:
-                title:
-                  type: string
-                  example: "카페 분위기도 좋고 사장님도 친절하셔서 추천해요!"
-                content:
-                  type: string
-                  example: >
-                    카페 위치가 조용한 골목에 있어 외부 소음이 거의 없어 집중하기에 정말 좋은 환경이었습니다.
-                    실내는 깔끔하게 정돈되어 있었고, 인테리어는 따뜻한 우드톤과 식물들로 아늑한 분위기를 자아냈습니다.
-                    커피는 원두 맛이 살아있고 풍미가 깊었으며, 디저트류도 정성스럽게 만들어진 느낌이 들었습니다.
-                    특히 사장님께서 추천해주신 시그니처 음료가 매우 인상 깊었고, 매장에서 흐르는 음악도 분위기와 잘 어울려서 오랜 시간 머물기에도 편안했어요.
-                    콘센트와 와이파이도 잘 갖춰져 있어서 노트북 작업하기에 부족함이 없었습니다.
-                    좌석 간 간격이 넓어 프라이버시도 잘 지켜졌고, 무엇보다 직원분들의 친절한 응대가 기억에 남습니다.
-                    다음에도 꼭 다시 방문하고 싶고, 지인들에게도 추천하고 싶은 카페입니다.
-                    별점을 5개 이상 줄 수 있다면 주고 싶을 정도로 만족스러운 경험이었습니다.
-                images:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: 첨부 이미지 파일 (최대 5장)
-      responses:
-        '201':
-          description: 리뷰 작성 성공
-
           content:
             multipart/form-data:
               schema:
@@ -3041,11 +3102,18 @@ paths:
                 properties:
                   title:
                     type: string
-                    example: "카페 분위기가 너무 좋아요!"
+                    example: "카페 분위기도 좋고 사장님도 친절하셔서 추천해요!"
                   content:
                     type: string
                     example: >
-                      커피 맛도 좋고 조용해서 공부하기 좋았어요. 다음에 또 방문할 예정입니다.
+                      카페 위치가 조용한 골목에 있어 외부 소음이 거의 없어 집중하기에 정말 좋은 환경이었습니다.
+                      실내는 깔끔하게 정돈되어 있었고, 인테리어는 따뜻한 우드톤과 식물들로 아늑한 분위기를 자아냈습니다.
+                      커피는 원두 맛이 살아있고 풍미가 깊었으며, 디저트류도 정성스럽게 만들어진 느낌이 들었습니다.
+                      특히 사장님께서 추천해주신 시그니처 음료가 매우 인상 깊었고, 매장에서 흐르는 음악도 분위기와 잘 어울려서 오랜 시간 머물기에도 편안했어요.
+                      콘센트와 와이파이도 잘 갖춰져 있어서 노트북 작업하기에 부족함이 없었습니다.
+                      좌석 간 간격이 넓어 프라이버시도 잘 지켜졌고, 무엇보다 직원분들의 친절한 응대가 기억에 남습니다.
+                      다음에도 꼭 다시 방문하고 싶고, 지인들에게도 추천하고 싶은 카페입니다.
+                      별점을 5개 이상 줄 수 있다면 주고 싶을 정도로 만족스러운 경험이었습니다.
                   images:
                     type: array
                     items:
@@ -3154,45 +3222,45 @@ paths:
         '500':
           description: 서버 오류
 
-  delete:
-    tags:
-      - Review
-    summary: 리뷰 삭제
-    description: 본인이 작성한 리뷰만 삭제할 수 있습니다.
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: reviewId
-        in: path
-        required: true
-        schema:
-          type: integer
-        description: 삭제할 리뷰 ID
-    responses:
-      '200':
-        description: 리뷰 삭제 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: 리뷰 삭제 성공!
-      '403':
-        description: 권한 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
-      '404':
-        description: 리뷰 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
-      '500':
-        description: 서버 오류
+    delete:
+      tags:
+        - Review
+      summary: 리뷰 삭제
+      description: 본인이 작성한 리뷰만 삭제할 수 있습니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 삭제할 리뷰 ID
+      responses:
+        '200':
+          description: 리뷰 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 리뷰 삭제 성공!
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
+        '404':
+          description: 리뷰 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
+        '500':
+          description: 서버 오류
 
   /api/v1/users/me/reviews:
     get:
@@ -3253,7 +3321,7 @@ paths:
         '500':
           description: 서버 오류
 
-  /api/v1/owners/cafes/basic-info:
+  /api/v1/owner/cafes/basic-info:
     post:
       tags: [Admin Cafe]
       summary: 카페 기본 정보 등록
@@ -3315,7 +3383,7 @@ paths:
         201:
           description: 카페 기본 정보 등록 성공
 
-  /api/v1/owners/cafes/operation:
+  /api/v1/owner/cafes/operation:
     patch:
       tags: [Admin Cafe]
       summary: 카페 운영 정보 수정
@@ -3397,7 +3465,7 @@ paths:
         200:
           description: 운영 정보 업데이트 성공
 
-  /api/v1/owners/cafes/menus:
+  /api/v1/owner/cafes/menus:
     post:
       summary: 카페 메뉴 등록
       description: 사장님이 카페의 메뉴를 등록합니다. 이미지 파일은 S3에 업로드됩니다.
@@ -3476,7 +3544,7 @@ paths:
         '409':
           description: 메뉴 이름 중복 또는 대표 메뉴 초과
 
-  /api/v1/owners/cafes/photos:
+  /api/v1/owner/cafes/photos:
     post:
       tags: [Admin Cafe]
       summary: 카페 사진 등록
@@ -3504,7 +3572,7 @@ paths:
         201:
           description: 사진 등록 성공
 
-  /api/v1/owners/cafes/complete:
+  /api/v1/owner/cafes/complete:
     patch:
       tags: [Admin Cafe]
       summary: 카페 등록 완료 처리
@@ -3514,7 +3582,7 @@ paths:
         200:
           description: 등록 완료
 
-  /api/v1/owners/cafes/photos:
+  /api/v1/owner/cafes/photos:
     get:
       tags: [Admin Cafe]
       summary: 내가 등록한 카페의 사진 조회
@@ -3524,7 +3592,7 @@ paths:
         200:
           description: 사진 조회 성공
 
-  /api/v1/owners/cafes/photos/{photoId}:
+  /api/v1/owner/cafes/photos/{photoId}:
     delete:
       tags: [Admin Cafe]
       summary: 특정 카페 사진 삭제
@@ -3550,7 +3618,7 @@ paths:
                   message: "카페 이미지가 삭제되었습니다."
                   photoId: 4
 
-  /api/v1/owners/cafes/myCafe:
+  /api/v1/owner/cafes/myCafe:
     get:
       tags: [Admin Cafe]
       summary: 내가 등록한 카페 조회
@@ -3834,6 +3902,144 @@ paths:
                         type: string
                         format: date-time
                         example: 2025-07-31T14:22:00.000Z
+
+  /api/v1/owner/stamps/stamp-images:
+    post:
+      tags:
+        - Admin Stamp
+      summary: 스탬프 이미지 업로드
+      description: 
+        사장님이 스탬프 이미지를 업로드합니다. 기본 이미지 1개 외에 최대 2개까지 등록 가능합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  maxItems: 2
+      responses:
+        '201':
+          description: 이미지 업로드 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지 업로드 성공
+                  data:
+                    type: array
+                    items:
+                      type: string
+                      example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1691223650_1.png
+        '400':
+          description: 유효하지 않은 요청 또는 이미지 2개 초과
+        '401':
+          description: 인증되지 않은 사용자
+
+  /api/v1/owner/stamps/stamp-policy:
+    post:
+      tags:
+        - Admin Stamp
+      summary: 스탬프 정책 등록
+      description: 
+        사장님이 스탬프 적립 정책을 등록합니다. 금액 기준 또는 횟수 기준, 리워드 종류에 따라 조건이 달라집니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - selectedImageUrl
+                - conditionType
+                - rewardType
+                - hasExpiry
+              properties:
+                selectedImageUrl:
+                  type: string
+                  example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1691223650_1.png
+                conditionType:
+                  type: string
+                  enum: [AMOUNT, COUNT]
+                  example: AMOUNT
+                amountThreshold:
+                  type: integer
+                  nullable: true
+                  example: 5000
+                stampCountAmount:
+                  type: integer
+                  nullable: true
+                  example: 1
+                drinkCount:
+                  type: integer
+                  nullable: true
+                  example: null
+                stampCountDrink:
+                  type: integer
+                  nullable: true
+                  example: null
+                rewardType:
+                  type: string
+                  enum: [DISCOUNT, SIZE_UP, FREE_DRINK]
+                  example: DISCOUNT
+                discountAmount:
+                  type: integer
+                  nullable: true
+                  example: 1000
+                menuId:
+                  type: integer
+                  nullable: true
+                  example: null
+                hasExpiry:
+                  type: boolean
+                  example: true
+                expiryDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  example: "2025-12-31"
+      responses:
+        '201':
+          description: 스탬프 정책 등록 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 정책이 등록되었습니다.
+                  data:
+                    type: object
+                    example:
+                      id: 1
+                      cafeId: 3
+                      selectedImageUrl: https://...
+                      conditionType: AMOUNT
+                      stampPerAmount: 1
+                      rewardType: DISCOUNT
+                      discountAmount: 1000
+                      hasExpiry: true
+                      rewardExpiresAt: 2025-12-31T00:00:00.000Z
+        '400':
+          description: 유효하지 않은 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '409':
+          description: 이미 등록된 정책 존재 시 에러
+
 
 
 components:
@@ -5352,43 +5558,76 @@ components:
       properties:
         id:
           type: integer
+          example: 12
         userId:
           type: integer
+          example: 3
         couponTemplateId:
           type: integer
+          example: 7
         acquisitionType:
           type: string
-          enum: [stamp, promotion]
+          enum: [promotion, stamp]
+          example: stamp
         status:
           type: string
           enum: [active, used, expired]
+          example: active
         issuedAt:
           type: string
           format: date-time
+        usedAt:
+          type: string
+          format: date-time
+          nullable: true
         expiredAt:
           type: string
           format: date-time
         couponTemplate:
-          type: object
-          properties:
-            id:
-              type: integer
-            cafeId:
-              type: integer
-            name:
-              type: string
-            discountType:
-              type: string
-              enum: [AMOUNT, PERCENT]
-            discountValue:
-              type: number
-            validDays:
-              type: integer
-            isActive:
-              type: boolean
-            expiredAt:
-              type: string
-              format: date-time
+          $ref: '#/components/schemas/CouponTemplate'
+
+    
+    CouponTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 7
+        cafeId:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 아메리카노 무료 쿠폰
+        discountType:
+          type: string
+          enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
+          description: 쿠폰의 할인 유형
+          example: FREE_DRINK
+        discountValue:
+          type: integer
+          nullable: true
+          description: DISCOUNT 타입일 경우 할인 금액
+          example: 1500
+        applicableMenuId:
+          type: integer
+          nullable: true
+          description: FREE_DRINK 또는 SIZE_UP일 경우 적용 대상 메뉴 ID
+          example: 3
+        validDays:
+          type: integer
+          nullable: true
+          example: 14
+        isActive:
+          type: boolean
+          example: true
+        expiredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
 
   securitySchemes:
       bearerAuth:

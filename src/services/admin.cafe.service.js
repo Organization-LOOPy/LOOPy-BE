@@ -244,3 +244,25 @@ export const deleteCafePhoto = async (userId, photoId) => {
 
   return { message: '카페 이미지가 삭제되었습니다.', photoId };
 };
+
+export const getMyCafeMenus = async (userId) => {
+  const cafe = await prisma.cafe.findFirst({
+    where: { ownerId: userId },
+  });
+
+  if (!cafe) throw new CafeNotExistError();
+
+  const menus = await prisma.cafeMenu.findMany({
+    where: { cafeId: cafe.id },
+    orderBy: { createdAt: 'asc' },
+    select: {
+      id: true,
+      name: true,
+      price: true,
+      photoUrl: true,
+      isRepresentative: true,
+    },
+  });
+
+  return menus;
+};

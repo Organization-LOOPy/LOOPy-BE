@@ -8,7 +8,8 @@ import {
     getCafe, 
     updateCafe,
     getMyCafePhoto,
-    deleteMyCafePhoto 
+    deleteMyCafePhoto,
+    getMyCafeMenuList,
 } from '../controllers/admin.cafe.controller.js';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
 import multer from 'multer';
@@ -32,5 +33,5 @@ router.get('/myCafe', getCafe);
 router.patch('/myCafe', updateCafe);
 router.get('/photos', getMyCafePhoto);
 router.delete('/photos/:photoId', deleteMyCafePhoto);
-
+router.get('/menus', getMyCafeMenuList);
 export default router;

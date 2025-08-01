@@ -30,6 +30,13 @@ export class InternalServerError extends CustomError {
 }
 
 // 사용자 인증 관련
+
+export class NotFoundPhoneError extends CustomError {
+  constructor(reason = 'phoneNumber가 필요합니다.', data = null) {
+    super(reason, 'NOT_FOUND_PHONE_NUMBER', 404, data);
+  }
+}
+
 export class KakaoAccessTokenMissingError extends CustomError {
   constructor() {
     super('카카오 access_token 응답 누락', 'KAKAO_ACCESS_TOKEN_MISSING', 500);
@@ -255,6 +262,28 @@ export class DuplicateCouponError extends CustomError {
   }
 }
 
+export class UserCouponNotFoundError extends CustomError {
+  constructor(userCouponId) {
+    super(
+      `사용자 쿠폰을 찾을 수 없습니다. ID: ${userCouponId}`,
+      "C010",
+      404,
+      { userCouponId }
+    );
+  }
+}
+
+export class UserCouponAlreadyUsedOrExpiredError extends CustomError {
+  constructor(userCouponId) {
+    super(
+      `해당 쿠폰은 이미 사용되었거나 만료되었습니다.`,
+      "C011",
+      400,
+      { userCouponId }
+    );
+  }
+}
+
 //검색 라우터
 export class MissingUserCoordinate extends CustomError {
   constructor(message) {
@@ -351,12 +380,12 @@ export class NoActiveStampError extends CustomError {
 
 // 스탬프북 관련
 export class StampNotEligibleError extends CustomError {
-  constructor(userId, cafeId) {
+  constructor(userId, cafeId, goalCount, currentCount) {
     super(
-      `스탬프 목표를 아직 달성하지 않았거나 이미 완료된 상태입니다. userId: ${userId}, cafeId: ${cafeId}`,
+      `스탬프 목표를 아직 달성하지 않았거나 이미 완료된 상태입니다. userId: ${userId}, cafeId: ${cafeId}, goalCount: ${goalCount}, currentCount: ${currentCount}`,
       "ST001",
       400,
-      { userId, cafeId }
+      { userId, cafeId, goalCount, currentCount }
     );
   }
 }
@@ -472,6 +501,18 @@ export class InvalidPhotoUrlsError extends CustomError {
 export class InvalidStampPolicyError extends CustomError {
   constructor(reason = '잘못된 스탬프 정책 요청입니다.', data = null) {
     super(reason, 'INVALID_STAMP_POLICY', 400, data);
+  }
+}
+
+export class StampImageLimitExceededError extends CustomError {
+  constructor(reason = '스탬프 이미지는 최대 2개까지만 업로드할 수 있습니다..', data = null) {
+    super(reason, 'INVALID_STAMP_IMAGE', 400, data);
+  }
+}
+
+export class NoStampImageError extends CustomError {
+  constructor(reason = '업로드할 이미지가 없습니다.', data = null) {
+    super(reason, 'NOT_FOUND_STAMP_IMAGE', 404, data);
   }
 }
 

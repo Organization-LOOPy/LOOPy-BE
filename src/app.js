@@ -65,13 +65,14 @@ app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafes/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
+
 app.use('/api/v1/users', stampbookRouter);
 app.use("/api/v1", stampbookRouter);
 app.use("/api/v1/users/me/stampbooks", stampbookRouter);
-//app.use("/api/v1/users/me", stampbookRouter);
+
 
 // 사장용
-app.use("/api/v1/owners/cafes", adminCafeRouter);
+app.use("/api/v1/owner/cafes", adminCafeRouter);
 app.use("/api/v1/owner/stamps", adminStampRouter);
 //app.use("/api/v1/owners/cafes/:cafeId/coupons", couponRouter);
 

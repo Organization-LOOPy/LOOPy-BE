@@ -7,10 +7,11 @@ import {
   getMyCafe, 
   updateMyCafe,
   getCafePhoto,
-  deleteCafePhoto  
+  deleteCafePhoto,
+  getMyCafeMenus, 
 } from "../services/admin.cafe.service.js";
 
-import { CafeNotExistError, UnauthCafeAccessError } from '../errors/customErrors.js';
+import { CafeNotExistError } from '../errors/customErrors.js';
 import prisma from '../../prisma/client.js';
 
 export const postCafeBasicInfo = async (req, res, next) => {
@@ -189,5 +190,19 @@ export const deleteMyCafePhoto = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const getMyCafeMenuList = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const menus = await getMyCafeMenus(userId);
+
+    res.status(200).json({
+      message: '내 카페 메뉴 목록 조회 성공',
+      data: menus,
+    });
+  } catch (error) {
+    next(error);
   }
 };

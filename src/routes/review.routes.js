@@ -19,10 +19,10 @@ router.use(authenticateJWT);
 router.post("/cafe/:cafeId/review", upload.array("images", 5), validateReview, verifyStamp, createReview);
 
 // 리뷰 수정
-router.patch("/:reviewId", validateReview, updateReview);
+router.patch("/reviews/:reviewId", validateReview, updateReview);
 
 // 리뷰 삭제
-router.delete("/:reviewId", deleteReview);
+router.delete("/reviews/:reviewId", deleteReview);
 
 // 내 리뷰 목록 조회
 router.get("/users/me/reviews", getMyReviews);

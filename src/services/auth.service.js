@@ -104,7 +104,7 @@ export const signupService = async (body) => {
   const roles = userRoles.map((r) => r.role);
 
   const token = jwt.sign(
-    { userId: user.id.toString(), roles },
+    { id: user.id.toString(), roles },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
@@ -148,7 +148,7 @@ export const loginService = async (email, password, requestedRole) => {
   }
 
   const token = jwt.sign(
-    { userId: user.id.toString(), roles, currentRole: requestedRole },
+    { id: user.id.toString(), roles, currentRole: requestedRole },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
