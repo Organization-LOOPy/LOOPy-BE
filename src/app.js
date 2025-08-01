@@ -34,6 +34,7 @@ const corsOptions = {
     "https://loo-py.xyz", // 프론트엔드 배포 환경
     "http://13.209.89.251:3000",
     "http://localhost:3000",
+    "https://loopyxyz.duckdns.org",
   ],
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
