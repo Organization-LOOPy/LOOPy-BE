@@ -3088,7 +3088,7 @@ paths:
             in: path
             required: true
             schema:
-            type: integer
+              type: integer
             description: 리뷰를 작성할 카페 ID
         requestBody:
           required: true
