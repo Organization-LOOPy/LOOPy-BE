@@ -35,6 +35,56 @@ paths:
                   success:
                     type: string
                     example: 루피 백엔드 작동 중!
+  
+  /api/v1/users/me/verify-phone:
+    post:
+      tags:
+        - Auth
+      summary: 전화번호 인증 완료 통보
+      description: 프론트에서 Firebase를 통해 전화번호 인증을 완료한 후, 백엔드에 인증 완료 사실을 알리기 위한 용도의 API입니다. 사용자 식별 없이 성공 응답만 반환합니다.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+                  example: "010-1234-5678"
+      responses:
+        '200':
+          description: 전화번호 인증 완료 확인 응답
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 전화번호 인증 확인됨
+                  phoneNumber:
+                    type: string
+                    example: "010-1234-5678"
+        '400':
+          description: 잘못된 요청 (phoneNumber 누락)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: BAD_REQUEST
+                  reason:
+                    type: string
+                    example: phoneNumber가 필요합니다.
+                  data:
+                    type: object
+                    nullable: true
+
     
   /api/v1/auth/signup:
     post:
