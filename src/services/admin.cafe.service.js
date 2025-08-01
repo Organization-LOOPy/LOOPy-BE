@@ -259,8 +259,8 @@ export const getMyCafeMenus = async (userId) => {
       id: true,
       name: true,
       price: true,
-      imageUrl: true,
-      isSignature: true,
+      photoUrl: true,
+      isRepresentative: true,
     },
   });
 

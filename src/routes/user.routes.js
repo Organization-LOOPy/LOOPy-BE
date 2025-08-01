@@ -10,7 +10,7 @@ import {
   updatePreferredArea,
   updateKakaoAlert,
   updateFcmToken,
-  savePhoneNumberAfterVerification,
+  notifyPhoneVerification,
   saveUserAgreements,
   getUserQrCode
 } from '../controllers/user.controller.js';
@@ -25,7 +25,7 @@ import {
 const router = express.Router();
 
 // sms 인증 확인 후 전화번호 저장
-router.post('/me/verify-phone', savePhoneNumberAfterVerification);
+router.post('/me/verify-phone', notifyPhoneVerification);
 
 // 약관 동의
 router.post('/me/agreements', saveUserAgreements);

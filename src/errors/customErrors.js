@@ -30,6 +30,13 @@ export class InternalServerError extends CustomError {
 }
 
 // 사용자 인증 관련
+
+export class NotFoundPhoneError extends CustomError {
+  constructor(reason = 'phoneNumber가 필요합니다.', data = null) {
+    super(reason, 'NOT_FOUND_PHONE_NUMBER', 404, data);
+  }
+}
+
 export class KakaoAccessTokenMissingError extends CustomError {
   constructor() {
     super('카카오 access_token 응답 누락', 'KAKAO_ACCESS_TOKEN_MISSING', 500);
