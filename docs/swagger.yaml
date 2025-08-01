@@ -4929,6 +4929,43 @@ components:
         data:
           $ref: '#/components/schemas/StampBookListResponse'
 
+    StampBookListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 3
+          cafe:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              name:
+                type: string
+                example: 루피 커피
+              address:
+                type: string
+                example: 서울시 마포구 와우산로
+              image:
+                type: string
+                format: uri
+                example: https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafe-image.jpg
+          currentCount:
+            type: integer
+            example: 4
+          goalCount:
+            type: integer
+            example: 10
+          status:
+            type: string
+            example: ONGOING
+          expiresAt:
+            type: string
+            format: date-time
+            example: 2025-08-31T23:59:59.000Z
 
     Stamp:
       type: object
