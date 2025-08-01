@@ -260,7 +260,7 @@ export const getMyCafeMenus = async (userId) => {
       name: true,
       price: true,
       photoUrl: true,
-      isSignature: true,
+      isRepresentative: true,
     },
   });
 
