@@ -356,7 +356,7 @@ export class StampNotEligibleError extends CustomError {
       `스탬프 목표를 아직 달성하지 않았거나 이미 완료된 상태입니다. userId: ${userId}, cafeId: ${cafeId}`,
       "ST001",
       400,
-      { userId, cafeId }
+      { userId, cafeId, goalCount, currentCount }
     );
   }
 }
