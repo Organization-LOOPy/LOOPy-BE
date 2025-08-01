@@ -1,8 +1,6 @@
 import express from "express";
-import {
-    issueRewardCoupon,
-    getMyStampBooks,
-} from "../controllers/stampbook.controller.js";
+import { issueRewardCoupon } from "../controllers/stampbook.controller.js";
+import { getMyStampBooks } from "../controllers/stamp.controller.js";
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
