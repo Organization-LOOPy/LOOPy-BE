@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import prisma from "../../prisma/client.js";
 import {
-  DuplicateEmailError,
+  DuplicateUserError,
   MissingFieldsError,
   EmailNotFoundError,
   InvalidPasswordError,
@@ -46,7 +46,7 @@ export const signupService = async (body) => {
   });
 
   if (existingUser) {
-    throw new DuplicateEmailError({ email, phoneNumber });
+    throw new DuplicateUserError({ email, phoneNumber });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);

@@ -55,9 +55,9 @@ export class TokenMissingError extends CustomError {
   }
 }
 
-export class DuplicateEmailError extends CustomError {
+export class DuplicateUserError extends CustomError {
   constructor(data) {
-    super("이미 존재하는 이메일입니다.", "U001", 409, data);
+    super("전화번호 또는 이메일이 이미 존재합니다.", "U001", 409, data);
   }
 }
 
@@ -491,6 +491,12 @@ export class StampImageLimitExceededError extends CustomError {
 export class NoStampImageError extends CustomError {
   constructor(reason = '업로드할 이미지가 없습니다.', data = null) {
     super(reason, 'NOT_FOUND_STAMP_IMAGE', 404, data);
+  }
+}
+
+export class StampPolicyNotFoundError extends CustomError {
+  constructor() {
+    super('등록된 스탬프 정책이 없습니다.', 'STAMP_POLICY_NOT_FOUND', 404);
   }
 }
 

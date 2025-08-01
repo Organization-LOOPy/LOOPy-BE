@@ -196,7 +196,7 @@ export const savePhoneNumberAfterVerificationService = async (userId, phoneNumbe
 
   //  다른 사용자면 에러
   if (existing && existing.id !== parsedUserId) {
-    throw new DuplicateEmailError({ phoneNumber });
+    throw new DuplicateUserError({ phoneNumber });
   }
 
   // 동일한 사용자라면 가능하게

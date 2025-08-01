@@ -1,5 +1,8 @@
 import { uploadStampImagesService } from '../services/admin.stamp.service.js';
-import { createStampPolicy } from '../services/admin.stamp.service.js';
+import { 
+  createStampPolicy,
+  updateStampPolicy,  
+} from '../services/admin.stamp.service.js';
 
 export const uploadStampImages = async (req, res, next) => {
   try {
@@ -28,5 +31,19 @@ export const postStampPolicy = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+
+export const patchStampPolicy = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const updated = await updateStampPolicy(userId, req.body);
+
+    res.status(200).json({
+      message: '스탬프 정책이 수정되었습니다.',
+      data: updated,
+    });
+  } catch (err) {
+    next(err);
   }
 };
