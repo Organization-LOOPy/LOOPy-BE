@@ -247,6 +247,7 @@ model Stamp {
   stampImageUrl String?  @map("stamp_image_url") @db.Text
   stampedAt     DateTime @map("stamped_at")
   source        String   @db.VarChar(100)
+  method        String   @db.VarChar(20)  
   note          String?  @db.Text
   latitude      Float?
   longitude     Float?

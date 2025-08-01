@@ -2565,7 +2565,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StampBookListResponse'
 
-  /api/v1/stampbooks/{stampBookId}:
+  /api/v1/users/me/stampbooks/{stampBookId}:
     get:
       summary: 스탬프북 상세 조회
       description: 특정 스탬프북의 상세 정보를 조회
@@ -2600,7 +2600,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/stampbooks/{stampBookId}/stamps:
+  /api/v1/users/me/stampbooks/{stampBookId}/stamps:
     post:
       summary: 도장 적립
       description: 스탬프북에 도장 1개 적립 (QR or 수동 방식)
@@ -2639,7 +2639,7 @@ paths:
                   isStampbookCompleted:
                     type: boolean
 
-  /api/v1/stampbooks/{stampBookId}/convert:
+  /api/v1/users/me/stampbooks/{stampBookId}/convert:
     post:
       summary: 스탬프 → 포인트 환전
       description: 완료된 스탬프북을 포인트로 환전합니다. <br> 완료되지 않았거나 이미 환전된 스탬프북일 경우 에러가 발생합니다.
@@ -2679,7 +2679,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/stampbooks/{stampBookId}/extend:
+  /api/v1/users/me/stampbooks/{stampBookId}/extend:
     patch:
       summary: 스탬프북 기간 연장
       description: 진행 중인(active) 스탬프북의 만료일을 1회에 한해 14일 연장합니다. 이미 연장된 경우 또는 완료된 스탬프북은 연장할 수 없습니다.
@@ -2759,7 +2759,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/stamps/count:
+  /api/v1/users/me/stamps/total-count:
       get:
       summary: 총 스탬프 수 조회
       description: 로그인한 사용자가 보유한 전체 스탬프 개수를 반환합니다. 모든 스탬프북에 적립된 도장의 수를 합산한 값입니다.
@@ -2782,7 +2782,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 
-  /api/v1/users/me/loopy-level:
+  /api/v1/users/me/stampbooks/loopy-level:
       get:
         summary: 루피 레벨 조회
         description: 사용자가 보유한 스탬프북 개수에 따라 루피 레벨을 계산합니다.
@@ -5417,41 +5417,47 @@ components:
 
     StampBookListResponse:
       type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: integer
-            example: 3
-          cafe:
+      properties:
+        resultType:
+          type: string
+          example: SUCCESS
+        error:
+          type: "null"
+          example: null
+        success:
+          type: array
+          items:
             type: object
             properties:
               id:
                 type: integer
                 example: 1
-              name:
+              cafe:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  name:
+                    type: string
+                    example: "이대점"
+                  address:
+                    type: string
+                    example: "서울 서대문구 어딘가 2"
+              currentCount:
+                type: integer
+                example: 3
+              goalCount:
+                type: integer
+                example: 5
+              status:
                 type: string
-                example: 루피 커피
-              address:
+                enum: [active, expired, completed, converted]
+                example: "active"
+              expiresAt:
                 type: string
-                example: 서울시 마포구 와우산로
-              image:
-                type: string
-                format: uri
-                example: https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafe-image.jpg
-          currentCount:
-            type: integer
-            example: 4
-          goalCount:
-            type: integer
-            example: 10
-          status:
-            type: string
-            example: ONGOING
-          expiresAt:
-            type: string
-            format: date-time
-            example: 2025-08-31T23:59:59.000Z
+                format: date-time
+                example: "2025-08-19T02:23:34.000Z"
 
     Stamp:
       type: object
