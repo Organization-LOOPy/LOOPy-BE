@@ -3034,6 +3034,47 @@ paths:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v1/user-coupons/{userCouponId}:
+    patch:
+      tags:
+        - UserCoupons
+      summary: 쿠폰 사용 처리
+      description: 사용자가 보유한 쿠폰을 사용 처리합니다. 사용된 쿠폰은 더 이상 사용할 수 없습니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userCouponId
+          in: path
+          required: true
+          description: 사용 처리할 쿠폰 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 쿠폰 사용 처리 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 쿠폰 사용 처리 성공
+                  coupon:
+                    $ref: '#/components/schemas/UserCoupon'
+        '400':
+          description: 이미 사용되었거나 만료된 쿠폰
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 쿠폰을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /api/v1/cafe/{cafeId}/review:
       post:
         tags:
@@ -3047,40 +3088,10 @@ paths:
             in: path
             required: true
             schema:
-            type: integer
+              type: integer
             description: 리뷰를 작성할 카페 ID
         requestBody:
           required: true
-
-              type: object
-              required:
-                - title
-                - content
-              properties:
-                title:
-                  type: string
-                  example: "카페 분위기도 좋고 사장님도 친절하셔서 추천해요!"
-                content:
-                  type: string
-                  example: >
-                    카페 위치가 조용한 골목에 있어 외부 소음이 거의 없어 집중하기에 정말 좋은 환경이었습니다.
-                    실내는 깔끔하게 정돈되어 있었고, 인테리어는 따뜻한 우드톤과 식물들로 아늑한 분위기를 자아냈습니다.
-                    커피는 원두 맛이 살아있고 풍미가 깊었으며, 디저트류도 정성스럽게 만들어진 느낌이 들었습니다.
-                    특히 사장님께서 추천해주신 시그니처 음료가 매우 인상 깊었고, 매장에서 흐르는 음악도 분위기와 잘 어울려서 오랜 시간 머물기에도 편안했어요.
-                    콘센트와 와이파이도 잘 갖춰져 있어서 노트북 작업하기에 부족함이 없었습니다.
-                    좌석 간 간격이 넓어 프라이버시도 잘 지켜졌고, 무엇보다 직원분들의 친절한 응대가 기억에 남습니다.
-                    다음에도 꼭 다시 방문하고 싶고, 지인들에게도 추천하고 싶은 카페입니다.
-                    별점을 5개 이상 줄 수 있다면 주고 싶을 정도로 만족스러운 경험이었습니다.
-                images:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: 첨부 이미지 파일 (최대 5장)
-      responses:
-        '201':
-          description: 리뷰 작성 성공
-
           content:
             multipart/form-data:
               schema:
@@ -3091,11 +3102,18 @@ paths:
                 properties:
                   title:
                     type: string
-                    example: "카페 분위기가 너무 좋아요!"
+                    example: "카페 분위기도 좋고 사장님도 친절하셔서 추천해요!"
                   content:
                     type: string
                     example: >
-                      커피 맛도 좋고 조용해서 공부하기 좋았어요. 다음에 또 방문할 예정입니다.
+                      카페 위치가 조용한 골목에 있어 외부 소음이 거의 없어 집중하기에 정말 좋은 환경이었습니다.
+                      실내는 깔끔하게 정돈되어 있었고, 인테리어는 따뜻한 우드톤과 식물들로 아늑한 분위기를 자아냈습니다.
+                      커피는 원두 맛이 살아있고 풍미가 깊었으며, 디저트류도 정성스럽게 만들어진 느낌이 들었습니다.
+                      특히 사장님께서 추천해주신 시그니처 음료가 매우 인상 깊었고, 매장에서 흐르는 음악도 분위기와 잘 어울려서 오랜 시간 머물기에도 편안했어요.
+                      콘센트와 와이파이도 잘 갖춰져 있어서 노트북 작업하기에 부족함이 없었습니다.
+                      좌석 간 간격이 넓어 프라이버시도 잘 지켜졌고, 무엇보다 직원분들의 친절한 응대가 기억에 남습니다.
+                      다음에도 꼭 다시 방문하고 싶고, 지인들에게도 추천하고 싶은 카페입니다.
+                      별점을 5개 이상 줄 수 있다면 주고 싶을 정도로 만족스러운 경험이었습니다.
                   images:
                     type: array
                     items:
@@ -5534,43 +5552,76 @@ components:
       properties:
         id:
           type: integer
+          example: 12
         userId:
           type: integer
+          example: 3
         couponTemplateId:
           type: integer
+          example: 7
         acquisitionType:
           type: string
-          enum: [stamp, promotion]
+          enum: [promotion, stamp]
+          example: stamp
         status:
           type: string
           enum: [active, used, expired]
+          example: active
         issuedAt:
           type: string
           format: date-time
+        usedAt:
+          type: string
+          format: date-time
+          nullable: true
         expiredAt:
           type: string
           format: date-time
         couponTemplate:
-          type: object
-          properties:
-            id:
-              type: integer
-            cafeId:
-              type: integer
-            name:
-              type: string
-            discountType:
-              type: string
-              enum: [AMOUNT, PERCENT]
-            discountValue:
-              type: number
-            validDays:
-              type: integer
-            isActive:
-              type: boolean
-            expiredAt:
-              type: string
-              format: date-time
+          $ref: '#/components/schemas/CouponTemplate'
+
+    
+    CouponTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 7
+        cafeId:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 아메리카노 무료 쿠폰
+        discountType:
+          type: string
+          enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
+          description: 쿠폰의 할인 유형
+          example: FREE_DRINK
+        discountValue:
+          type: integer
+          nullable: true
+          description: DISCOUNT 타입일 경우 할인 금액
+          example: 1500
+        applicableMenuId:
+          type: integer
+          nullable: true
+          description: FREE_DRINK 또는 SIZE_UP일 경우 적용 대상 메뉴 ID
+          example: 3
+        validDays:
+          type: integer
+          nullable: true
+          example: 14
+        isActive:
+          type: boolean
+          example: true
+        expiredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
 
   securitySchemes:
       bearerAuth:
