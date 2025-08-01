@@ -2640,189 +2640,140 @@ paths:
                     type: boolean
 
   /api/v1/stampbooks/{stampBookId}/convert:
-  post:
-    summary: 스탬프 → 포인트 환전
-    description: 완료된 스탬프북을 포인트로 환전합니다. <br> 완료되지 않았거나 이미 환전된 스탬프북일 경우 에러가 발생합니다.
-    tags:
-      - Stamp
-    security:
-      - bearerAuth: []
-    parameters:
-      - in: path
-        name: stampBookId
-        required: true
-        schema:
-          type: integer
-    responses:
-      '200':
-        description: 환전 성공
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StampConversionSuccessResponse'
-      '400':
-        description: 잘못된 요청 (예: 완료되지 않은 스탬프북, 환전 불가능 상태)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-      '403':
-        description: 접근 권한 없음
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-      '404':
-        description: 스탬프북을 찾을 수 없음
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-
-
-    # delete:
-    #   summary: 환전 취소
-    #   description: 환전 후 3일 이내 환전 취소
-    #   tags:
-    #     - Stamp
-    #   security:
-    #     - bearerAuth: []
-    #   parameters:
-    #     - in: path
-    #       name: stampBookId
-    #       required: true
-    #       schema:
-    #         type: integer
-    #   responses:
-    #     '200':
-    #       description: 환전 취소 성공
-    #       content:
-    #         application/json:
-    #           schema:
-    #             type: object
-    #             properties:
-    #               message:
-    #                 type: string
-    #               refundPoint:
-    #                 type: integer
+    post:
+      summary: 스탬프 → 포인트 환전
+      description: 완료된 스탬프북을 포인트로 환전합니다. <br> 완료되지 않았거나 이미 환전된 스탬프북일 경우 에러가 발생합니다.
+      tags:
+        - Stamp
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 환전 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StampConversionSuccessResponse'
+        '400':
+          description: 잘못된 요청 (예: 완료되지 않은 스탬프북, 환전 불가능 상태)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 접근 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 스탬프북을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/stampbooks/{stampBookId}/extend:
-  patch:
-    summary: 스탬프북 기간 연장
-    description: 진행 중인(active) 스탬프북의 만료일을 1회에 한해 14일 연장합니다. 이미 연장된 경우 또는 완료된 스탬프북은 연장할 수 없습니다.
-    tags:
-      - Stamp
-    security:
-      - bearerAuth: []
-    parameters:
-      - in: path
-        name: stampBookId
-        required: true
-        schema:
-          type: integer
-    responses:
-      '200':
-        description: 연장 성공
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StampBookExtensionSuccessResponse'
-      '400':
-        description: 잘못된 요청 (예: 이미 연장된 스탬프북)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-      '403':
-        description: 접근 권한 없음
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-      '404':
-        description: 스탬프북을 찾을 수 없음
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
+    patch:
+      summary: 스탬프북 기간 연장
+      description: 진행 중인(active) 스탬프북의 만료일을 1회에 한해 14일 연장합니다. 이미 연장된 경우 또는 완료된 스탬프북은 연장할 수 없습니다.
+      tags:
+        - Stamp
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 연장 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StampBookExtensionSuccessResponse'
+        '400':
+          description: 잘못된 요청 (예: 이미 연장된 스탬프북)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 접근 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 스탬프북을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/users/me/stampbooks/expiring:
-    get:
-      summary: 소멸 임박 스탬프북 조회
-      description: 7일 이내 만료 예정인 active 스탬프북 목록 조회
-      tags:
-        - Stamp
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: 조회 성공
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/StampBookExpiring'
+      get:
+        summary: 소멸 임박 스탬프북 조회
+        description: 7일 이내 만료 예정인 active 스탬프북 목록 조회
+        tags:
+          - Stamp
+        security:
+          - bearerAuth: []
+        responses:
+          '200':
+            description: 조회 성공
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/StampBookExpiring'
 
   /api/v1/users/me/stampbooks/converted:
-    get:
-      summary: 환전 완료된 스탬프북 히스토리 조회
-      description: 사용자가 환전한 스탬프북 목록을 조회합니다. 최근 환전된 순으로 정렬되며, 각 스탬프북의 회차와 환전 일자를 포함합니다.
-      tags:
-        - Stamp
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: 환전 히스토리 조회 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ConvertedStampBookHistoryResponse'
-        '500':
-          description: 서버 오류
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+      get:
+        summary: 환전 완료된 스탬프북 히스토리 조회
+        description: 사용자가 환전한 스탬프북 목록을 조회합니다. 최근 환전된 순으로 정렬되며, 각 스탬프북의 회차와 환전 일자를 포함합니다.
+        tags:
+          - Stamp
+        security:
+          - bearerAuth: []
+        responses:
+          '200':
+            description: 환전 히스토리 조회 성공
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ConvertedStampBookHistoryResponse'
+          '500':
+            description: 서버 오류
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/users/me/stamps/count:
-    get:
-    summary: 총 스탬프 수 조회
-    description: 로그인한 사용자가 보유한 전체 스탬프 개수를 반환합니다. 모든 스탬프북에 적립된 도장의 수를 합산한 값입니다.
-    tags:
-      - Stamp
-    security:
-      - bearerAuth: []
-    responses:
-      '200':
-        description: 총 스탬프 수 조회 성공
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/TotalStampCountResponse'
-      '500':
-        description: 서버 오류
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/users/me/loopy-level:
-    get:
-      summary: 루피 레벨 조회
-      description: 사용자가 보유한 스탬프북 개수에 따라 루피 레벨을 계산합니다.
+      get:
+      summary: 총 스탬프 수 조회
+      description: 로그인한 사용자가 보유한 전체 스탬프 개수를 반환합니다. 모든 스탬프북에 적립된 도장의 수를 합산한 값입니다.
       tags:
         - Stamp
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 루피 레벨 조회 성공
+          description: 총 스탬프 수 조회 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LoopyLevelResponse'
+                $ref: '#/components/schemas/TotalStampCountResponse'
         '500':
           description: 서버 오류
           content:
@@ -2830,7 +2781,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/notifications:
+
+  /api/v1/users/me/loopy-level:
+      get:
+        summary: 루피 레벨 조회
+        description: 사용자가 보유한 스탬프북 개수에 따라 루피 레벨을 계산합니다.
+        tags:
+          - Stamp
+        security:
+          - bearerAuth: []
+        responses:
+          '200':
+            description: 루피 레벨 조회 성공
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/LoopyLevelResponse'
+          '500':
+            description: 서버 오류
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/users/me/notification:
   get:
     tags:
       - Notifications
@@ -2890,7 +2864,6 @@ paths:
             schema:
               $ref: '#/components/schemas/ErrorResponse'
 
-  
   /api/v1/notification/{notificationId}:
     get:
       tags:
@@ -2952,86 +2925,133 @@ paths:
 
   
   /api/v1/cafes/{cafeId}/my-stamp:
-  get:
-    summary: 카페 내 내 스탬프 현황 조회
-    description: 로그인한 사용자가 특정 카페에 대해 보유한 스탬프북의 도장 개수, 목표 개수, 만료일 정보를 조회합니다.
-    tags:
-      - Stamp
-    security:
-      - bearerAuth: []
-    parameters:
-      - in: path
-        name: cafeId
-        required: true
-        schema:
-          type: integer
-        description: 조회할 대상 카페 ID
-    responses:
-      '200':
-        description: 조회 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                resultType:
-                  type: string
-                  example: SUCCESS
-                error:
-                  type: string
-                  nullable: true
-                  example: null
-                success:
-                  type: object
-                  properties:
-                    stampBookId:
-                      type: integer
-                      example: 23
-                      description: 해당 카페의 스탬프북 ID
-                    currentCount:
-                      type: integer
-                      example: 4
-                      description: 현재 도장 수
-                    goalCount:
-                      type: integer
-                      example: 10
-                      description: 목표 도장 수
-                    expiresAt:
-                      type: string
-                      format: date
-                      example: 2025-08-15
-                      description: 스탬프북 만료일
-      '404':
-        description: 해당 카페에 대한 스탬프북 없음
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-      '500':
-        description: 서버 오류
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/stampbooks/{cafeId}/coupon:
-    post:
+    get:
+      summary: 카페 내 내 스탬프 현황 조회
+      description: 로그인한 사용자가 특정 카페에 대해 보유한 스탬프북의 도장 개수, 목표 개수, 만료일 정보를 조회합니다.
       tags:
-        - StampBooks
-      summary: 스탬프 목표 달성 시 리워드 쿠폰 발급
-      description: 스탬프북의 목표를 달성한 경우, 사용자에게 리워드 쿠폰을 발급합니다.
+        - Stamp
       security:
         - bearerAuth: []
       parameters:
-        - name: cafeId
+        - in: path
+          name: cafeId
+          required: true
+          schema:
+            type: integer
+          description: 조회할 대상 카페 ID
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: string
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      stampBookId:
+                        type: integer
+                        example: 23
+                        description: 해당 카페의 스탬프북 ID
+                      currentCount:
+                        type: integer
+                        example: 4
+                        description: 현재 도장 수
+                      goalCount:
+                        type: integer
+                        example: 10
+                        description: 목표 도장 수
+                      expiresAt:
+                        type: string
+                        format: date
+                        example: 2025-08-15
+                        description: 스탬프북 만료일
+        '404':
+          description: 해당 카페에 대한 스탬프북 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/stampbooks/{cafeId}/coupon:
+      post:
+        tags:
+          - StampBooks
+        summary: 스탬프 목표 달성 시 리워드 쿠폰 발급
+        description: 스탬프북의 목표를 달성한 경우, 사용자에게 리워드 쿠폰을 발급합니다.
+        security:
+          - bearerAuth: []
+        parameters:
+          - name: cafeId
+            in: path
+            required: true
+            description: 쿠폰을 발급받을 카페 ID
+            schema:
+              type: integer
+        responses:
+          '200':
+            description: 리워드 쿠폰 발급 성공
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: 리워드 쿠폰 발급 성공
+                    coupon:
+                      $ref: '#/components/schemas/UserCoupon'
+          '400':
+            description: 스탬프북이 조건을 만족하지 않음 또는 잘못된 요청
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '401':
+            description: 인증되지 않은 사용자
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '404':
+            description: 스탬프북 또는 카페를 찾을 수 없음
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/user-coupons/{userCouponId}:
+    patch:
+      tags:
+        - UserCoupons
+      summary: 쿠폰 사용 처리
+      description: 사용자가 보유한 쿠폰을 사용 처리합니다. 사용된 쿠폰은 더 이상 사용할 수 없습니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: userCouponId
           in: path
           required: true
-          description: 쿠폰을 발급받을 카페 ID
+          description: 사용 처리할 쿠폰 ID
           schema:
             type: integer
       responses:
         '200':
-          description: 리워드 쿠폰 발급 성공
+          description: 쿠폰 사용 처리 성공
           content:
             application/json:
               schema:
@@ -3039,109 +3059,103 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 리워드 쿠폰 발급 성공
+                    example: 쿠폰 사용 처리 성공
                   coupon:
                     $ref: '#/components/schemas/UserCoupon'
         '400':
-          description: 스탬프북이 조건을 만족하지 않음 또는 잘못된 요청
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 인증되지 않은 사용자
+          description: 이미 사용되었거나 만료된 쿠폰
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: 스탬프북 또는 카페를 찾을 수 없음
+          description: 쿠폰을 찾을 수 없음
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/cafe/{cafeId}/review:
-    post:
-      tags:
-        - Review
-      summary: 리뷰 작성
-      description: 제목 20자 이상, 본문 500자 이상, 이미지 최대 5장까지 첨부 가능합니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - name: cafeId
-          in: path
-          required: true
-          schema:
-            type: integer
-          description: 리뷰를 작성할 카페 ID
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
+      post:
+        tags:
+          - Review
+        summary: 리뷰 작성
+        description: 제목 20자 이상, 본문 500자 이상, 이미지 최대 5장까지 첨부 가능합니다.
+        security:
+          - bearerAuth: []
+        parameters:
+          - name: cafeId
+            in: path
+            required: true
             schema:
-              type: object
-              required:
-                - title
-                - content
-              properties:
-                title:
-                  type: string
-                  example: "카페 분위기도 좋고 사장님도 친절하셔서 추천해요!"
-                content:
-                  type: string
-                  example: >
-                    카페 위치가 조용한 골목에 있어 외부 소음이 거의 없어 집중하기에 정말 좋은 환경이었습니다.
-                    실내는 깔끔하게 정돈되어 있었고, 인테리어는 따뜻한 우드톤과 식물들로 아늑한 분위기를 자아냈습니다.
-                    커피는 원두 맛이 살아있고 풍미가 깊었으며, 디저트류도 정성스럽게 만들어진 느낌이 들었습니다.
-                    특히 사장님께서 추천해주신 시그니처 음료가 매우 인상 깊었고, 매장에서 흐르는 음악도 분위기와 잘 어울려서 오랜 시간 머물기에도 편안했어요.
-                    콘센트와 와이파이도 잘 갖춰져 있어서 노트북 작업하기에 부족함이 없었습니다.
-                    좌석 간 간격이 넓어 프라이버시도 잘 지켜졌고, 무엇보다 직원분들의 친절한 응대가 기억에 남습니다.
-                    다음에도 꼭 다시 방문하고 싶고, 지인들에게도 추천하고 싶은 카페입니다.
-                    별점을 5개 이상 줄 수 있다면 주고 싶을 정도로 만족스러운 경험이었습니다.
-                images:
-                  type: array
-                  items:
-                    type: string
-                    format: binary
-                  description: 첨부 이미지 파일 (최대 5장)
-      responses:
-        '201':
-          description: 리뷰 작성 성공
+              type: integer
+            description: 리뷰를 작성할 카페 ID
+        requestBody:
+          required: true
           content:
-            application/json:
+            multipart/form-data:
               schema:
                 type: object
+                required:
+                  - title
+                  - content
                 properties:
-                  message:
+                  title:
                     type: string
-                    example: 리뷰 작성 성공
-                  review:
-                    $ref: '#/components/schemas/Review'
-        '400':
-          description: 잘못된 요청 (제목/본문 미입력, 유효성 실패 등)
-          content:
-            application/json:
-              examples:
-                제목 짧음:
-                  value: { errorCode: "R001", reason: "제목은 최소 20자 이상이어야 합니다." }
-                본문 짧음:
-                  value: { errorCode: "R002", reason: "본문은 최소 500자 이상이어야 합니다." }
-                필드 누락:
-                  value: { errorCode: "R005", reason: "제목과 본문을 모두 입력해주세요." }
-                이미지 타입 오류:
-                  value: { errorCode: "R006", reason: "이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: text/plain)" }
-                이미지 수량 초과:
-                  value: { errorCode: "R007", reason: "이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: 6개)" }
-        '403':
-          description: 유효한 스탬프가 없음
-          content:
-            application/json:
-              example:
-                value: { errorCode: "R008", reason: "스탬프 적립을 시작하고 리뷰를 작성해보세요!" }
-        '500':
-          description: 서버 오류
+                    example: "카페 분위기도 좋고 사장님도 친절하셔서 추천해요!"
+                  content:
+                    type: string
+                    example: >
+                      카페 위치가 조용한 골목에 있어 외부 소음이 거의 없어 집중하기에 정말 좋은 환경이었습니다.
+                      실내는 깔끔하게 정돈되어 있었고, 인테리어는 따뜻한 우드톤과 식물들로 아늑한 분위기를 자아냈습니다.
+                      커피는 원두 맛이 살아있고 풍미가 깊었으며, 디저트류도 정성스럽게 만들어진 느낌이 들었습니다.
+                      특히 사장님께서 추천해주신 시그니처 음료가 매우 인상 깊었고, 매장에서 흐르는 음악도 분위기와 잘 어울려서 오랜 시간 머물기에도 편안했어요.
+                      콘센트와 와이파이도 잘 갖춰져 있어서 노트북 작업하기에 부족함이 없었습니다.
+                      좌석 간 간격이 넓어 프라이버시도 잘 지켜졌고, 무엇보다 직원분들의 친절한 응대가 기억에 남습니다.
+                      다음에도 꼭 다시 방문하고 싶고, 지인들에게도 추천하고 싶은 카페입니다.
+                      별점을 5개 이상 줄 수 있다면 주고 싶을 정도로 만족스러운 경험이었습니다.
+                  images:
+                    type: array
+                    items:
+                      type: string
+                      format: binary
+                    description: 첨부 이미지 파일 (최대 5장)
+        responses:
+          '201':
+            description: 리뷰 작성 성공
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: 리뷰 작성 성공
+                    review:
+                      $ref: '#/components/schemas/Review'
+          '400':
+            description: 잘못된 요청 (제목/본문 미입력, 유효성 실패 등)
+            content:
+              application/json:
+                examples:
+                  제목 짧음:
+                    value: { errorCode: "R001", reason: "제목은 최소 20자 이상이어야 합니다." }
+                  본문 짧음:
+                    value: { errorCode: "R002", reason: "본문은 최소 500자 이상이어야 합니다." }
+                  필드 누락:
+                    value: { errorCode: "R005", reason: "제목과 본문을 모두 입력해주세요." }
+                  이미지 타입 오류:
+                    value: { errorCode: "R006", reason: "이미지 파일 형식만 업로드할 수 있습니다. (받은 타입: text/plain)" }
+                  이미지 수량 초과:
+                    value: { errorCode: "R007", reason: "이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: 6개)" }
+          '403':
+            description: 유효한 스탬프가 없음
+            content:
+              application/json:
+                example:
+                  value: { errorCode: "R008", reason: "스탬프 적립을 시작하고 리뷰를 작성해보세요!" }
+          '500':
+            description: 서버 오류
 
   /api/v1/reviews/{reviewId}:
     patch:
@@ -3208,45 +3222,45 @@ paths:
         '500':
           description: 서버 오류
 
-  delete:
-    tags:
-      - Review
-    summary: 리뷰 삭제
-    description: 본인이 작성한 리뷰만 삭제할 수 있습니다.
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: reviewId
-        in: path
-        required: true
-        schema:
-          type: integer
-        description: 삭제할 리뷰 ID
-    responses:
-      '200':
-        description: 리뷰 삭제 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: 리뷰 삭제 성공!
-      '403':
-        description: 권한 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
-      '404':
-        description: 리뷰 없음
-        content:
-          application/json:
-            example:
-              value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
-      '500':
-        description: 서버 오류
+    delete:
+      tags:
+        - Review
+      summary: 리뷰 삭제
+      description: 본인이 작성한 리뷰만 삭제할 수 있습니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 삭제할 리뷰 ID
+      responses:
+        '200':
+          description: 리뷰 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 리뷰 삭제 성공!
+        '403':
+          description: 권한 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R004", reason: "본인의 리뷰만 수정/삭제할 수 있습니다." }
+        '404':
+          description: 리뷰 없음
+          content:
+            application/json:
+              example:
+                value: { errorCode: "R003", reason: "ID 123에 해당하는 리뷰가 존재하지 않습니다." }
+        '500':
+          description: 서버 오류
 
   /api/v1/users/me/reviews:
     get:
@@ -5332,6 +5346,43 @@ components:
         data:
           $ref: '#/components/schemas/StampBookListResponse'
 
+    StampBookListResponse:
+      type: array
+      items:
+        type: object
+        properties:
+          id:
+            type: integer
+            example: 3
+          cafe:
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 1
+              name:
+                type: string
+                example: 루피 커피
+              address:
+                type: string
+                example: 서울시 마포구 와우산로
+              image:
+                type: string
+                format: uri
+                example: https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafe-image.jpg
+          currentCount:
+            type: integer
+            example: 4
+          goalCount:
+            type: integer
+            example: 10
+          status:
+            type: string
+            example: ONGOING
+          expiresAt:
+            type: string
+            format: date-time
+            example: 2025-08-31T23:59:59.000Z
 
     Stamp:
       type: object
@@ -5712,43 +5763,76 @@ components:
       properties:
         id:
           type: integer
+          example: 12
         userId:
           type: integer
+          example: 3
         couponTemplateId:
           type: integer
+          example: 7
         acquisitionType:
           type: string
-          enum: [stamp, promotion]
+          enum: [promotion, stamp]
+          example: stamp
         status:
           type: string
           enum: [active, used, expired]
+          example: active
         issuedAt:
           type: string
           format: date-time
+        usedAt:
+          type: string
+          format: date-time
+          nullable: true
         expiredAt:
           type: string
           format: date-time
         couponTemplate:
-          type: object
-          properties:
-            id:
-              type: integer
-            cafeId:
-              type: integer
-            name:
-              type: string
-            discountType:
-              type: string
-              enum: [AMOUNT, PERCENT]
-            discountValue:
-              type: number
-            validDays:
-              type: integer
-            isActive:
-              type: boolean
-            expiredAt:
-              type: string
-              format: date-time
+          $ref: '#/components/schemas/CouponTemplate'
+
+    
+    CouponTemplate:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 7
+        cafeId:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: 아메리카노 무료 쿠폰
+        discountType:
+          type: string
+          enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
+          description: 쿠폰의 할인 유형
+          example: FREE_DRINK
+        discountValue:
+          type: integer
+          nullable: true
+          description: DISCOUNT 타입일 경우 할인 금액
+          example: 1500
+        applicableMenuId:
+          type: integer
+          nullable: true
+          description: FREE_DRINK 또는 SIZE_UP일 경우 적용 대상 메뉴 ID
+          example: 3
+        validDays:
+          type: integer
+          nullable: true
+          example: 14
+        isActive:
+          type: boolean
+          example: true
+        expiredAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
 
   securitySchemes:
       bearerAuth:
