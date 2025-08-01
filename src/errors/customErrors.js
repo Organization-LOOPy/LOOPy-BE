@@ -351,9 +351,9 @@ export class NoActiveStampError extends CustomError {
 
 // 스탬프북 관련
 export class StampNotEligibleError extends CustomError {
-  constructor(userId, cafeId) {
+  constructor(userId, cafeId, goalCount, currentCount) {
     super(
-      `스탬프 목표를 아직 달성하지 않았거나 이미 완료된 상태입니다. userId: ${userId}, cafeId: ${cafeId}`,
+      `스탬프 목표를 아직 달성하지 않았거나 이미 완료된 상태입니다. userId: ${userId}, cafeId: ${cafeId}, goalCount: ${goalCount}, currentCount: ${currentCount}`,
       "ST001",
       400,
       { userId, cafeId, goalCount, currentCount }

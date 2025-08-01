@@ -14,7 +14,12 @@ export const stampBookService = {
       stampBook.isCompleted ||
       stampBook.currentCount < stampBook.goalCount
     ) {
-      throw new StampNotEligibleError(userId, cafeId);
+      throw new StampNotEligibleError(
+        userId,
+        cafeId,
+        stampBook?.goalCount ?? null,
+        stampBook?.currentCount ?? null
+      );
     }
 
     const now = new Date();
