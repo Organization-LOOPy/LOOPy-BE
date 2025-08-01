@@ -3839,6 +3839,144 @@ paths:
                         format: date-time
                         example: 2025-07-31T14:22:00.000Z
 
+  /api/v1/owner/stamps/stamp-images:
+    post:
+      tags:
+        - Admin Stamp
+      summary: 스탬프 이미지 업로드
+      description: 
+        사장님이 스탬프 이미지를 업로드합니다. 기본 이미지 1개 외에 최대 2개까지 등록 가능합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                images:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  maxItems: 2
+      responses:
+        '201':
+          description: 이미지 업로드 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지 업로드 성공
+                  data:
+                    type: array
+                    items:
+                      type: string
+                      example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1691223650_1.png
+        '400':
+          description: 유효하지 않은 요청 또는 이미지 2개 초과
+        '401':
+          description: 인증되지 않은 사용자
+
+  /api/v1/owner/stamps/stamp-policy:
+    post:
+      tags:
+        - Admin Stamp
+      summary: 스탬프 정책 등록
+      description: 
+        사장님이 스탬프 적립 정책을 등록합니다. 금액 기준 또는 횟수 기준, 리워드 종류에 따라 조건이 달라집니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - selectedImageUrl
+                - conditionType
+                - rewardType
+                - hasExpiry
+              properties:
+                selectedImageUrl:
+                  type: string
+                  example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1691223650_1.png
+                conditionType:
+                  type: string
+                  enum: [AMOUNT, COUNT]
+                  example: AMOUNT
+                amountThreshold:
+                  type: integer
+                  nullable: true
+                  example: 5000
+                stampCountAmount:
+                  type: integer
+                  nullable: true
+                  example: 1
+                drinkCount:
+                  type: integer
+                  nullable: true
+                  example: null
+                stampCountDrink:
+                  type: integer
+                  nullable: true
+                  example: null
+                rewardType:
+                  type: string
+                  enum: [DISCOUNT, SIZE_UP, FREE_DRINK]
+                  example: DISCOUNT
+                discountAmount:
+                  type: integer
+                  nullable: true
+                  example: 1000
+                menuId:
+                  type: integer
+                  nullable: true
+                  example: null
+                hasExpiry:
+                  type: boolean
+                  example: true
+                expiryDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  example: "2025-12-31"
+      responses:
+        '201':
+          description: 스탬프 정책 등록 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 정책이 등록되었습니다.
+                  data:
+                    type: object
+                    example:
+                      id: 1
+                      cafeId: 3
+                      selectedImageUrl: https://...
+                      conditionType: AMOUNT
+                      stampPerAmount: 1
+                      rewardType: DISCOUNT
+                      discountAmount: 1000
+                      hasExpiry: true
+                      rewardExpiresAt: 2025-12-31T00:00:00.000Z
+        '400':
+          description: 유효하지 않은 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '409':
+          description: 이미 등록된 정책 존재 시 에러
+
+
 
 components:
   securitySchemes:
