@@ -2590,44 +2590,44 @@ paths:
                     type: boolean
 
   /api/v1/stampbooks/{stampBookId}/convert:
-  post:
-    summary: 스탬프 → 포인트 환전
-    description: 완료된 스탬프북을 포인트로 환전합니다. <br> 완료되지 않았거나 이미 환전된 스탬프북일 경우 에러가 발생합니다.
-    tags:
-      - Stamp
-    security:
-      - bearerAuth: []
-    parameters:
-      - in: path
-        name: stampBookId
-        required: true
-        schema:
-          type: integer
-    responses:
-      '200':
-        description: 환전 성공
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StampConversionSuccessResponse'
-      '400':
-        description: 잘못된 요청 (예: 완료되지 않은 스탬프북, 환전 불가능 상태)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-      '403':
-        description: 접근 권한 없음
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-      '404':
-        description: 스탬프북을 찾을 수 없음
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
+    post:
+      summary: 스탬프 → 포인트 환전
+      description: 완료된 스탬프북을 포인트로 환전합니다. <br> 완료되지 않았거나 이미 환전된 스탬프북일 경우 에러가 발생합니다.
+      tags:
+        - Stamp
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 환전 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StampConversionSuccessResponse'
+        '400':
+          description: 잘못된 요청 (예: 완료되지 않은 스탬프북, 환전 불가능 상태)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: 접근 권한 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: 스탬프북을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 
     # delete:
@@ -2656,7 +2656,7 @@ paths:
     #               refundPoint:
     #                 type: integer
 
-  /api/v1/stampbooks/{stampBookId}/extend:
+/api/v1/stampbooks/{stampBookId}/extend:
   patch:
     summary: 스탬프북 기간 연장
     description: 진행 중인(active) 스탬프북의 만료일을 1회에 한해 14일 연장합니다. 이미 연장된 경우 또는 완료된 스탬프북은 연장할 수 없습니다.
@@ -2696,7 +2696,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/stampbooks/expiring:
+/api/v1/users/me/stampbooks/expiring:
     get:
       summary: 소멸 임박 스탬프북 조회
       description: 7일 이내 만료 예정인 active 스탬프북 목록 조회
@@ -2714,7 +2714,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/StampBookExpiring'
 
-  /api/v1/users/me/stampbooks/converted:
+/api/v1/users/me/stampbooks/converted:
     get:
       summary: 환전 완료된 스탬프북 히스토리 조회
       description: 사용자가 환전한 스탬프북 목록을 조회합니다. 최근 환전된 순으로 정렬되며, 각 스탬프북의 회차와 환전 일자를 포함합니다.
@@ -2736,7 +2736,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/stamps/count:
+/api/v1/users/me/stamps/count:
     get:
     summary: 총 스탬프 수 조회
     description: 로그인한 사용자가 보유한 전체 스탬프 개수를 반환합니다. 모든 스탬프북에 적립된 도장의 수를 합산한 값입니다.
@@ -2758,7 +2758,7 @@ paths:
             schema:
               $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/loopy-level:
+/api/v1/users/me/loopy-level:
     get:
       summary: 루피 레벨 조회
       description: 사용자가 보유한 스탬프북 개수에 따라 루피 레벨을 계산합니다.
@@ -2841,7 +2841,7 @@ paths:
               $ref: '#/components/schemas/ErrorResponse'
 
   
-  /api/v1/notification/{notificationId}:
+/api/v1/notification/{notificationId}:
     get:
       tags:
         - Notifications
