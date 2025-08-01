@@ -1,5 +1,4 @@
 import express from "express";
-import { issueRewardCoupon } from "../controllers/stampbook.controller.js";
 import {
     getMyStampBooks,
     getStampBookDetail,
