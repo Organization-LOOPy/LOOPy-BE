@@ -4181,12 +4181,12 @@ paths:
         '404':
           description: 정책이 존재하지 않음
 
-  /api/v1/owner/dashboard/stamp-stats:
+  /api/v1/owners/cafes/stamp-stats:
     get:
       tags:
         - Admin Cafe
       summary: 스탬프 통계 조회
-      description: 오늘, 이번 주, 전체 스탬프 적립 수 및 적립 고객 수, 리워드 지급 수를 조회합니다.
+      description: 오늘, 이번 주, 전체 스탬프 적립 수와 적립 고객 수, 리워드 지급 수, 해당 주(월~일)의 요일별 스탬프 적립 수를 조회합니다.
       security:
         - bearerAuth: []
       responses:
@@ -4222,11 +4222,21 @@ paths:
                       rewardGivenCount:
                         type: integer
                         example: 9
-                        description: 스탬프 목표 달성 후 리워드를 받은 횟수
-        '401':
-          description: 인증되지 않은 사용자
-        '500':
-          description: 서버 내부 오류
+                        description: 목표 스탬프 수를 달성하여 리워드를 지급한 횟수
+                      dailyStampCounts:
+                        type: array
+                        description: 이번 주 월~일 요일별 스탬프 적립 수
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                              example: "2025-08-04"
+                            count:
+                              type: integer
+                              example: 3
+
 
 
 components:
