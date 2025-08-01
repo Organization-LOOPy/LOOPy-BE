@@ -21,7 +21,7 @@ import adminCafeRouter from "./routes/admin.cafe.routes.js";
 import adminStampRouter from "./routes/admin.stamp.routes.js";
 //import couponRouter from './routes/coupon.routes.js';
 import customerPageRouter from "./routes/customer.page.routes.js";
-
+import DashboardRouter from "./routes/dashboard.routes.js"
 
 const app = express();
 
@@ -68,10 +68,12 @@ app.use("/api/v1/stampbooks", stampbookRouter);
 // 사장용
 app.use("/api/v1/owner/cafes", adminCafeRouter);
 app.use("/api/v1/owner/stamps", adminStampRouter);
-//app.use("/api/v1/owners/cafes/:cafeId/coupons", couponRouter);
+//app.use("/api/v1/owner/cafes/:cafeId/coupons", couponRouter);
+app.use("/api/v1/owner/dashboard", DashboardRouter);
 
 // 페이지GET
 app.use("/api/v1/pages", customerPageRouter);
+
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어
 
