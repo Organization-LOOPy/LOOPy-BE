@@ -12,7 +12,11 @@ const router = express.Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 router.use(authenticateJWT);
-router.post('/stamp-images', upload.array('images', 2), uploadStampImages);
+router.post(
+    '/stamp-images', 
+    upload.array('images', 2), 
+    uploadStampImages
+);
 router.post('/stamp-policy', postStampPolicy);
 router.patch('/stamp-policy', patchStampPolicy);
 router.get('/stamp-policy', getStampPolicy);

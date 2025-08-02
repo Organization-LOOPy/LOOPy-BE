@@ -9,6 +9,7 @@ import {
   updateFcmTokenService,
   savePhoneNumberAfterVerificationService,
   saveUserAgreementsService,
+  deleteMyAccountService,
 } from '../services/user.service.js';
 import { 
   QRNotFoundError,
@@ -31,6 +32,22 @@ export const reactivateUser = async (req, res, next) => {
     return res.success({ message: '계정이 다시 활성화되었습니다.', user });
   } catch (err) {
     next(err);
+  }
+};
+
+export const deleteMyAccount = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const result = await deleteMyAccountService(userId);
+
+    return res.status(200).json({
+      resultType: 'SUCCESS',
+      message: '회원 탈퇴가 완료되었습니다.',
+      data: result,
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
