@@ -51,11 +51,8 @@ export const stampBookRepository = {
   async findStampBook(userId, cafeId) {
     const stampBook = await prisma.stampBook.findUnique({
       where: {
-        userId_cafeId: {
-          // 자동 생성된 복합 유니크 필드
-          userId: userId,
-          cafeId: cafeId,
-        },
+        userId: userId,
+        cafeId: cafeId,
       },
       select: {
         id: true,
