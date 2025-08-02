@@ -62,9 +62,6 @@ export const stampBookRepository = {
       },
     });
     if (!stampBook) {
-      logger.debug(
-        `유저 ID: ${userId}의 카페 ID: ${cafeId}에 대한 스탬프북이 없습니다.`
-      );
       return null;
     }
 
