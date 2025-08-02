@@ -17,7 +17,7 @@ export const issueRewardCoupon = async (req, res, next) => {
 
 export const useUserCouponController = async (req, res, next) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;
     const userCouponId = parseInt(req.params.userCouponId, 10);
 
     const updatedCoupon = await useUserCouponService(userId, userCouponId);
