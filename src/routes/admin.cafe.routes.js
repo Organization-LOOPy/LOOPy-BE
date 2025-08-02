@@ -26,7 +26,11 @@ router.post(
   upload.single('menuImage'),
   postCafeMenu
 );
-router.post('/photos', postCafePhotos);
+router.post(
+  '/photos', 
+  upload.array('photos', 5),
+  postCafePhotos
+);
 router.patch('/complete',completeCafeRegistration);
 
 router.get('/myCafe', getCafe);

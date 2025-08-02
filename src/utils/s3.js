@@ -1,4 +1,4 @@
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand,DeleteObjectCommand } from "@aws-sdk/client-s3";
 
 const s3 = new S3Client({
   region: "ap-northeast-2",
@@ -29,4 +29,22 @@ export const uploadToS3 = async (file) => {
   // v3에서는 결과에 Location이 없어서 직접 만들어야 함
   const location = `https://${uploadParams.Bucket}.s3.${s3.config.region}.amazonaws.com/${fileKey}`;
   return location;
+};
+
+export const deleteFromS3 = async (fileUrl) => {
+  const bucket = process.env.AWS_S3_BUCKET;
+  const region = process.env.AWS_REGION;
+  // const cloudFrontBaseUrl = process.env.CLOUDFRONT_URL;
+  // const location = `${cloudFrontBaseUrl}/${fileKey}`;
+  const baseUrl = `https://${bucket}.s3.${region}.amazonaws.com/`;
+
+  const key = fileUrl.replace(baseUrl, '');
+
+  const deleteParams = {
+    Bucket: bucket,
+    Key: key,
+  };
+
+  const command = new DeleteObjectCommand(deleteParams);
+  await s3.send(command);
 };
