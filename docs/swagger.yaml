@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://loopyxyz.duckdns.org
+  - url: http://localhost:3000
     description: 서버 배포 도메인 
 
 security:
@@ -4318,6 +4318,39 @@ paths:
               application/json:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/users/me:
+    delete:
+      summary: 사장 회원 탈퇴
+      description: 로그인된 사장 계정을 영구 삭제합니다.
+      tags: Auth
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 회원 탈퇴 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 회원 탈퇴가 완료되었습니다.
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "5"
+                      email:
+                        type: string
+                        example: owner@example.com
+        '403':
+          description: 권한 없음 (OWNER 전용)
 
 
 

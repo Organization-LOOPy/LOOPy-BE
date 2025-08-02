@@ -12,7 +12,7 @@ import {
   UnauthCafeAccessError,
   RepresentativeLimitExceededError, 
 } from '../errors/customErrors.js';
-import { uploadToS3 } from '../utils/s3.js';
+import { uploadToS3, deleteFromS3 } from '../utils/s3.js';
 
 export const createMyCafeBasicInfo = async (userId, basicInfo) => {
   const { name, address, region1DepthName, region2DepthName, region3DepthName, latitude, longitude, ownerName } = basicInfo;
@@ -233,16 +233,17 @@ export const deleteCafePhoto = async (userId, photoId) => {
     throw new CafePhotoNotFoundError();
   }
 
- if (!photo.cafe || photo.cafe.ownerId !== userId) {
-  throw new UnauthCafeAccessError(userId, photo.cafeId, photoId);
-}
+  if (!photo.cafe || photo.cafe.ownerId !== userId) {
+    throw new UnauthCafeAccessError(userId, photo.cafeId, photoId);
+  }
 
+  await deleteFromS3(photo.photoUrl);
 
   await prisma.cafePhoto.delete({
     where: { id: photoId },
   });
 
-  return { message: '카페 이미지가 삭제되었습니다.', photoId };
+  return true;
 };
 
 export const getMyCafeMenus = async (userId) => {

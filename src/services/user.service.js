@@ -6,6 +6,7 @@ import {
   PreferenceSaveError,
   InvalidPreferredAreaError,
   QRCodeError,
+  InvalidExitRoleError,
 } from '../errors/customErrors.js';
 import QRCode from 'qrcode';
 
@@ -23,6 +24,41 @@ export const deactivateUserService = async (userId) => {
     id: updatedUser.id.toString(),
     status: updatedUser.status,
     inactivedAt: updatedUser.inactivedAt,
+  };
+};
+
+// 사장 탈퇴(바로 탈퇴 처리)
+export const deleteMyAccountService = async (userId) => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: {
+      id: true,
+      email: true,
+      roles: {
+        select: {
+          role: true,
+        },
+      },
+    },
+  });
+
+  if (!user) {
+    throw new UserNotFoundError(userId);
+  }
+
+  const hasOwnerRole = user.roles.some((r) => r.role === 'OWNER');
+
+  if (!hasOwnerRole) {
+    throw new InvalidExitRoleError('OWNER');
+  }
+
+  const deletedUser = await prisma.user.delete({
+    where: { id: userId },
+  });
+
+  return {
+    id: deletedUser.id.toString(),
+    email: deletedUser.email,
   };
 };
  

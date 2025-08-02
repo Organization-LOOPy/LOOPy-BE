@@ -150,6 +150,16 @@ export class PreferenceSaveError extends CustomError {
   }
 }
 
+export class InvalidExitRoleError extends Error {
+  constructor(expectedRole) {
+    super(`요청은 ${expectedRole} 권한에서만 수행할 수 있습니다.`);
+    this.name = 'InvalidRoleError';
+    this.errorCode = 'INVALID_ROLE';
+    this.statusCode = 403;
+    this.data = { expectedRole };
+  }
+}
+
 // 북마크
 export class BookmarkAlreadyExistsError extends CustomError {
   constructor(data) {
