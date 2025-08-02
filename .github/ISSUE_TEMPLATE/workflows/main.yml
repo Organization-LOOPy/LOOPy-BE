@@ -35,6 +35,12 @@ jobs:
           echo "Pulling latest code..."
           git pull origin main
 
+          echo "Cleaning up unused Docker resources..."
+          docker container prune -f
+          docker image prune -a -f
+          docker volume prune -f
+          docker network prune -f
+
           echo "Stopping current container..."
           docker stop loopy-app || true
           docker rm loopy-app || true
