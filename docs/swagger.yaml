@@ -972,7 +972,7 @@ paths:
       description: 카페 ID를 기반으로 상세 정보, 메뉴, 사진, 쿠폰, 스탬프북, 즐겨찾기 여부를 조회합니다
       operationId: getCafeDetail
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: cafeId
           in: path
@@ -5942,11 +5942,6 @@ components:
           format: date-time
 
 
-  securitySchemes:
-      bearerAuth:
-        type: http
-        scheme: bearer
-        bearerFormat: JWT
 
 tags:
   - name: Users

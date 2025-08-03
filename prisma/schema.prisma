@@ -238,6 +238,7 @@ model StampBook {
   stamps            Stamp[]
   pointTransactions PointTransaction[]
 
+  @@unique([userId, cafeId]) 
   @@map("stamp_books")
 }
 
