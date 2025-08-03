@@ -4323,7 +4323,7 @@ paths:
     delete:
       summary: 사장 회원 탈퇴
       description: 로그인된 사장 계정을 영구 삭제합니다.
-      tags: Auth
+      tags: [Auth]
       security:
         - bearerAuth: []
       responses:

@@ -146,6 +146,7 @@ export const updateStampPolicy = async (userId, policyData) => {
     },
   });
 
+  // 스탬프 정책 변경 시 고객에게 알림 전송
   const bookmarkedUsers = await prisma.userBookmark.findMany({
     where: { cafeId: cafe.id },
     select: { userId: true },
@@ -170,7 +171,7 @@ export const updateStampPolicy = async (userId, policyData) => {
       cafeId: cafe.id,
       type: 'stamp',
       title: '스탬프 정책이 변경되었습니다.',
-      content, // 최신 정책 전체 내용
+      content,
     }));
 
     await prisma.notification.createMany({ data: notifications });
