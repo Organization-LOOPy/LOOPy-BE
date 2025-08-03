@@ -4195,62 +4195,6 @@ paths:
         '404':
           description: 정책이 존재하지 않음
 
-  /api/v1/owners/cafes/stamp-stats:
-    get:
-      tags:
-        - Admin Cafe
-      summary: 스탬프 통계 조회
-      description: 오늘, 이번 주, 전체 스탬프 적립 수와 적립 고객 수, 리워드 지급 수, 해당 주(월~일)의 요일별 스탬프 적립 수를 조회합니다.
-      security:
-        - bearerAuth: []
-      responses:
-        '200':
-          description: 스탬프 통계 조회 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 스탬프 통계 조회 성공
-                  data:
-                    type: object
-                    properties:
-                      todayStampCount:
-                        type: integer
-                        example: 2
-                        description: 오늘 적립된 스탬프 수
-                      thisWeekStampCount:
-                        type: integer
-                        example: 10
-                        description: 이번 주(월~일) 적립된 스탬프 수
-                      totalStampCount:
-                        type: integer
-                        example: 82
-                        description: 전체 기간 동안 적립된 스탬프 수
-                      uniqueUserCount:
-                        type: integer
-                        example: 18
-                        description: 내 카페에서 스탬프를 적립한 고객 수
-                      rewardGivenCount:
-                        type: integer
-                        example: 9
-                        description: 목표 스탬프 수를 달성하여 리워드를 지급한 횟수
-                      dailyStampCounts:
-                        type: array
-                        description: 이번 주 월~일 요일별 스탬프 적립 수
-                        items:
-                          type: object
-                          properties:
-                            date:
-                              type: string
-                              format: date
-                              example: "2025-08-04"
-                            count:
-                              type: integer
-                              example: 3
-
     /api/v1/owner/dashboard/stamp-stats:
       get:
         tags:
@@ -4319,7 +4263,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/admin/users/me:
+  /api/v1/users/owner:
     delete:
       summary: 사장 회원 탈퇴
       description: 로그인된 사장 계정을 영구 삭제합니다.
