@@ -46,7 +46,7 @@ model User {
 
 model UserRole {
   id     Int      @id @default(autoincrement())
-  user   User     @relation(fields: [userId], references: [id])
+  user   User     @relation(fields: [userId], references: [id],  onDelete: Cascade)
   userId Int
   role   RoleType
 
@@ -247,6 +247,7 @@ model Stamp {
   stampImageUrl String?  @map("stamp_image_url") @db.Text
   stampedAt     DateTime @map("stamped_at")
   source        String   @db.VarChar(100)
+  method        String   @db.VarChar(20)  
   note          String?  @db.Text
   latitude      Float?
   longitude     Float?

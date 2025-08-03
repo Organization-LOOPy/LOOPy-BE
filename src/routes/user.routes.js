@@ -12,7 +12,8 @@ import {
   updateFcmToken,
   notifyPhoneVerification,
   saveUserAgreements,
-  getUserQrCode
+  getUserQrCode,
+  deleteMyAccount
 } from '../controllers/user.controller.js';
 
 import {
@@ -52,4 +53,6 @@ router.delete('/me/bookmarks/:cafeId', removeBookmark);
 // 사용자별 QR코드
 router.get('/me/qrcode', getUserQrCode); 
 
+// 사장 회원탈퇴
+router.delete('/owner', deleteMyAccount);
 export default router;

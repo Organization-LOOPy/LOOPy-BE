@@ -972,7 +972,7 @@ paths:
       description: 카페 ID를 기반으로 상세 정보, 메뉴, 사진, 쿠폰, 스탬프북, 즐겨찾기 여부를 조회합니다
       operationId: getCafeDetail
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: cafeId
           in: path
@@ -2565,7 +2565,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/StampBookListResponse'
 
-  /api/v1/stampbooks/{stampBookId}:
+  /api/v1/users/me/stampbooks/{stampBookId}:
     get:
       summary: 스탬프북 상세 조회
       description: 특정 스탬프북의 상세 정보를 조회
@@ -2600,7 +2600,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/stampbooks/{stampBookId}/stamps:
+  /api/v1/users/me/stampbooks/{stampBookId}/stamps:
     post:
       summary: 도장 적립
       description: 스탬프북에 도장 1개 적립 (QR or 수동 방식)
@@ -2639,7 +2639,7 @@ paths:
                   isStampbookCompleted:
                     type: boolean
 
-  /api/v1/stampbooks/{stampBookId}/convert:
+  /api/v1/users/me/stampbooks/{stampBookId}/convert:
     post:
       summary: 스탬프 → 포인트 환전
       description: 완료된 스탬프북을 포인트로 환전합니다. <br> 완료되지 않았거나 이미 환전된 스탬프북일 경우 에러가 발생합니다.
@@ -2679,7 +2679,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/stampbooks/{stampBookId}/extend:
+  /api/v1/users/me/stampbooks/{stampBookId}/extend:
     patch:
       summary: 스탬프북 기간 연장
       description: 진행 중인(active) 스탬프북의 만료일을 1회에 한해 14일 연장합니다. 이미 연장된 경우 또는 완료된 스탬프북은 연장할 수 없습니다.
@@ -2759,7 +2759,7 @@ paths:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/stamps/count:
+  /api/v1/users/me/stamps/total-count:
       get:
       summary: 총 스탬프 수 조회
       description: 로그인한 사용자가 보유한 전체 스탬프 개수를 반환합니다. 모든 스탬프북에 적립된 도장의 수를 합산한 값입니다.
@@ -2782,7 +2782,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 
 
-  /api/v1/users/me/loopy-level:
+  /api/v1/users/me/stampbooks/loopy-level:
       get:
         summary: 루피 레벨 조회
         description: 사용자가 보유한 스탬프북 개수에 따라 루피 레벨을 계산합니다.
@@ -4039,6 +4039,319 @@ paths:
           description: 인증되지 않은 사용자
         '409':
           description: 이미 등록된 정책 존재 시 에러
+            
+    get:
+      tags:
+        - Admin Stamp
+      summary: 스탬프 정책 조회
+      description: 로그인한 사장님의 카페에 등록된 스탬프 정책을 조회합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 스탬프 정책 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 정책 조회 성공
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      cafeId:
+                        type: integer
+                        example: 4
+                      selectedImageUrl:
+                        type: string
+                        example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/stamp1.png
+                      conditionType:
+                        type: string
+                        enum: [AMOUNT, COUNT]
+                        example: COUNT
+                      drinkCount:
+                        type: integer
+                        nullable: true
+                        example: 10
+                      stampPerCount:
+                        type: integer
+                        nullable: true
+                        example: 1
+                      rewardType:
+                        type: string
+                        enum: [DISCOUNT, SIZE_UP, FREE_DRINK]
+                        example: FREE_DRINK
+                      menuId:
+                        type: integer
+                        nullable: true
+                        example: 3
+                      discountAmount:
+                        type: integer
+                        nullable: true
+                        example: null
+                      hasExpiry:
+                        type: boolean
+                        example: true
+                      rewardExpiresAt:
+                        type: string
+                        format: date-time
+                        example: "2025-12-31T00:00:00.000Z"
+                      createdAt:
+                        type: string
+                        format: date-time
+                      updatedAt:
+                        type: string
+                        format: date-time
+        '401':
+          description: 인증되지 않은 사용자
+        '404':
+          description: 등록된 스탬프 정책이 없는 경우
+
+    patch:
+      tags:
+        - Admin Stamp
+      summary: 스탬프 정책 수정
+      description: 로그인한 사장님의 기존 스탬프 정책을 수정합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - selectedImageUrl
+                - conditionType
+                - rewardType
+                - hasExpiry
+              properties:
+                selectedImageUrl:
+                  type: string
+                  example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/stamp1.png
+                conditionType:
+                  type: string
+                  enum: [AMOUNT, COUNT]
+                  example: COUNT
+                amountThreshold:
+                  type: integer
+                  nullable: true
+                  example: null
+                stampCountAmount:
+                  type: integer
+                  nullable: true
+                  example: null
+                drinkCount:
+                  type: integer
+                  nullable: true
+                  example: 10
+                stampCountDrink:
+                  type: integer
+                  nullable: true
+                  example: 1
+                rewardType:
+                  type: string
+                  enum: [DISCOUNT, SIZE_UP, FREE_DRINK]
+                  example: FREE_DRINK
+                discountAmount:
+                  type: integer
+                  nullable: true
+                  example: null
+                menuId:
+                  type: integer
+                  nullable: true
+                  example: 3
+                hasExpiry:
+                  type: boolean
+                  example: true
+                expiryDate:
+                  type: string
+                  format: date
+                  nullable: true
+                  example: "2025-12-31"
+      responses:
+        '200':
+          description: 스탬프 정책 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 정책이 수정되었습니다.
+                  data:
+                    type: object
+                    $ref: '#/components/schemas/StampPolicy'
+        '400':
+          description: 유효하지 않은 요청
+        '401':
+          description: 인증되지 않은 사용자
+        '404':
+          description: 정책이 존재하지 않음
+
+  /api/v1/owners/cafes/stamp-stats:
+    get:
+      tags:
+        - Admin Cafe
+      summary: 스탬프 통계 조회
+      description: 오늘, 이번 주, 전체 스탬프 적립 수와 적립 고객 수, 리워드 지급 수, 해당 주(월~일)의 요일별 스탬프 적립 수를 조회합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 스탬프 통계 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 통계 조회 성공
+                  data:
+                    type: object
+                    properties:
+                      todayStampCount:
+                        type: integer
+                        example: 2
+                        description: 오늘 적립된 스탬프 수
+                      thisWeekStampCount:
+                        type: integer
+                        example: 10
+                        description: 이번 주(월~일) 적립된 스탬프 수
+                      totalStampCount:
+                        type: integer
+                        example: 82
+                        description: 전체 기간 동안 적립된 스탬프 수
+                      uniqueUserCount:
+                        type: integer
+                        example: 18
+                        description: 내 카페에서 스탬프를 적립한 고객 수
+                      rewardGivenCount:
+                        type: integer
+                        example: 9
+                        description: 목표 스탬프 수를 달성하여 리워드를 지급한 횟수
+                      dailyStampCounts:
+                        type: array
+                        description: 이번 주 월~일 요일별 스탬프 적립 수
+                        items:
+                          type: object
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                              example: "2025-08-04"
+                            count:
+                              type: integer
+                              example: 3
+
+    /api/v1/owner/dashboard/stamp-stats:
+      get:
+        tags:
+          - Admin Dashboard
+        summary: 내 카페 스탬프 통계 조회
+        description: |
+          사장님의 카페에 대해 아래 항목들의 통계를 조회합니다.
+          - 오늘 적립된 스탬프 수
+          - 이번 주(월~일) 적립된 스탬프 수
+          - 이번 주 요일별 스탬프 적립 수
+          - 스탬프를 적립한 고객 수 (중복 제거)
+          - 전체 스탬프 적립 수
+          - 리워드 지급 수 (스탬프북이 goalCount에 도달한 경우)
+        security:
+          - bearerAuth: []
+        responses:
+          '200':
+            description: 스탬프 통계 조회 성공
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    message:
+                      type: string
+                      example: 스탬프 통계 조회 성공
+                    data:
+                      type: object
+                      properties:
+                        todayStampCount:
+                          type: integer
+                          example: 5
+                        thisWeekStampCount:
+                          type: integer
+                          example: 20
+                        weeklyStats:
+                          type: object
+                          description: 이번 주 요일별 스탬프 수
+                          example:
+                            Mon: 2
+                            Tue: 3
+                            Wed: 5
+                            Thu: 4
+                            Fri: 3
+                            Sat: 2
+                            Sun: 1
+                        totalStampCount:
+                          type: integer
+                          example: 150
+                        uniqueUserCount:
+                          type: integer
+                          example: 40
+                        rewardGivenCount:
+                          type: integer
+                          example: 10
+          '401':
+            description: 인증되지 않은 사용자
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+          '500':
+            description: 서버 오류
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/users/me:
+    delete:
+      summary: 사장 회원 탈퇴
+      description: 로그인된 사장 계정을 영구 삭제합니다.
+      tags: Auth
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 회원 탈퇴 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  message:
+                    type: string
+                    example: 회원 탈퇴가 완료되었습니다.
+                  data:
+                    type: object
+                    properties:
+                      id:
+                        type: string
+                        example: "5"
+                      email:
+                        type: string
+                        example: owner@example.com
+        '403':
+          description: 권한 없음 (OWNER 전용)
+
 
 
 
@@ -5137,41 +5450,47 @@ components:
 
     StampBookListResponse:
       type: array
-      items:
-        type: object
-        properties:
-          id:
-            type: integer
-            example: 3
-          cafe:
+      properties:
+        resultType:
+          type: string
+          example: SUCCESS
+        error:
+          type: "null"
+          example: null
+        success:
+          type: array
+          items:
             type: object
             properties:
               id:
                 type: integer
                 example: 1
-              name:
+              cafe:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 1
+                  name:
+                    type: string
+                    example: "이대점"
+                  address:
+                    type: string
+                    example: "서울 서대문구 어딘가 2"
+              currentCount:
+                type: integer
+                example: 3
+              goalCount:
+                type: integer
+                example: 5
+              status:
                 type: string
-                example: 루피 커피
-              address:
+                enum: [active, expired, completed, converted]
+                example: "active"
+              expiresAt:
                 type: string
-                example: 서울시 마포구 와우산로
-              image:
-                type: string
-                format: uri
-                example: https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafe-image.jpg
-          currentCount:
-            type: integer
-            example: 4
-          goalCount:
-            type: integer
-            example: 10
-          status:
-            type: string
-            example: ONGOING
-          expiresAt:
-            type: string
-            format: date-time
-            example: 2025-08-31T23:59:59.000Z
+                format: date-time
+                example: "2025-08-19T02:23:34.000Z"
 
     Stamp:
       type: object
@@ -5623,11 +5942,6 @@ components:
           format: date-time
 
 
-  securitySchemes:
-      bearerAuth:
-        type: http
-        scheme: bearer
-        bearerFormat: JWT
 
 tags:
   - name: Users

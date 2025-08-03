@@ -5,8 +5,10 @@ import {
   InvalidStampPolicyError,
   StampImageLimitExceededError, 
   NoStampImageError,
+  StampPolicyNotFoundError,
 } from '../errors/customErrors.js';
 
+// 스탬프 사진 등록
 export const uploadStampImagesService = async (userId, files) => {
   const cafe = await prisma.cafe.findFirst({
     where: { ownerId: userId },
@@ -44,6 +46,7 @@ export const uploadStampImagesService = async (userId, files) => {
   return uploadedUrls;
 };
 
+// 스탬프 정책 등록 
 export const createStampPolicy = async (userId, policyData) => {
   const {
     selectedImageUrl,
@@ -59,14 +62,11 @@ export const createStampPolicy = async (userId, policyData) => {
     expiryDate
   } = policyData;
 
-
-  // 1. 카페 확인
   const cafe = await prisma.cafe.findFirst({
     where: { ownerId: userId },
   });
   if (!cafe) throw new InvalidStampPolicyError('해당 사용자의 카페를 찾을 수 없습니다.');
 
-  // 2. 기존 정책 있는 경우 예외
   const existing = await prisma.stampPolicy.findFirst({
     where: { cafeId: cafe.id },
   });
@@ -101,4 +101,67 @@ export const createStampPolicy = async (userId, policyData) => {
   });
 
   return created;
+};
+
+// 스탬프 정책 수정 
+export const updateStampPolicy = async (userId, policyData) => {
+  const cafe = await prisma.cafe.findFirst({
+    where: { ownerId: userId },
+  });
+  if (!cafe) throw new CafeNotFoundError();
+
+  const existingPolicy = await prisma.stampPolicy.findFirst({
+    where: { cafeId: cafe.id },
+  });
+  if (!existingPolicy) throw new StampPolicyNotFoundError();
+
+  const {
+    selectedImageUrl,
+    conditionType,
+    amountThreshold,
+    stampCountAmount,
+    drinkCount,
+    stampCountDrink,
+    rewardType,
+    discountAmount,
+    menuId,
+    hasExpiry,
+    expiryDate,
+  } = policyData;
+
+  const updated = await prisma.stampPolicy.update({
+    where: { id: existingPolicy.id },
+    data: {
+      selectedImageUrl,
+      conditionType,
+      minAmount: conditionType === 'AMOUNT' ? amountThreshold : null,
+      drinkCount: conditionType === 'COUNT' ? drinkCount : null,
+      stampPerAmount: conditionType === 'AMOUNT' ? stampCountAmount : null,
+      stampPerCount: conditionType === 'COUNT' ? stampCountDrink : null,
+      rewardType,
+      discountAmount: rewardType === 'DISCOUNT' ? discountAmount : null,
+      menuId: rewardType === 'FREE_DRINK' ? menuId : null,
+      hasExpiry,
+      rewardExpiresAt: hasExpiry ? new Date(expiryDate) : null,
+    },
+  });
+
+  return updated;
+};
+
+// 스탬프 정책 조회
+export const getMyStampPolicy = async (userId) => {
+  const cafe = await prisma.cafe.findFirst({
+    where: { ownerId: userId },
+  });
+
+  if (!cafe) throw new CafeNotFoundError();
+
+  const policy = await prisma.stampPolicy.findFirst({
+    where: { cafeId: cafe.id },
+  });
+
+  if (!policy) throw new StampPolicyNotFoundError();
+
+  return policy;
 };

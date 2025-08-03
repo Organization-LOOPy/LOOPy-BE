@@ -3,6 +3,7 @@ const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
 import { StampbookNotFoundError } from "../errors/customErrors.js";
+import { BadRequestError } from '../errors/customErrors.js';
 
 //  [기능 1] 전체 스탬프북 조회
 // - 사용 화면: [마이페이지 > 스탬프북 리스트 화면]
@@ -149,38 +150,46 @@ export const getStampBookDetail = async (req, res, next) => {
 };
 
 
-//   [기능 3] 도장 1개 적립
-// - 사용 화면: [QR 코드 인식 or 수동 적립 요청 시]
-// - QR 또는 MANUAL 방식으로 도장 1개 적립
-// - 목표 도장 수를 초과할 수 없으며, 유효한 방식인지 체크함
-
 export const addStamp = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const stampBookId = parseInt(req.params.stampBookId, 10);
     const { cafeId, method } = req.body;
 
+    console.log("✅ [도장 적립] 요청 정보:", {
+      userId,
+      stampBookId,
+      cafeId,
+      method,
+    });
+
     // 적립 방식 유효성 검사
     if (!['QR', 'MANUAL'].includes(method)) {
+      console.warn("❌ [도장 적립] 잘못된 방식:", method);
       return res.error(400, '적립 방식이 올바르지 않습니다.');
     }
 
-    // 스탬프북 존재 및 소유권 확인
     const stampBook = await prisma.stampBook.findUnique({
       where: { id: stampBookId },
       include: { stamps: true },
     });
 
     if (!stampBook) {
+      console.warn("❌ [도장 적립] 스탬프북 없음:", stampBookId);
       return res.error(404, '스탬프북을 찾을 수 없습니다.');
     }
     if (stampBook.userId !== userId) {
+      console.warn("❌ [도장 적립] 사용자 불일치:", {
+        실제소유자: stampBook.userId,
+        요청자: userId,
+      });
       return res.error(403, '해당 스탬프북에 접근 권한이 없습니다.');
     }
 
-    // 목표 수량 달성 여부 확인
     const currentCount = stampBook.stamps.length;
-    const goalCount = stampBook.goalStampCount;
+    const goalCount = stampBook.goalCount;
+
+    console.log("📊 [도장 적립] 현재 도장 수:", currentCount, "/", goalCount);
 
     if (currentCount >= goalCount) {
       return res.error(400, '이미 모든 도장이 적립되었습니다.');
@@ -190,19 +199,23 @@ export const addStamp = async (req, res, next) => {
     await prisma.stamp.create({
       data: {
         stampBookId,
-        cafeId,
         method,
+        stampedAt: new Date(),
+        source: 'USER',
       },
     });
 
     const updatedCount = currentCount + 1;
     const isCompleted = updatedCount >= goalCount;
 
+    console.log("✅ [도장 적립] 적립 완료 - 개수:", updatedCount);
+
     return res.success({
       stampCount: updatedCount,
       isStampbookCompleted: isCompleted,
     });
   } catch (error) {
+    console.error('[addStamp] 오류 발생:', err);
     next(error);
   }
 };
@@ -421,15 +434,15 @@ export const getExpiringStampBooks = async (req, res, next) => {
     const userId = req.user.id;
     const today = new Date();
     const oneWeekLater = new Date();
-    oneWeekLater.setDate(today.getDate() + 7); // 현재 기준 7일 후 날짜 계산
+    oneWeekLater.setDate(today.getDate() + 7);
 
     const expiringBooks = await prisma.stampBook.findMany({
       where: {
         userId,
         status: 'active',
         expiresAt: {
-          gte: today, // 오늘부터
-          lte: oneWeekLater, // 7일 이내까지
+          gte: today,
+          lte: oneWeekLater,
         },
       },
       include: {
@@ -442,15 +455,17 @@ export const getExpiringStampBooks = async (req, res, next) => {
         },
       },
       orderBy: {
-        expiresAt: 'asc', // 곧 만료 순 정렬
+        expiresAt: 'asc',
       },
     });
 
-    return res.success(expiringBooks);
+    return res.success(expiringBooks); 
   } catch (err) {
+    console.error('[getExpiringStampBooks ERROR]', err);
     next(err);
   }
 };
+
 
 //   [기능 8] 스탬프 히스토리 조회 (환전 완료된 스탬프북)
 // - 사용 화면: [마이페이지 > 스탬프 히스토리]

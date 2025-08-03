@@ -89,8 +89,6 @@ export const postCafePhotos = async (req, res, next) => {
   try {
     const { cafeId } = req.params;
     const userId = req.user.id;
-    const { photoUrls } = req.body;
-
 
     const cafe = await prisma.cafe.findFirst({
       where: { ownerId: userId }
@@ -98,16 +96,23 @@ export const postCafePhotos = async (req, res, next) => {
 
     if (!cafe) throw new CafeNotExistError();
 
-    const createdPhotos = await addCafePhotos(cafe.id, photoUrls);
+    const uploadedUrls = [];
+
+    for (const [index, file] of req.files.entries()) {
+      const s3Url = await uploadToS3(file, 'cafes'); 
+      uploadedUrls.push({ url: s3Url, displayOrder: index });
+    }
+
+    const createdPhotos = await addCafePhotos(cafe.id, uploadedUrls);
 
     res.status(201).json({
-  message: '카페 사진이 등록되었습니다.',
-  cafePhotos: createdPhotos.map((photo) => ({
-    id: photo.id,
-    photoUrl: photo.photoUrl,
-    displayOrder: photo.displayOrder,
-  })),
-});
+      message: '카페 사진이 등록되었습니다.',
+      cafePhotos: createdPhotos.map(photo => ({
+        id: photo.id,
+        photoUrl: photo.photoUrl,
+        displayOrder: photo.displayOrder,
+      })),
+    });
   } catch (error) {
     next(error);
   }
