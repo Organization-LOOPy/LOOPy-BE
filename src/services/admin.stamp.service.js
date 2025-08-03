@@ -146,6 +146,36 @@ export const updateStampPolicy = async (userId, policyData) => {
     },
   });
 
+  const bookmarkedUsers = await prisma.userBookmark.findMany({
+    where: { cafeId: cafe.id },
+    select: { userId: true },
+  });
+
+  const content = JSON.stringify({
+    conditionType: updated.conditionType,
+    minAmount: updated.minAmount,
+    stampPerAmount: updated.stampPerAmount,
+    drinkCount: updated.drinkCount,
+    stampPerCount: updated.stampPerCount,
+    rewardType: updated.rewardType,
+    discountAmount: updated.discountAmount,
+    menuId: updated.menuId,
+    hasExpiry: updated.hasExpiry,
+    rewardExpiresAt: updated.rewardExpiresAt,
+  }, null, 2);
+
+  if (bookmarkedUsers.length > 0) {
+    const notifications = bookmarkedUsers.map(({ userId }) => ({
+      userId,
+      cafeId: cafe.id,
+      type: 'stamp',
+      title: '스탬프 정책이 변경되었습니다.',
+      content, // 최신 정책 전체 내용
+    }));
+
+    await prisma.notification.createMany({ data: notifications });
+  }
+
   return updated;
 };
 
