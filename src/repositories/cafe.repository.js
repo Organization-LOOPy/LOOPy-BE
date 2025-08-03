@@ -51,8 +51,10 @@ export const stampBookRepository = {
   async findStampBook(userId, cafeId) {
     const stampBook = await prisma.stampBook.findUnique({
       where: {
-        userId: userId,
-        cafeId: cafeId,
+        userId_cafeId: {
+          userId: userId,
+          cafeId: cafeId,
+        },
       },
       select: {
         id: true,
