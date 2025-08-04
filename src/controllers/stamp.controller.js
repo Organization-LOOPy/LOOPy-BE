@@ -210,15 +210,32 @@ export const addStamp = async (req, res, next) => {
 
     console.log("✅ [도장 적립] 적립 완료 - 개수:", updatedCount);
 
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: stampBook.userId,
+          cafeId: stampBook.cafeId,
+          type: 'stamp',
+          title: '스탬프가 적립되었어요!',
+          content: '지금 방금 적립한 스탬프에 대해 리뷰를 작성해보세요 ✍️',
+          isRead: false,
+        },
+      });
+    } catch (notificationError) {
+      console.error("❌ [도장 적립] 알림 생성 실패:", notificationError);
+    }
+
     return res.success({
       stampCount: updatedCount,
       isStampbookCompleted: isCompleted,
     });
+    
   } catch (error) {
-    console.error('[addStamp] 오류 발생:', err);
+    console.error('[addStamp] 오류 발생:', error);
     next(error);
   }
 };
+
 
 //  [기능 4] 스탬프 → 포인트 환전
 // - 사용 화면: [스탬프북 상세 > ‘환전하기’ 버튼 클릭 시]
@@ -461,7 +478,7 @@ export const getExpiringStampBooks = async (req, res, next) => {
 
     return res.success(expiringBooks); 
   } catch (err) {
-    console.error('[getExpiringStampBooks ERROR]', err);
+    console.error('[getExpiringStampBooks ERROR]', error);
     next(err);
   }
 };
@@ -618,4 +635,4 @@ export const getMyStampByCafe = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+}
