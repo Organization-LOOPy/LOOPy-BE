@@ -14,7 +14,7 @@ export const cafeService = {
       cafeRepository.findPhotos(cafeId),
       cafeRepository.findMenu(cafeId),
       stampBookRepository.findStampBook(userId, cafeId),
-      cafeCouponRepository.findCafeCoupons(cafeId),
+      cafeCouponRepository.findCafeCoupons(cafeId, userId),
       cafeBookmarkRepository.isBookmarked(cafeId, userId),
     ]);
     delete cafe.latitude;

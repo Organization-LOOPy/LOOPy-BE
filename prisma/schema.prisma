@@ -231,7 +231,7 @@ model StampBook {
   isConverted       Boolean            @default(false) @map("is_converted")
   round             Int                @default(1) @map("round")
   createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  updatedAt         DateTime?           @updatedAt @map("updated_at")
   // Relations
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   cafe              Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
@@ -343,8 +343,8 @@ model Cafe {
   keywords         Json?
   status           CafeStatus @default(inactive)
   createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
-
+  updatedAt DateTime? @map("updated_at")
+  
   challengeParticipantsJoinedAt ChallengeParticipant[] @relation("CafeToJoinedChallengeParticipants")
 
   // Relations
@@ -372,7 +372,7 @@ model CafeMenu {
   isRepresentative Boolean  @default(false) @map("is_representative")
   photoUrl         String?  @map("photo_url") @db.Text
   createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
 
   // Relations
   cafe            Cafe             @relation(fields: [cafeId], references: [id], onDelete: Cascade)
@@ -464,7 +464,7 @@ model UserCoupon {
   expiredAt        DateTime              @map("expired_at")
   usedAt           DateTime?             @map("used_at")
   createdAt        DateTime              @default(now()) @map("created_at")
-  updatedAt        DateTime              @updatedAt @map("updated_at")
+  updatedAt        DateTime?              @updatedAt @map("updated_at")
 
   // Relations
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
