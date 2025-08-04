@@ -1,5 +1,3 @@
-//coupon.controller.js
-
 import { createCouponTemplateService } from "../services/coupon.service.js";
 
 export const createCouponTemplateController = async (req, res) => {
@@ -14,10 +12,6 @@ export const createCouponTemplateController = async (req, res) => {
           data: null,
         });
       }
-      console.log('🔥 req.params:', req.params);       // cafeId 포함 확인
-      console.log('🔥 req.body:', req.body);           // 요청 데이터 확인
-      console.log('🔥 cafeId:', cafeId);               // 숫자로 변환된지 확인
-
   
       const newCoupon = await createCouponTemplateService(cafeId, data);
   
@@ -26,7 +20,6 @@ export const createCouponTemplateController = async (req, res) => {
         data: newCoupon,
       });
     } catch (err) {
-      console.error('❌ 쿠폰 생성 중 에러:', err);
       return res.error(err);
     }
   };
