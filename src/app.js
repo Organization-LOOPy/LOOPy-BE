@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
+import client from 'prom-client';
 import { morganMiddleware } from "./utils/logger.js";
 import { responseHandler } from "./middlewares/responseHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -41,6 +42,9 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
   exposedHeaders: ["x-access-token", "Content-Encoding"],
 };
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+
 app.use(cors(corsOptions));
 setupSwagger(app);
 app.use(express.json());
@@ -54,6 +58,17 @@ app.get("/", (req, res) =>
 app.get("/health", (req, res) => {
   res.status(200).send("ok");
 });
+
+// Prometheus metrics
+app.get('/metrics', async (req, res) => {
+  try {
+    res.set('Content-Type', register.contentType);
+    res.end(await register.metrics());
+  } catch (err) {
+    res.status(500).end(err);
+  }
+});
+
 
 // 고객용
 app.use("/api/v1/challenges", challengeRoutes);
