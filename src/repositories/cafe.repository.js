@@ -72,7 +72,7 @@ export const stampBookRepository = {
 };
 
 export const cafeCouponRepository = {
-  async findCafeCoupons(cafeId) {
+  async findCafeCoupons(cafeId, userId) {
     const coupons = await prisma.couponTemplate.findMany({
       where: { cafeId, isActive: true },
       select: {
@@ -83,10 +83,17 @@ export const cafeCouponRepository = {
         applicableMenu: true,
         createdAt: true,
         expiredAt: true,
+        userCoupons: {
+          where: { userId },
+          select: { id: true }, // 존재 여부만 판단
+        },
       },
     });
 
-    return coupons;
+    return coupons.map((coupon) => ({
+      ...coupon,
+      isIssued: coupon.userCoupons.length > 0,
+    }));
   },
 
   async issueCoupon(couponInfo, userId) {
