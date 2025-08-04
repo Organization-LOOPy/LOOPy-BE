@@ -4352,7 +4352,82 @@ paths:
         '403':
           description: 권한 없음 (OWNER 전용)
 
-
+  /api/v1/owner/cafes/{cafeId}/coupons:
+    post:
+      tags:
+        - Admin Coupons
+      summary: 사장님 쿠폰 생성
+      description: 사장님이 매장에 프로모션 쿠폰을 생성합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          description: 쿠폰을 발행할 카페 ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - discountType
+                - validDays
+              properties:
+                name:
+                  type: string
+                  example: 아메리카노 1,000원 할인
+                discountType:
+                  type: string
+                  enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
+                  example: DISCOUNT
+                  description: 쿠폰 유형
+                discountValue:
+                  type: integer
+                  nullable: true
+                  example: 1000
+                  description: 금액 할인일 경우 필수
+                applicableMenuId:
+                  type: integer
+                  nullable: true
+                  example: 5
+                  description: 무료 음료 / 사이즈업 쿠폰일 경우 필수
+                validDays:
+                  type: integer
+                  example: 7
+                  description: 쿠폰 유효일 수
+                expiredAt:
+                  type: string
+                  format: date-time
+                  example: 2025-08-31T23:59:59.000Z
+                  description: 쿠폰 발급일로부터의 만료일시
+      responses:
+        '201':
+          description: 쿠폰 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 쿠폰이 성공적으로 생성되었습니다.
+                  data:
+                    $ref: '#/components/schemas/CouponTemplate'
+        '400':
+          description: 유효하지 않은 요청
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 
 components:
