@@ -294,6 +294,18 @@ export class UserCouponAlreadyUsedOrExpiredError extends CustomError {
   }
 }
 
+export class CouponMissingDiscountValueError extends CustomError {
+  constructor() {
+    super("금액 할인 쿠폰은 할인 금액이 필요합니다.", "C012", 400);
+  }
+}
+
+export class CouponMissingMenuIdError extends CustomError {
+  constructor() {
+    super("해당 쿠폰 유형에는 적용할 메뉴가 필요합니다.", "C013", 400);
+  }
+}
+
 //검색 라우터
 export class MissingUserCoordinate extends CustomError {
   constructor(message) {

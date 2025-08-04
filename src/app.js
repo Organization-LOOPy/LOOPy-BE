@@ -20,7 +20,7 @@ import stampbookRouter from "./routes/stampbook.routes.js";
 
 import adminCafeRouter from "./routes/admin.cafe.routes.js";
 import adminStampRouter from "./routes/admin.stamp.routes.js";
-//import couponRouter from './routes/coupon.routes.js';
+import couponRouter from './routes/coupon.routes.js';
 import customerPageRouter from "./routes/customer.page.routes.js";
 import DashboardRouter from "./routes/dashboard.routes.js";
 
@@ -73,7 +73,7 @@ app.use("/api/v1/users/me/stampbooks", stampbookRouter);
 // 사장용
 app.use("/api/v1/owner/cafes", adminCafeRouter);
 app.use("/api/v1/owner/stamps", adminStampRouter);
-//app.use("/api/v1/owner/cafes/:cafeId/coupons", couponRouter);
+app.use("/api/v1/owner/cafes", couponRouter);
 app.use("/api/v1/owner/dashboard", DashboardRouter);
 
 // 페이지GET
