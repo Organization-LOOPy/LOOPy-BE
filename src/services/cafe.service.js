@@ -1,7 +1,7 @@
 import { logger } from "../utils/logger.js";
 import {
   cafeRepository,
-  stampBookRepository,
+  cafeNotificationRepository,
   cafeCouponRepository,
   cafeReviewRepository,
   cafeBookmarkRepository,
@@ -9,27 +9,29 @@ import {
 import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
 export const cafeService = {
-  async getCafeDetails(cafe, cafeId, userId) {
-    const [photos, menu, stampBook, coupons, bookmark] = await Promise.all([
-      cafeRepository.findPhotos(cafeId),
-      cafeRepository.findMenu(cafeId),
-      stampBookRepository.findStampBook(userId, cafeId),
-      cafeCouponRepository.findCafeCoupons(cafeId, userId),
-      cafeBookmarkRepository.isBookmarked(cafeId, userId),
-    ]);
-    delete cafe.latitude;
-    delete cafe.longitude;
+  async getCafeDetails(_, cafeId, userId) {
+    const cafe = await cafeRepository.findCafeDetails(cafeId, userId);
 
     const cafeDetails = {
       cafe: {
-        ...cafe,
+        id: cafe.id,
+        name: cafe.name,
+        address: cafe.address,
+        businessHours: cafe.businessHours,
+        phone: cafe.phone,
+        websiteUrl: cafe.websiteUrl,
+        description: cafe.description,
+        storeFilters: cafe.storeFilters,
+        takeOutFilters: cafe.takeOutFilters,
+        menuFilters: cafe.menuFilters,
+        keywords: cafe.keywords,
       },
-      photos: photos.map((photo) => ({
-        id: photo.id,
-        url: photo.photoUrl,
-        displayOrder: photo.displayOrder,
+      photos: (cafe.photos ?? []).map((p) => ({
+        id: p.id,
+        url: p.photoUrl,
+        displayOrder: p.displayOrder,
       })),
-      menu: menu.map((item) => ({
+      menu: (cafe.menu ?? []).map((item) => ({
         id: item.id,
         name: item.name,
         price: item.price,
@@ -38,26 +40,56 @@ export const cafeService = {
         isSoldOut: item.isSoldOut,
         isRepresentative: item.isRepresentative,
       })),
-      coupons: coupons.map((coupon) => ({
-        ...coupon,
-        id: coupon.id,
+      coupons: (cafe.CouponTemplate ?? []).map((c) => ({
+        id: c.id,
+        name: c.name,
+        discountType: c.discountType,
+        discountValue: c.discountValue,
+        applicableMenu: c.applicableMenu,
+        createdAt: c.createdAt,
+        expiredAt: c.expiredAt,
+        userCoupons: c.userCoupons,
+        isIssued: c.userCoupons.length > 0,
       })),
-      stampBook: stampBook
+      challenge: (cafe.challengeAvailable ?? []).map((a) => ({
+        id: a.challengeId,
+        challengeId: a.challengeId,
+        title: a.challenge.title,
+        thumbnailUrl: a.challenge.thumbnailUrl,
+        startDate: a.challenge.startDate,
+        endDate: a.challenge.endDate,
+      })),
+      stampBook: (cafe.stampBooks ?? [])[0]
         ? {
-            id: stampBook.id,
-            currentCount: stampBook.currentCount,
-            goalCount: stampBook.goalCount,
-            expiresAt: stampBook.expiresAt,
-            stampBookId: stampBook.id,
+            id: cafe.stampBooks[0].id,
+            currentCount: cafe.stampBooks[0].currentCount,
+            goalCount: cafe.stampBooks[0].goalCount,
+            expiresAt: cafe.stampBooks[0].expiresAt,
+            stampBookId: cafe.stampBooks[0].id,
           }
         : null,
       bookmark: {
-        isBookmarked: !!bookmark,
+        isBookmarked: !cafe.bookmaredBy,
       },
     };
 
-    console.log(cafeDetails);
     return cafeDetails;
+  },
+};
+
+export const cafeNotificationService = {
+  async addNotification(cafeId, userId) {
+    const isExistNotification =
+      await cafeNotificationRepository.findNotification(cafeId, userId);
+    if (isExistNotification) {
+      await cafeNotificationRepository.removeNotification(cafeId, userId);
+      return null;
+    }
+    const notification = await cafeNotificationRepository.addNotification(
+      cafeId,
+      userId
+    );
+    return notification;
   },
 };
 

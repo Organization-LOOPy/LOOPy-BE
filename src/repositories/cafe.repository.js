@@ -7,95 +7,140 @@ import {
 } from "../errors/customErrors.js";
 
 export const cafeRepository = {
-  async findPhotos(cafeId) {
-    const photos = await prisma.CafePhoto.findMany({
-      where: { cafeId },
-      orderBy: { displayOrder: "asc" },
-      select: {
-        id: true,
-        photoUrl: true,
-        displayOrder: true,
-      },
-    });
-
-    return photos;
-  },
-
-  async findMenu(cafeId) {
-    const menu = await prisma.CafeMenu.findMany({
-      where: { cafeId },
+  async findCafeDetails(cafeId, userId) {
+    const cafe = await prisma.cafe.findUnique({
+      where: { id: cafeId },
       select: {
         id: true,
         name: true,
-        price: true,
-        isRepresentative: true,
+        address: true,
+        businessHours: true,
+        phone: true,
+        websiteUrl: true,
         description: true,
-        photoUrl: true,
-        isSoldOut: true,
-      },
-      orderBy: {
-        isRepresentative: "desc", //대표메뉴 맨 위로
+        storeFilters: true,
+        takeOutFilters: true,
+        menuFilters: true,
+        keywords: true,
+
+        photos: {
+          select: {
+            id: true,
+            photoUrl: true,
+            displayOrder: true,
+          },
+          orderBy: { displayOrder: "asc" },
+        },
+
+        menu: {
+          select: {
+            id: true,
+            name: true,
+            price: true,
+            isRepresentative: true,
+            description: true,
+            photoUrl: true,
+            isSoldOut: true,
+          },
+          orderBy: { isRepresentative: "desc" },
+        },
+
+        CouponTemplate: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            discountType: true,
+            discountValue: true,
+            applicableMenu: true,
+            createdAt: true,
+            expiredAt: true,
+            userCoupons: {
+              where: { userId },
+              select: { id: true },
+            },
+          },
+        },
+
+        challengeAvailable: {
+          select: {
+            challengeId: true,
+            challenge: {
+              select: {
+                title: true,
+                thumbnailUrl: true,
+                startDate: true,
+                endDate: true,
+              },
+            },
+          },
+        },
+
+        bookmarkedBy: {
+          where: { userId },
+          select: { id: true },
+        },
+
+        stampBooks: {
+          where: { userId },
+          select: {
+            id: true,
+            currentCount: true,
+            goalCount: true,
+            expiresAt: true,
+          },
+        },
       },
     });
 
-    if (!menu || menu.length === 0) {
-      logger.error(`카페 ID: ${cafeId}에 대한 메뉴가 없습니다.`);
-      throw new MenuNotFoundError(cafeId);
-    }
+    logger.debug(cafe);
 
-    return menu;
+    return cafe;
   },
 };
 
-export const stampBookRepository = {
-  async findStampBook(userId, cafeId) {
-    const stampBook = await prisma.stampBook.findUnique({
+export const cafeNotificationRepository = {
+  async findNotification(cafeId, userId) {
+    const notification = await prisma.userCafeNotification.findUnique({
       where: {
         userId_cafeId: {
-          userId: userId,
-          cafeId: cafeId,
+          userId,
+          cafeId,
         },
       },
       select: {
-        id: true,
-        currentCount: true,
-        goalCount: true,
-        expiresAt: true,
+        userId: true,
+        cafeId: true,
       },
     });
-    if (!stampBook) {
-      return null;
-    }
 
-    return stampBook;
+    return notification;
+  },
+
+  async removeNotification(cafeId, userId) {
+    await prisma.userCafeNotification.delete({
+      where: {
+        userId_cafeId: {
+          userId,
+          cafeId,
+        },
+      },
+    });
+  },
+
+  async addNotification(cafeId, userId) {
+    const notification = await prisma.userCafeNotification.create({
+      data: {
+        userId,
+        cafeId,
+      },
+    });
+
+    return notification;
   },
 };
 
 export const cafeCouponRepository = {
-  async findCafeCoupons(cafeId, userId) {
-    const coupons = await prisma.couponTemplate.findMany({
-      where: { cafeId, isActive: true },
-      select: {
-        id: true,
-        name: true,
-        discountType: true,
-        discountValue: true,
-        applicableMenu: true,
-        createdAt: true,
-        expiredAt: true,
-        userCoupons: {
-          where: { userId },
-          select: { id: true }, // 존재 여부만 판단
-        },
-      },
-    });
-
-    return coupons.map((coupon) => ({
-      ...coupon,
-      isIssued: coupon.userCoupons.length > 0,
-    }));
-  },
-
   async issueCoupon(couponInfo, userId) {
     const { id, createdAt, expiredAt } = couponInfo;
 

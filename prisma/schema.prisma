@@ -40,6 +40,7 @@ model User {
   coupons               UserCoupon[]
   bookmarks             UserBookmark[]
   cafes                 Cafe[]
+  cafeNotificationSettings UserCafeNotification[]
 
   @@map("users")
 }
@@ -359,6 +360,7 @@ model Cafe {
   bookmarkedBy       UserBookmark[]
   stampPolicies StampPolicy[]
   stampImages StampImage[]
+  userNotificationSettings UserCafeNotification[]
 
   @@map("cafes")
 }
@@ -433,6 +435,17 @@ model Notification {
   cafe Cafe? @relation(fields: [cafeId], references: [id], onDelete: SetNull)
 
   @@map("notifications")
+}
+
+model UserCafeNotification {
+  userId Int @map("user_id")
+  cafeId Int @map("cafe_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cafeId])
+  @@map("user_cafe_notification")
 }
 
 model CouponTemplate {
