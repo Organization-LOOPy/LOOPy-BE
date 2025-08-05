@@ -232,6 +232,7 @@ model StampBook {
   round             Int                @default(1) @map("round")
   createdAt         DateTime           @default(now()) @map("created_at")
   updatedAt         DateTime?           @updatedAt @map("updated_at")
+  
   // Relations
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   cafe              Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
