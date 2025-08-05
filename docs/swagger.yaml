@@ -3548,26 +3548,25 @@ paths:
     post:
       tags: [Admin Cafe]
       summary: 카페 사진 등록
+      description: |
+        클라이언트는 사진 파일을 전송합니다. 서버가 해당 파일을 S3에 업로드하고, URL을 저장합니다.
       security:
         - bearerAuth: []
       requestBody:
         required: true
         content:
-          application/json:
+          multipart/form-data:
             schema:
               type: object
-              required: [photoUrls]
               properties:
-                photoUrls:
+                photos:
                   type: array
                   items:
                     type: string
-                    example: "https://example.com/photo.jpg"
-            example:
-              photoUrls:
-                - "https://example.com/cafe1.jpg"
-                - "https://example.com/cafe2.jpg"
-                - "https://example.com/cafe3.jpg"
+                    format: binary
+            encoding:
+              photos:
+                style: form
       responses:
         201:
           description: 사진 등록 성공
