@@ -99,6 +99,47 @@ export const cafeRepository = {
   },
 };
 
+export const cafeNotificationRepository = {
+  async findNotification(cafeId, userId) {
+    const notification = await prisma.userCafeNotification.findUnique({
+      where: {
+        userId_cafeId: {
+          userId,
+          cafeId,
+        },
+      },
+      select: {
+        userId: true,
+        cafeId: true,
+      },
+    });
+
+    return notification;
+  },
+
+  async removeNotification(cafeId, userId) {
+    await prisma.userCafeNotification.delete({
+      where: {
+        userId_cafeId: {
+          userId,
+          cafeId,
+        },
+      },
+    });
+  },
+
+  async addNotification(cafeId, userId) {
+    const notification = await prisma.userCafeNotification.create({
+      data: {
+        userId,
+        cafeId,
+      },
+    });
+
+    return notification;
+  },
+};
+
 export const cafeCouponRepository = {
   async issueCoupon(couponInfo, userId) {
     const { id, createdAt, expiredAt } = couponInfo;

@@ -1,6 +1,7 @@
 import { logger } from "../utils/logger.js";
 import {
   cafeRepository,
+  cafeNotificationRepository,
   cafeCouponRepository,
   cafeReviewRepository,
   cafeBookmarkRepository,
@@ -73,6 +74,22 @@ export const cafeService = {
     };
 
     return cafeDetails;
+  },
+};
+
+export const cafeNotificationService = {
+  async addNotification(cafeId, userId) {
+    const isExistNotification =
+      await cafeNotificationRepository.findNotification(cafeId, userId);
+    if (isExistNotification) {
+      await cafeNotificationRepository.removeNotification(cafeId, userId);
+      return null;
+    }
+    const notification = await cafeNotificationRepository.addNotification(
+      cafeId,
+      userId
+    );
+    return notification;
   },
 };
 

@@ -2,6 +2,7 @@ import { logger } from "../utils/logger.js";
 import { NotAuthenticatedError } from "../errors/customErrors.js";
 import {
   cafeService,
+  cafeNotificationService,
   cafeReviewService,
   cafeCouponService,
   cafeBookmarkService,
@@ -23,6 +24,30 @@ export const getCafe = async (req, res, next) => {
   }
 };
 
+export const getNotification = async (req, res, next) => {
+  try {
+    const cafe = req.cafe;
+    const userId = req.user.id;
+
+    const notification = await cafeNotificationService.addNotification(
+      cafe.id,
+      userId
+    );
+    if (notification == null) {
+      logger.debug(`카페 알람 설정을 해제하였습니다.`);
+      res.success({ message: "카페 알람 설정을 해제하였습니다." });
+    }
+
+    logger.debug(`카페 알람 설정 성공: ${notification.id}`);
+    res.success({
+      data: notification,
+      message: "카페 알람 설정을 성공하였습니다.",
+    });
+  } catch (err) {
+    logger.error(`카페 알람 설정 중 오류 발생: ${err.message}`);
+    next(err);
+  }
+};
 export const issueCafeCouponToUser = async (req, res) => {
   try {
     const couponInfo = req.couponInfo;
