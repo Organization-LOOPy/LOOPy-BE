@@ -1,0 +1,39 @@
+import requests
+import os
+
+PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
+
+def get_trending_menu_info() -> str:
+    prompt = """당신은 F&B 트렌드 분석가입니다.
+2025년 현재 한국에서 인기 있는 카페 메뉴 트렌드를 조사해 주세요.
+신메뉴, 재조명된 음료, 고객 반응이 좋은 메뉴 등을 중심으로 요약해 주세요.
+결과는 JSON 배열로 다음 형식에 맞춰 주세요:
+
+[
+  {
+    "menu": "메뉴 이름",
+    "description": "이 메뉴가 어떤 특징을 가지고 있는지",
+    "whyPopular": "인기 있는 이유",
+    "exampleCafe": "이 메뉴를 제공하는 대표 카페 이름 또는 예시"
+  }
+]
+한국어로 응답해 주세요.
+"""
+    return fetch_cafe_trend(prompt)
+
+
+def get_popular_cafe_features() -> str:
+    prompt = """2025년 한국에서 인기가 많은 카페들이 공통적으로 갖고 있는 특징을 조사해 주세요.
+예: 분위기, 좌석 구성, 운영 시간, 서비스, 디저트 종류 등
+결과는 JSON 배열로 요약해 주세요.
+
+[
+  {
+    "feature": "특징 이름",
+    "description": "이 특징이 왜 중요한지",
+    "example": "이 특징을 갖춘 대표 카페 이름 또는 설명"
+  }
+]
+한국어로 응답해 주세요.
+"""
+    return fetch_cafe_trend(prompt)
