@@ -1139,6 +1139,13 @@ paths:
                       expiredAt: "2025-12-31T23:59:59.000Z"
                       userCoupons: []
                       isIssued: false
+                  Challenge:
+                    id: 1
+                    challengeId: 1
+                    title: "3회 공부 인증 도전"
+                    thumbnailUrl: "https://example.com/thumbnail.jpg"
+                    startDate: "2025-08-01T00:00:00.000Z"
+                    endDate: "2025-08-15T00:00:00.000Z"   
                   stampBook:
                     id: 1
                     currentCount: 3

@@ -15,7 +15,7 @@ export const getCafe = async (req, res, next) => {
 
     const cafeDetails = await cafeService.getCafeDetails(cafe, cafe.id, userId);
 
-    logger.debug(`카페 정보 조회 성공: ${cafeDetails.name}`);
+    logger.debug(`카페 정보 조회 성공: ${cafeDetails.id}`);
     res.success(cafeDetails);
   } catch (err) {
     logger.error(`카페 정보 조회 중 오류 발생: ${err.message}`);
@@ -61,7 +61,6 @@ export const getCafeReviews = async (req, res, next) => {
     });
     next(err);
   }
-  
 };
 
 export const addBookmark = async (req, res, next) => {
