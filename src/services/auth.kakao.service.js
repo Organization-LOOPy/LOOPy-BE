@@ -7,6 +7,7 @@ import {
   KakaoAlreadyLinkedError, 
   KakaoCodeMissingError,
  } from '../errors/customErrors.js';
+import { generateQRCode } from './user.service.js';
 
 // 공통 util 함수
 const buildRedirectUrl = (token, nickname) =>
@@ -114,6 +115,12 @@ do {
       },
     },
   });
+
+  const qrCode = await generateQRCode(user.id);
+await prisma.user.update({
+  where: { id: user.id },
+  data: { qrCode },
+});
 
   const token = createJwt(user.id, [requestedRole], requestedRole);
   return { redirectUrl: buildRedirectUrl(token, user.nickname) };
