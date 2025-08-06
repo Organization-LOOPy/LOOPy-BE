@@ -365,71 +365,6 @@ export const convertStampToPoint = async (req, res, next) => {
   }
 };
 
-// //  [기능 5] 환전 취소 -> 보류
-// // - 사용 화면: [환전 후 3일 이내 환전 취소 요청 시]
-// // - 유저가 환전한 스탬프북을 3일 이내에 취소할 수 있음
-// // - 포인트 회수, 스탬프북 상태 복구, 환불 기록 남김
-
-// export const cancelStampConversion = async (req, res, next) => {
-//   const userId = req.user.id;
-//   const stampBookId = parseInt(req.params.stampBookId, 10);
-
-//   try {
-//     const stampBook = await prisma.stampBook.findUnique({
-//       where: { id: stampBookId },
-//     });
-
-//     if (!stampBook) throw new NotFoundError("존재하지 않는 스탬프북입니다.");
-//     if (stampBook.userId !== userId)
-//       throw new ForbiddenError("본인의 스탬프북만 환전 취소할 수 있습니다.");
-//     if (!stampBook.isConverted || !stampBook.convertedAt)
-//       throw new BadRequestError("환전되지 않은 스탬프북입니다.");
-
-//     // 3일 이내 취소 가능 여부 확인
-//     const now = new Date();
-//     const convertedAt = new Date(stampBook.convertedAt);
-//     const diffInDays = (now - convertedAt) / (1000 * 60 * 60 * 24);
-//     if (diffInDays > 3)
-//       throw new BadRequestError("환전 취소는 3일 이내에만 가능합니다.");
-
-//     const stampCount = stampBook.currentStampCount;
-//     const refundPoint = stampCount * 100;
-
-//     // 트랜잭션으로 상태 복구 및 포인트 회수
-//     await prisma.$transaction([
-//       prisma.stampBook.update({
-//         where: { id: stampBookId },
-//         data: {
-//           isConverted: false,
-//           convertedAt: null,
-//           status: 'completed',
-//         },
-//       }),
-//       prisma.user.update({
-//         where: { id: userId },
-//         data: {
-//           totalPoint: {
-//             decrement: refundPoint,
-//           },
-//         },
-//       }),
-//       prisma.pointTransaction.create({
-//         data: {
-//           userId,
-//           stampBookId,
-//           point: -refundPoint,
-//           type: 'refunded',
-//           description: '스탬프 환전 취소',
-//         },
-//       }),
-//     ]);
-
-//     return res.success({ message: "환전 취소 완료", refundPoint });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
 //  [기능 6] 스탬프북 기간 연장
 // - 사용 화면: [스탬프북 상세 화면 > 연장 버튼 클릭 시]
 // - 진행 중인(active) 스탬프북만 1회 14일 연장 가능
@@ -490,7 +425,7 @@ export const extendStampBook = async (req, res, next) => {
   }
 };
 
-//   [기능 7] 소멸 임박 스탬프북 조회
+// [기능 7] 소멸 임박 스탬프북 조회
 // - 사용 화면: [마이페이지 or 홈 > “곧 만료돼요” 배너 영역]
 // - 만료까지 7일 이하 남은 active 상태의 스탬프북 조회
 // - 만료일 오름차순 정렬
@@ -519,16 +454,48 @@ export const getExpiringStampBooks = async (req, res, next) => {
             address: true,
           },
         },
+        stamps: {
+          select: { id: true },
+        },
       },
       orderBy: {
         expiresAt: 'asc',
       },
     });
 
-    return res.success(expiringBooks); 
-  } catch (err) {
+    const result = expiringBooks.map((book) => {
+      const goalCount = book.goalCount;
+      const currentCount = book.stamps.length;
+      const progressRate = Math.floor((currentCount / goalCount) * 100);
+
+      const expiresAt = new Date(book.expiresAt);
+      const todayMidnight = new Date(today.toDateString());
+      const daysLeft = Math.ceil((expiresAt - todayMidnight) / (1000 * 60 * 60 * 24));
+
+      const isCompleted = book.isCompleted;
+      const canExtend = !isCompleted && daysLeft <= 7 && daysLeft > 0;
+      const previewRewardText = `${goalCount - currentCount}회 후 포인트로 자동 환전돼요!`;
+
+      return {
+        stampBookId: book.id,
+        cafeId: book.cafe.id,
+        cafeName: book.cafe.name,
+        cafeAddress: book.cafe.address,
+        expiresAt: book.expiresAt,
+        daysLeft,
+        currentCount,
+        goalCount,
+        progressRate,
+        isCompleted,
+        canExtend,
+        previewRewardText,
+      };
+    });
+
+    return res.success(result);
+  } catch (error) {
     console.error('[getExpiringStampBooks ERROR]', error);
-    next(err);
+    next(error);
   }
 };
 
@@ -554,20 +521,34 @@ export const getConvertedStampbooks = async (req, res, next) => {
       include: {
         cafe: {
           select: {
+            id: true,
             name: true,
             address: true,
+            photos: {
+              orderBy: { displayOrder: 'asc' },
+              take: 1,
+              select: { photoUrl: true },
+            },
           },
         },
       },
     });
 
-    const result = convertedBooks.map((book) => ({
-      stampBookId: book.id,
-      cafeName: book.cafe.name,
-      address: book.cafe.address,
-      round: book.round,
-      convertedAt: book.convertedAt,
-    }));
+    const result = convertedBooks.map((book) => {
+      const cafe = book.cafe;
+      const imageUrl = cafe.photos[0]?.photoUrl || null;
+
+      return {
+        stampBookId: book.id,
+        cafeId: cafe.id,
+        cafeName: cafe.name,
+        cafeAddress: cafe.address,
+        cafeImageUrl: imageUrl,
+        round: book.round,
+        displayText: `스탬프지 ${book.round}장 완료`,
+        convertedAt: book.convertedAt,
+      };
+    });
 
     return res.success(result);
   } catch (err) {
