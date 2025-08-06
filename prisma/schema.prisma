@@ -334,6 +334,7 @@ model Cafe {
   longitude        Float
   ownerName        String     @map("owner_name") @db.VarChar(100)
   businessHours    Json?      @map("business_hours")
+  breakTime        String?    @map("break_time") @db.VarChar(100)
   phone            String?    @db.VarChar(20)
   websiteUrl       String?    @map("website_url") @db.Text
   description      String?    @db.Text

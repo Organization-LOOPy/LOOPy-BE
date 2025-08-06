@@ -84,6 +84,7 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
     where: { id: cafe.id },
     data: {
       businessHours: parsedHours,
+      breakTime: operationInfo.breakTime,
       storeFilters: parseIfString(operationInfo.storeFilters),
       takeOutFilters: parseIfString(operationInfo.takeOutFilters),
       menuFilters: parseIfString(operationInfo.menuFilters),
