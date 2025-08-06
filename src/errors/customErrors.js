@@ -294,6 +294,17 @@ export class UserCouponAlreadyUsedOrExpiredError extends CustomError {
   }
 }
 
+export class InvalidCouponStatusError extends CustomError {
+  constructor(status) {
+    super(
+      `올바르지 않은 쿠폰 상태입니다: ${status}`,
+      "U001", // 적절한 에러코드로 바꿔도 돼
+      400,
+      { status }
+    );
+  }
+}
+
 export class CouponMissingDiscountValueError extends CustomError {
   constructor() {
     super("금액 할인 쿠폰은 할인 금액이 필요합니다.", "C012", 400);

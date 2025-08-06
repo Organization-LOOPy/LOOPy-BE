@@ -1,8 +1,5 @@
 import prisma from "../../prisma/client.js";
-import { StampNotEligibleError,
-         UserCouponNotFoundError,
-         UserCouponAlreadyUsedOrExpiredError,
-} from "../errors/customErrors.js";
+import { StampNotEligibleError } from "../errors/customErrors.js";
 
 // 스탬프북 쿠폰 발급 서비스
 export const stampBookService = {
@@ -98,33 +95,3 @@ export const stampBookService = {
   },
 };
 
-
-
-// 쿠폰 사용 서비스 (스탬프, 프로모션 포함)
-
-export const useUserCouponService = async (userId, userCouponId) => {
-  const userCoupon = await prisma.userCoupon.findFirst({
-    where: { 
-      id: userCouponId,
-      userId: userId, // 사용자 ID로 필터링
-    },
-  });
-
-  if (!userCoupon) {
-    throw new UserCouponNotFoundError(userCouponId);
-  }
-
-  if (userCoupon.status !== "active") {
-    throw new UserCouponAlreadyUsedOrExpiredError(userCouponId);
-  }
-
-  const now = new Date();
-
-  return await prisma.userCoupon.update({
-    where: { id: userCouponId },
-    data: {
-      status: "used",
-      usedAt: now,
-    },
-  });
-};
