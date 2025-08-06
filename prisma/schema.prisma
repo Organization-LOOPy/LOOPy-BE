@@ -40,6 +40,7 @@ model User {
   coupons               UserCoupon[]
   bookmarks             UserBookmark[]
   cafes                 Cafe[]
+  cafeNotificationSettings UserCafeNotification[]
 
   @@map("users")
 }
@@ -231,13 +232,15 @@ model StampBook {
   isConverted       Boolean            @default(false) @map("is_converted")
   round             Int                @default(1) @map("round")
   createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
+  updatedAt         DateTime?           @updatedAt @map("updated_at")
+  
   // Relations
   user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
   cafe              Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   stamps            Stamp[]
   pointTransactions PointTransaction[]
 
+  @@unique([userId, cafeId]) 
   @@map("stamp_books")
 }
 
@@ -342,8 +345,8 @@ model Cafe {
   keywords         Json?
   status           CafeStatus @default(inactive)
   createdAt        DateTime   @default(now()) @map("created_at")
-  updatedAt        DateTime   @updatedAt @map("updated_at")
-
+  updatedAt DateTime? @map("updated_at")
+  
   challengeParticipantsJoinedAt ChallengeParticipant[] @relation("CafeToJoinedChallengeParticipants")
 
   // Relations
@@ -357,6 +360,7 @@ model Cafe {
   bookmarkedBy       UserBookmark[]
   stampPolicies StampPolicy[]
   stampImages StampImage[]
+  userNotificationSettings UserCafeNotification[]
 
   @@map("cafes")
 }
@@ -371,7 +375,7 @@ model CafeMenu {
   isRepresentative Boolean  @default(false) @map("is_representative")
   photoUrl         String?  @map("photo_url") @db.Text
   createdAt        DateTime @default(now()) @map("created_at")
-  updatedAt        DateTime @updatedAt @map("updated_at")
+  updatedAt        DateTime? @updatedAt @map("updated_at")
 
   // Relations
   cafe            Cafe             @relation(fields: [cafeId], references: [id], onDelete: Cascade)
@@ -433,6 +437,17 @@ model Notification {
   @@map("notifications")
 }
 
+model UserCafeNotification {
+  userId Int @map("user_id")
+  cafeId Int @map("cafe_id")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, cafeId])
+  @@map("user_cafe_notification")
+}
+
 model CouponTemplate {
   id               Int          @id @default(autoincrement())
   cafeId           Int          @map("cafe_id")
@@ -463,7 +478,7 @@ model UserCoupon {
   expiredAt        DateTime              @map("expired_at")
   usedAt           DateTime?             @map("used_at")
   createdAt        DateTime              @default(now()) @map("created_at")
-  updatedAt        DateTime              @updatedAt @map("updated_at")
+  updatedAt        DateTime?              @updatedAt @map("updated_at")
 
   // Relations
   user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
