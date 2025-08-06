@@ -5744,58 +5744,58 @@ components:
           type: integer
           example: 2
 
-  StampBookExpiring:
-    type: object
-    properties:
-      id:
-        type: integer
-        description: 스탬프북 ID
-        example: 12
-      cafeId:
-        type: integer
-        description: 카페 ID
-        example: 3
-      cafeName:
-        type: string
-        description: 카페 이름
-        example: 카페 위니
-      cafeAddress:
-        type: string
-        description: 카페 주소
-        example: 서울 서대문구 이화여대길 52
-      expiresAt:
-        type: string
-        format: date-time
-        description: 스탬프북 만료일
-        example: 2025-08-15T00:00:00.000Z
-      daysLeft:
-        type: integer
-        description: 남은 일수 (D-day)
-        example: 3
-      currentCount:
-        type: integer
-        description: 현재 도장 개수
-        example: 6
-      goalCount:
-        type: integer
-        description: 목표 도장 개수
-        example: 9
-      progressRate:
-        type: integer
-        description: 도장 적립률 (%)
-        example: 66
-      isCompleted:
-        type: boolean
-        description: 스탬프북 완료 여부
-        example: false
-      canExtend:
-        type: boolean
-        description: 기간 연장 가능 여부
-        example: true
-      previewRewardText:
-        type: string
-        description: 안내 문구 ("n회 후 포인트로 자동 환전돼요!")
-        example: 3회 후 포인트로 자동 환전돼요!
+    StampBookExpiring:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: 스탬프북 ID
+          example: 12
+        cafeId:
+          type: integer
+          description: 카페 ID
+          example: 3
+        cafeName:
+          type: string
+          description: 카페 이름
+          example: 카페 위니
+        cafeAddress:
+          type: string
+          description: 카페 주소
+          example: 서울 서대문구 이화여대길 52
+        expiresAt:
+          type: string
+          format: date-time
+          description: 스탬프북 만료일
+          example: 2025-08-15T00:00:00.000Z
+        daysLeft:
+          type: integer
+          description: 남은 일수 (D-day)
+          example: 3
+        currentCount:
+          type: integer
+          description: 현재 도장 개수
+          example: 6
+        goalCount:
+          type: integer
+          description: 목표 도장 개수
+          example: 9
+        progressRate:
+          type: integer
+          description: 도장 적립률 (%)
+          example: 66
+        isCompleted:
+          type: boolean
+          description: 스탬프북 완료 여부
+          example: false
+        canExtend:
+          type: boolean
+          description: 기간 연장 가능 여부
+          example: true
+        previewRewardText:
+          type: string
+          description: 안내 문구 ("n회 후 포인트로 자동 환전돼요!")
+          example: 3회 후 포인트로 자동 환전돼요!
 
 
     StampConversionResult:
