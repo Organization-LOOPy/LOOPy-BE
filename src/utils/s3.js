@@ -14,7 +14,7 @@ const s3 = new S3Client({
  * @param {string} folder - S3에 저장할 폴더명 (예: 'stamps', 'reviews')
  * @returns {string} S3에 저장된 파일의 public URL
  */
-export const uploadToS3 = async (file) => {
+export const uploadToS3 = async (file, folder) => {
   const fileKey = `${folder}/${Date.now()}_${file.originalname}`;
 
   const uploadParams = {
