@@ -294,6 +294,17 @@ export class UserCouponAlreadyUsedOrExpiredError extends CustomError {
   }
 }
 
+export class InvalidCouponStatusError extends CustomError {
+  constructor(status) {
+    super(
+      `올바르지 않은 쿠폰 상태입니다: ${status}`,
+      "U001", // 적절한 에러코드로 바꿔도 돼
+      400,
+      { status }
+    );
+  }
+}
+
 export class CouponMissingDiscountValueError extends CustomError {
   constructor() {
     super("금액 할인 쿠폰은 할인 금액이 필요합니다.", "C012", 400);
@@ -334,15 +345,17 @@ export class StampbookNotFoundError extends CustomError {
 
 // 리뷰 관련
 
-export class InvalidReviewTitleError extends CustomError {
-  constructor(title) {
-    super("제목은 최소 20자 이상이어야 합니다.", "R001", 400, { title });
+export class cafeNotFoundError extends CustomError {
+  constructor(cafeId) {
+    super(`ID ${cafeId}에 해당하는 카페가 존재하지 않습니다.`, "R001", 404, {
+      cafeId
+    });
   }
 }
 
 export class InvalidReviewContentError extends CustomError {
   constructor(content) {
-    super("본문은 최소 500자 이상이어야 합니다.", "R002", 400, { content });
+    super("본문은 최소 500자 이하여야 합니다.", "R002", 400, { content });
   }
 }
 
@@ -365,7 +378,7 @@ export class ForbiddenReviewAccessError extends CustomError {
 
 export class MissingReviewFieldsError extends CustomError {
   constructor(missingFields = []) {
-    super("제목과 본문을 모두 입력해주세요.", "R005", 400, { missingFields });
+    super("본문을 입력해주세요.", "R005", 400, { missingFields });
   }
 }
 
