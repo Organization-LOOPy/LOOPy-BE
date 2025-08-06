@@ -5744,25 +5744,59 @@ components:
           type: integer
           example: 2
 
-    StampBookExpiring:
-      type: object
-      properties:
-        id:
-          type: integer
-        cafe:
-          type: object
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            address:
-              type: string
-        expiresAt:
-          type: string
-          format: date-time
-        status:
-          type: string
+  StampBookExpiring:
+    type: object
+    properties:
+      id:
+        type: integer
+        description: 스탬프북 ID
+        example: 12
+      cafeId:
+        type: integer
+        description: 카페 ID
+        example: 3
+      cafeName:
+        type: string
+        description: 카페 이름
+        example: 카페 위니
+      cafeAddress:
+        type: string
+        description: 카페 주소
+        example: 서울 서대문구 이화여대길 52
+      expiresAt:
+        type: string
+        format: date-time
+        description: 스탬프북 만료일
+        example: 2025-08-15T00:00:00.000Z
+      daysLeft:
+        type: integer
+        description: 남은 일수 (D-day)
+        example: 3
+      currentCount:
+        type: integer
+        description: 현재 도장 개수
+        example: 6
+      goalCount:
+        type: integer
+        description: 목표 도장 개수
+        example: 9
+      progressRate:
+        type: integer
+        description: 도장 적립률 (%)
+        example: 66
+      isCompleted:
+        type: boolean
+        description: 스탬프북 완료 여부
+        example: false
+      canExtend:
+        type: boolean
+        description: 기간 연장 가능 여부
+        example: true
+      previewRewardText:
+        type: string
+        description: 안내 문구 ("n회 후 포인트로 자동 환전돼요!")
+        example: 3회 후 포인트로 자동 환전돼요!
+
 
     StampConversionResult:
       type: object
@@ -5798,19 +5832,38 @@ components:
       properties:
         stampBookId:
           type: integer
+          description: 스탬프북 ID
           example: 15
+        cafeId:
+          type: integer
+          description: 카페 ID
+          example: 7
         cafeName:
           type: string
+          description: 카페 이름
           example: 블루보틀 연남점
-        address:
+        cafeAddress:
           type: string
+          description: 카페 주소
           example: 서울특별시 마포구 연남동 123-45
+        cafeImageUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: 카페 썸네일 이미지 URL
+          example: https://example.com/photo.jpg
         round:
           type: integer
+          description: 해당 카페에서 몇 번째 스탬프북인지
           example: 3
+        displayText:
+          type: string
+          description: 스탬프북 완료 문구
+          example: 스탬프지 3장 완료
         convertedAt:
           type: string
           format: date-time
+          description: 환전 완료 시각
           example: "2025-07-31T13:45:00.000Z"
 
     ConvertedStampBookHistoryResponse:
@@ -5829,6 +5882,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/ConvertedStampBookHistoryItem'
+
       
     TotalStampCountResult:
       type: object
