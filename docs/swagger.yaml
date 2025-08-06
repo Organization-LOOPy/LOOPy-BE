@@ -2862,12 +2862,26 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ConvertedStampBookHistoryResponse'
+              example:
+                status: SUCCESS
+                code: 200
+                message: 스탬프 히스토리 조회 성공
+                data:
+                  - stampBookId: 15
+                    cafeId: 7
+                    cafeName: 블루보틀 연남점
+                    cafeAddress: 서울특별시 마포구 연남동 123-45
+                    cafeImageUrl: https://example.com/photo.jpg
+                    round: 3
+                    displayText: 스탬프지 3장 완료
+                    convertedAt: "2025-07-31T13:45:00.000Z"
         '500':
           description: 서버 오류
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
 
 
   /api/v1/users/me/stamps/total-count:
@@ -5866,6 +5880,7 @@ components:
           format: date-time
           description: 환전 완료 시각
           example: "2025-07-31T13:45:00.000Z"
+
 
     ConvertedStampBookHistoryResponse:
       type: object
