@@ -135,7 +135,6 @@ export const cafeReviewService = {
 
     const reviewDetails = actualReviews.map((review) => ({
       id: review.id,
-      title: review.title,
       content: review.content,
       nickname: review.user.nickname,
       userProfileImage: review.user.profileImageUrl,

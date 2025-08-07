@@ -210,7 +210,6 @@ export const cafeReviewRepository = {
       where: whereClause,
       select: {
         id: true,
-        title: true,
         content: true,
         createdAt: true,
         images: true,
