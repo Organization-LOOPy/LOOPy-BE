@@ -3615,6 +3615,9 @@ paths:
                         type: string
                       closeTime:
                         type: string
+                breakTime:
+                  type: string
+                  example: "14:00~15:00"
                 storeFilters:
                   type: array
                   items:
@@ -3657,6 +3660,7 @@ paths:
                   isClosed: true
                 - day: "일"
                   isClosed: true
+              breakTime: "14:00~15:00"
               storeFilters:
                 - "1인석"
               takeOutFilters:
@@ -3669,6 +3673,7 @@ paths:
       responses:
         200:
           description: 운영 정보 업데이트 성공
+
 
   /api/v1/owner/cafes/menus:
     post:
@@ -5161,6 +5166,7 @@ components:
         - name
         - address
         - businessHours
+        - breakTime
         - phone
         - websiteUrl
         - description
@@ -5186,6 +5192,10 @@ components:
           items:
             $ref: '#/components/schemas/CafeDetailBusinessHour'
           description: 영업시간 정보
+        breakTime:
+          type: string
+          description: 브레이크 타임
+          example: "14:00~15:00"
         phone:
           type: string
           description: 전화번호

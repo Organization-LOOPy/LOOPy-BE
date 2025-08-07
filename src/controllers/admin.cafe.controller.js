@@ -56,6 +56,7 @@ export const patchCafeOperationInfo = async (req, res, next) => {
         id: updatedCafe.id,
         name: updatedCafe.name,
         businessHours: updatedCafe.businessHours,
+        breakTime: updatedCafe.breakTime,
         storeFilters: updatedCafe.storeFilters,
         takeOutFilters: updatedCafe.takeOutFilters,
         menuFilters: updatedCafe.menuFilters,
