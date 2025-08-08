@@ -43,9 +43,6 @@ export const cafeSearchRepository = {
       },
       take: take + 1,
     });
-
-    console.log(cafeList);
-
     // nextCursor 계산
     const hasMore = cafeList.length > take;
     const cafes = hasMore ? cafeList.slice(0, -1) : cafeList;
@@ -58,6 +55,43 @@ export const cafeSearchRepository = {
       nextCursor,
       hasMore,
     };
+  },
+
+  async findCafeByIds(cafeIds, userId) {
+    return await prisma.cafe.findMany({
+      where: {
+        id: { in: cafeIds },
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        keywords: true,
+        latitude: true,
+        longitude: true,
+        region1DepthName: true,
+        region2DepthName: true,
+        region3DepthName: true,
+        createdAt: true,
+        photos: {
+          orderBy: { displayOrder: "asc" },
+          take: 1,
+          select: {
+            id: true,
+            photoUrl: true,
+          },
+        },
+        bookmarkedBy: userId
+          ? {
+              where: { userId: userId },
+              select: { id: true },
+            }
+          : false,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
   },
 };
 

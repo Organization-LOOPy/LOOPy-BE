@@ -1,4 +1,5 @@
 import { logger } from "../utils/logger.js";
+import axios from "axios";
 import { cafeRepository } from "../repositories/cafe.repository.js";
 import {
   cafeSearchRepository,
@@ -156,12 +157,63 @@ export const cafeSearchService = {
       };
     }
 
-    return {
-      fromNLP: true,
-      data: [],
-      nextCursor: null,
-      hasMore: false,
-    };
+    try {
+      const nlpRes = await axios.post(
+        "http://localhost:8000/embedding/search",
+        {
+          query: query,
+        }
+      );
+
+      const cafeIds = nlpRes.data?.cafeIds ?? [];
+
+      if (cafeIds.length === 0) {
+        return {
+          fromNLP: true,
+          data: [],
+          nextCursor: null,
+          hasMore: false,
+        };
+      }
+
+      const nlpCafeResults = await cafeSearchRepository.findCafeByIds(
+        cafeIds,
+        userId
+      );
+
+      const cafesWithDistance = nlpCafeResults.map((cafe) => {
+        const distance = getDistanceInMeters(
+          cafe.latitude,
+          cafe.longitude,
+          refinedX,
+          refinedY
+        );
+
+        const isBookmarked = cafe.bookmarkedBy && cafe.bookmarkedBy.length > 0;
+
+        return {
+          ...cafe,
+          distance,
+          isBookmarked,
+        };
+      });
+
+      const sortedCafes = cafesWithDistance.sort((a, b) => {
+        if (a.isBookmarked && !b.isBookmarked) return -1;
+        if (!a.isBookmarked && b.isBookmarked) return 1;
+        return a.distance - b.distance;
+      });
+
+      return {
+        fromNLP: true,
+        data: sortedCafes,
+        nextCursor: null,
+        hasMore: false,
+      };
+    } catch (err) {
+      logger.error(`nlp서버 카페 검색 중 오류 발생: ${err.message}`);
+      next(err);
+    }
   },
 
   async getCafeDetails(cafe, x, y) {
