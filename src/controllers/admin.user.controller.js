@@ -250,7 +250,6 @@ export const verifyQRToken = async (req, res, next) => {
         return res.fail('사용할 포인트 금액이 올바르지 않습니다.', 400);
       }
   
-      // 포인트 사용 기록만 남김 (보유 여부는 프론트에서 검증 완료된 상태 가정)
       await prisma.pointTransaction.create({
         data: {
           userId,
@@ -303,3 +302,51 @@ export const useUserCoupon = async (req, res, next) => {
       next(err);
     }
   };
+
+  // 챌린지 인증 처리
+  export const verifyChallengeForUser = async (req, res, next) => {
+    const userId = parseInt(req.params.userId, 10);
+    const challengeId = parseInt(req.params.challengeId, 10);
+    const cafeId = req.user.cafeId;
+  
+    try {
+      const participation = await prisma.challengeParticipant.findUnique({
+        where: {
+          userId_challengeId: {
+            userId,
+            challengeId,
+          },
+        },
+      });
+  
+      if (!participation) {
+        return res.fail('챌린지 참여 이력이 없습니다.', 404);
+      }
+  
+      if (participation.completedAt) {
+        return res.fail('이미 완료된 챌린지입니다.', 400);
+      }
+  
+      if (participation.joinedCafeId !== cafeId) {
+        return res.fail('해당 카페에서 인증할 수 없는 챌린지입니다.', 403);
+      }
+  
+      // 챌린지 완료 처리
+      await prisma.challengeParticipant.update({
+        where: {
+          userId_challengeId: {
+            userId,
+            challengeId,
+          },
+        },
+        data: {
+          completedAt: new Date(),
+        },
+      });
+  
+      return res.success('챌린지 인증 완료');
+    } catch (err) {
+      next(err);
+    }
+  };
+en  
