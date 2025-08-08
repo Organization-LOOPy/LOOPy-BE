@@ -6,31 +6,27 @@ RUN apk add --no-cache curl
 # pnpm 설치
 RUN npm install -g pnpm
 
-WORKDIR /app
-
-
 # 비root 사용자 먼저 생성
 RUN addgroup -g 1001 -S nodejs && adduser -S nodejs -u 1001
 
-# 종속성 설치 (root로 실행)
-COPY package.json pnpm-lock.yaml ./
+# 작업 디렉토리 생성 및 권한 설정
+WORKDIR /app
+
+# package.json과 lock 파일 먼저 복사하고, 권한 설정
+COPY --chown=nodejs:nodejs package.json pnpm-lock.yaml ./
+
+# nodejs 사용자로 전환 후 의존성 설치
+USER nodejs
 RUN pnpm install --frozen-lockfile
 
-# 소스 코드 복사
-COPY . .
+# 나머지 소스 복사 (권한은 자동 설정됨)
+COPY --chown=nodejs:nodejs . .
 
 # Prisma 클라이언트 생성
 RUN pnpm exec prisma generate
 
-# 로그 디렉토리 생성 및 권한 설정
-RUN mkdir -p /app/logs && chown -R nodejs:nodejs /app
-USER nodejs
-
-# 모든 파일 소유권을 nodejs 사용자로 변경 (마지막에!)
-RUN chown -R nodejs:nodejs /app
-
-# 이제 nodejs 사용자로 전환
-USER nodejs
+# 로그 디렉토리 생성
+RUN mkdir -p /app/logs
 
 EXPOSE 3000
 
