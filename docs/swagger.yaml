@@ -4543,6 +4543,8 @@ paths:
           in: path
           required: true
           description: 쿠폰을 발행할 카페 ID
+          schema:
+            type: integer
       requestBody:
         required: true
         content:
@@ -4550,13 +4552,9 @@ paths:
             schema:
               type: object
               required:
-                - name
                 - discountType
                 - validDays
               properties:
-                name:
-                  type: string
-                  example: 아메리카노 1,000원 할인
                 discountType:
                   type: string
                   enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
@@ -4571,16 +4569,21 @@ paths:
                   type: integer
                   nullable: true
                   example: 5
-                  description: 무료 음료 / 사이즈업 쿠폰일 경우 필수
-                validDays:
-                  type: integer
-                  example: 7
-                  description: 쿠폰 유효일 수
-                expiredAt:
+                usageConditions:
+                  type: string
+                  nullable: true
+                  example: "1만원 이상 구매 시"
+                  description: 쿠폰 사용 조건
+                startDate:
                   type: string
                   format: date-time
-                  example: 2025-08-31T23:59:59.000Z
-                  description: 쿠폰 발급일로부터의 만료일시
+                  nullable: true
+                  example: "2025-08-10T00:00:00.000Z"
+                endDate:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  example: "2025-08-31T23:59:59.000Z"
       responses:
         '201':
           description: 쿠폰 생성 성공
@@ -4606,54 +4609,92 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
-  /api/v1/owner/users/{userId}/challenges/{challengeId}/verify:
-    post:
-      summary: 고객 챌린지 인증 처리
-      description: 사장님이 특정 고객의 챌린지 수행을 인증합니다. 인증 성공 시, 고객 앱에서 해당 챌린지가 완료 처리됩니다.
+    get:
       tags:
-        - Owner Challenge
+        - Admin Coupons
+      summary: 사장님 쿠폰 목록 조회
+      description: 사장님이 등록한 쿠폰 목록을 조회합니다. `type` 쿼리로 필터링할 수 있습니다.
       security:
         - bearerAuth: []
       parameters:
-        - name: userId
+        - name: cafeId
           in: path
           required: true
+          description: 쿠폰을 조회할 카페 ID
           schema:
             type: integer
-          description: 인증할 고객의 ID
-        - name: challengeId
-          in: path
-          required: true
+        - name: type
+          in: query
+          required: false
+          description: 필터링할 쿠폰 유형 (DISCOUNT, FREE_DRINK, SIZE_UP)
           schema:
-            type: integer
-          description: 인증할 챌린지 ID
+            type: string
+            enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
       responses:
         '200':
-          description: 챌린지 인증 성공
+          description: 쿠폰 목록 조회 성공
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  status:
-                    type: string
-                    example: SUCCESS
-                  code:
-                    type: integer
-                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CouponTemplate'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/owner/cafes/{cafeId}/coupons/{couponId}/terminate:
+    patch:
+      tags:
+        - Admin Coupons
+      summary: 쿠폰 발급 종료
+      description: 사장님이 특정 쿠폰의 발급을 종료합니다. (isActive → false)
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          description: 카페 ID
+          schema:
+            type: integer
+        - name: couponId
+          in: path
+          required: true
+          description: 종료할 쿠폰 ID
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 쿠폰 발급 종료 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
                   message:
                     type: string
-                    example: 챌린지 인증 완료
-        '400':
-          description: 잘못된 요청
-        '403':
-          description: 인증 권한 없음
+                    example: 쿠폰 발급이 종료되었습니다.
+                  data:
+                    $ref: '#/components/schemas/CouponTemplate'
         '404':
-          description: 대상 챌린지를 찾을 수 없음
-
-
-
+          description: 해당 쿠폰을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   securitySchemes:
@@ -6290,7 +6331,6 @@ components:
           format: date-time
         couponTemplate:
           $ref: '#/components/schemas/CouponTemplate'
-
     
     CouponTemplate:
       type: object

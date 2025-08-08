@@ -25,6 +25,8 @@ import adminStampRouter from "./routes/admin.stamp.routes.js";
 import couponRouter from './routes/coupon.routes.js';
 import customerPageRouter from "./routes/customer.page.routes.js";
 import DashboardRouter from "./routes/dashboard.routes.js";
+import adminChallengeRouter from './routes/admin.challenge.routes.js';
+
 
 const app = express();
 
@@ -91,6 +93,8 @@ app.use("/api/v1/owner/cafes", adminCafeRouter);
 app.use("/api/v1/owner/stamps", adminStampRouter);
 app.use("/api/v1/owner/cafes", couponRouter);
 app.use("/api/v1/owner/dashboard", DashboardRouter);
+app.use('/api/v1/owner/cafe', adminChallengeRouter);
+
 // 페이지GET
 app.use("/api/v1/pages", customerPageRouter);
 
