@@ -254,35 +254,6 @@ export const getCafeBusinessInfo = async (userId) => {
   };
 };
 
-export const getCafeMenus = async (userId) => {
-  const cafe = await prisma.cafe.findFirst({
-    where: {
-      ownerId: userId,
-    },
-    select: {
-      id: true,
-    },
-  });
-
-  if (!cafe) throw new CafeNotExistError();
-
-  return await prisma.cafeMenu.findMany({
-    where: {
-      cafeId: cafe.id,
-    },
-    select: {
-      isRepresentative: true,
-      name: true,
-      photoUrl: true,
-      description: true,
-      price: true,
-    },
-    orderBy: {
-      createdAt: 'asc',
-    },
-  });
-};
-
 export const updateMyCafe = async (userId, cafeId, updateData) => {
     const cafe = await prisma.cafe.findUnique({where: {id: cafeId }});
     if(!cafe)  throw new CafePhotoNotFoundError();
@@ -332,9 +303,10 @@ export const deleteCafePhoto = async (userId, photoId) => {
   return true;
 };
 
-export const getMyCafeMenuNames = async (userId) => {
+export const getCafeMenus = async (userId) => {
   const cafe = await prisma.cafe.findFirst({
     where: { ownerId: userId },
+    select: { id: true },
   });
 
   if (!cafe) throw new CafeNotExistError();
@@ -348,6 +320,7 @@ export const getMyCafeMenuNames = async (userId) => {
       price: true,
       photoUrl: true,
       isRepresentative: true,
+      description: true,
     },
   });
 
