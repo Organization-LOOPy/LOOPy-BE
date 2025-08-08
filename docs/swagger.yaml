@@ -2455,12 +2455,11 @@ paths:
                               type: string
                               example: 이화동
 
-  /api/v1/challenges/{challengeId}/participate:
+  /api/v1/challenges/{challengeId}/join:
     post:
       summary: 챌린지 참여
-      description: 해당 챌린지에 로그인한 유저가 참여합니다. 참여 시 선택한 매장 ID(`joinedCafeId`)를 함께 전달해야 합니다.
-      tags:
-        - Challenge
+      description: 해당 챌린지에 로그인 유저가 참여합니다. 참여 시 선택한 매장 ID를 함께 전달해야 합니다.
+      tags: [Challenge]
       security:
         - bearerAuth: []
       parameters:
@@ -2481,11 +2480,11 @@ paths:
               properties:
                 joinedCafeId:
                   type: integer
-                  description: 유저가 선택한 참여 매장의 ID
                   example: 12
+                  description: 유저가 선택한 참여 매장의 ID
       responses:
         '200':
-          description: 챌린지 참여 성공
+          description: 성공
           content:
             application/json:
               schema:
@@ -2504,56 +2503,6 @@ paths:
                       message:
                         type: string
                         example: 챌린지 참여가 완료되었습니다.
-        '400':
-          description: 요청 오류 (기간 외 참여, 중복 참여 등)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: FAIL
-                  error:
-                    type: object
-                    properties:
-                      errorCode:
-                        type: string
-                        example: AlreadyParticipatedError
-                      reason:
-                        type: string
-                        example: 이미 참여 중인 챌린지입니다.
-                      data:
-                        type: object
-                        nullable: true
-                  success:
-                    type: "null"
-                    example: null
-        '404':
-          description: 챌린지 미존재
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: FAIL
-                  error:
-                    type: object
-                    properties:
-                      errorCode:
-                        type: string
-                        example: ChallengeNotFoundError
-                      reason:
-                        type: string
-                        example: 유효한 챌린지를 찾을 수 없습니다.
-                      data:
-                        type: object
-                        nullable: true
-                  success:
-                    type: "null"
-                    example: null
 
   /api/v1/challenges/{challengeId}/cafes:
     get:
@@ -3997,47 +3946,11 @@ paths:
                           type: string
                           example: "디카페인"
 
-  /api/v1/owner/cafes/myCafe/all-menus:
+    /api/v1/owner/cafes/myCafe/menus:
     get:
       tags: [Admin Cafe]
-      summary: 내 카페 메뉴 전체 조회
-      description: 사장님이 등록한 모든 메뉴를 조회합니다.
-      responses:
-        200:
-          description: 메뉴 조회 성공
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    isRepresentative:
-                      type: boolean
-                      description: 대표 메뉴 여부
-                      example: true
-                    name:
-                      type: string
-                      description: 메뉴명
-                      example: "아이스 아메리카노"
-                    photoUrl:
-                      type: string
-                      description: 메뉴 이미지 URL
-                      example: "https://cdn.your-cafe.com/menu/americano.jpg"
-                    description:
-                      type: string
-                      description: 메뉴 설명
-                      example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
-                    price:
-                      type: integer
-                      description: 가격 (단위: 원)
-                      example: 4500
-
-  /api/v1/owner/cafes/menus-name:
-    get:
-      tags: [Admin Cafe]
-      summary: 내 카페 메뉴 요약 리스트 조회
-      description: 사장님의 카페에 등록된 메뉴의 이름, 가격, 대표 여부, 사진 URL 등을 간단히 조회합니다.
+      summary: 내 카페 메뉴 전체 요약 조회
+      description: 사장님이 등록한 모든 메뉴의 요약 정보를 조회합니다.
       responses:
         200:
           description: 메뉴 요약 리스트 조회 성공
@@ -4070,6 +3983,10 @@ paths:
                         isRepresentative:
                           type: boolean
                           example: true
+                        description:
+                          type: string
+                          example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
+
 
 
   /api/v1/owner/stamps/stamp-images:
@@ -4734,273 +4651,6 @@ paths:
           description: 인증 권한 없음
         '404':
           description: 대상 챌린지를 찾을 수 없음
-
-  /api/v1/owner/cafes/{cafeId}/notification:
-    post:
-      tags:
-        - Owner Notification
-      summary: 고객에게 알림 메시지 전송
-      description: 특정 카페를 기준으로, 해당 카페에 스탬프북을 보유한 고객에게 알림 메시지를 전송합니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: cafeId
-          required: true
-          schema:
-            type: integer
-          description: 알림을 보낼 대상 카페 ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  description: 전송할 알림 메시지 내용
-                  maxLength: 500
-              required:
-                - message
-              example:
-                message: "스탬프 3개만 더 찍으면 포인트 지급!"
-      responses:
-        '200':
-          description: 알림 전송 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BasicSuccessResponse'
-              example:
-                status: SUCCESS
-                code: 200
-                message: 알림 메시지가 전송되었습니다.
-                data: null
-        '400':
-          description: 잘못된 요청 (빈 메시지 또는 길이 초과 등)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/BasicFailResponse'
-              example:
-                status: FAIL
-                code: 400
-                message: 알림 메시지는 최대 500자까지 입력 가능합니다.
-                data: null
-        '401':
-          description: 인증 실패 (토큰 누락/만료 등)
-        '500':
-          description: 서버 내부 오류
-
-  /api/v1/owner/users/search:
-    get:
-      tags:
-        - Owner User
-      summary: 전화번호로 고객 정보 조회
-      description: 고객의 전화번호를 기준으로 도장, 포인트, 현재 스탬프북 정보를 조회합니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: query
-          name: phone
-          schema:
-            type: string
-          required: true
-          description: 조회할 고객의 전화번호
-      responses:
-        '200':
-          description: 고객 정보 조회 성공
-          content:
-            application/json:
-              example:
-                status: SUCCESS
-                code: 200
-                message: 고객 정보 조회 성공
-                data:
-                  userId: 1
-                  nickname: 도장냥이
-                  stamp:
-                    totalCount: 7
-                    currentStampBook:
-                      stampBookId: 3
-                      currentCount: 3
-                      goalCount: 10
-                  point:
-                    total: 500
-        '400':
-          description: 전화번호 누락
-        '404':
-          description: 고객을 찾을 수 없음
-
-  /api/v1/owner/users/{userId}/stamps:
-    post:
-      tags:
-        - Owner User
-      summary: 특정 고객에게 도장 1개 적립
-      description: 로그인한 사장님의 카페 기준으로, 해당 고객의 가장 최신 스탬프북에 도장을 1개 적립합니다. 없으면 새로 생성합니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: userId
-          schema:
-            type: integer
-          required: true
-          description: 도장 적립 대상 고객의 ID
-      responses:
-        '200':
-          description: 도장 적립 완료
-          content:
-            application/json:
-              example:
-                status: SUCCESS
-                code: 200
-                message: 스탬프 적립 완료
-                data:
-                  stampBookId: 3
-                  currentCount: 4
-                  goalCount: 10
-        '404':
-          description: 유저가 존재하지 않음
-
-  /api/v1/owner/qrs/verify:
-    post:
-      tags:
-        - Owner User
-      summary: 고객 QR 토큰 인증 및 정보 조회
-      description: 고객의 QR 토큰을 통해 유저 정보, 포인트, 도장, 사용 가능한 쿠폰, 진행 중인 챌린지를 조회합니다.
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - qrToken
-              properties:
-                qrToken:
-                  type: string
-                  description: 고객 QR 토큰
-            example:
-              qrToken: "a1b2c3d4e5"
-      responses:
-        '200':
-          description: QR 인증 성공
-          content:
-            application/json:
-              example:
-                status: SUCCESS
-                code: 200
-                message: QR 인증 성공
-                data:
-                  userId: 1
-                  nickname: 도장냥이
-                  stamp:
-                    totalCount: 7
-                    currentStampBook:
-                      stampBookId: 3
-                      currentCount: 4
-                      goalCount: 10
-                  point:
-                    total: 500
-                  availableCoupons:
-                    - userCouponId: 12
-                      name: 무료 아메리카노
-                      description: 아무 음료나 가능
-                      expiredAt: "2025-08-30T00:00:00.000Z"
-                  ongoingChallenges:
-                    - challengeId: 1
-                      title: 마포점 챌린지
-                      expiredAt: "2025-08-31T00:00:00.000Z"
-        '400':
-          description: QR 토큰 누락
-        '404':
-          description: QR로 고객을 찾을 수 없음
-
-  /api/v1/owner/users/{userId}/points:
-    patch:
-      tags:
-        - Owner User
-      summary: 고객 포인트 사용 처리
-      description: 특정 고객의 포인트를 사장님이 사용하는 경우 처리합니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: userId
-          schema:
-            type: integer
-          required: true
-          description: 포인트를 사용할 고객의 ID
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - amount
-              properties:
-                amount:
-                  type: integer
-                  description: 사용할 포인트 금액
-            example:
-              amount: 300
-      responses:
-        '200':
-          description: 포인트 사용 완료
-          content:
-            application/json:
-              example:
-                status: SUCCESS
-                code: 200
-                message: 포인트 사용 완료
-                data:
-                  usedAmount: 300
-        '400':
-          description: 포인트 금액 누락 또는 유효하지 않음
-
-  /api/v1/owner/users/{userId}/coupons/{couponId}:
-    patch:
-      tags:
-        - Owner User
-      summary: 고객 쿠폰 사용 처리
-      description: 특정 고객의 미사용 쿠폰을 사용 처리합니다.
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: userId
-          schema:
-            type: integer
-          required: true
-          description: 쿠폰을 사용할 고객의 ID
-        - in: path
-          name: couponId
-          schema:
-            type: integer
-          required: true
-          description: 사용 처리할 쿠폰의 ID
-      responses:
-        '200':
-          description: 쿠폰 사용 완료
-          content:
-            application/json:
-              example:
-                status: SUCCESS
-                code: 200
-                message: 쿠폰 사용 처리 완료
-                data:
-                  userCouponId: 32
-                  usedAt: "2025-08-09T10:23:00.000Z"
-        '404':
-          description: 유효한 쿠폰을 찾을 수 없음
-
-
-
 
 
 
@@ -6682,36 +6332,6 @@ components:
         createdAt:
           type: string
           format: date-time
-
-  BasicSuccessResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: SUCCESS
-        code:
-          type: integer
-          example: 200
-        message:
-          type: string
-          example: 알림 메시지가 전송되었습니다.
-        data:
-          nullable: true
-
-  BasicFailResponse:
-      type: object
-      properties:
-        status:
-          type: string
-          example: FAIL
-        code:
-          type: integer
-          example: 400
-        message:
-          type: string
-          example: 알림 메시지는 최대 500자까지 입력 가능합니다.
-        data:
-          nullable: true
 
 
 
