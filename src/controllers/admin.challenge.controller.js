@@ -1,7 +1,9 @@
 import { getAvailableChallengesService,
          joinChallengeService,
          getInProgressChallengesService,
-         getChallengeDetailService } from '../services/admin.challenge.service.js';
+         getChallengeDetailService,
+         getPastChallengesByCafe,
+         getChallengeStatisticsService} from '../services/admin.challenge.service.js';
 
 
 export const getAvailableChallengesController = async (req, res, next) => {
@@ -71,4 +73,13 @@ export const getChallengeDetailController = async (req, res, next) => {
   }
 };
 
+export const getChallengeStatistics = async (req, res, next) => {
+    try {
+      const cafeId = Number(req.params.cafeId);
+      const data = await getChallengeStatisticsService(cafeId); 
+      return res.success(data);
+    } catch (err) {
+      next(err);
+    }
+  };
   

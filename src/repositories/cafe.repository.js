@@ -87,6 +87,21 @@ export const cafeRepository = {
             imageUrl: true,
           },
         },
+
+        StampPolicy: {
+          select: {
+            id: true,
+            rewardType: true,
+            reward_description: true,
+            discountAmount: true,
+            menu: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 

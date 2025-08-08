@@ -123,3 +123,63 @@ export const getChallengeDetailService = async (cafeId, challengeId) => {
     completedCount
   };
 };
+
+// 챌린지 통계 조회 서비스
+export const getChallengeStatisticsService = async (cafeId) => {
+  const cafeIdNum = Number(cafeId);
+
+  // 1. 내 카페가 참여한 챌린지 ID 목록
+  const participatedChallenges = await prisma.challengeParticipant.findMany({
+    where: {  joinedCafeId: cafeIdNum },
+    select: { challengeId: true },
+  });
+
+  const challengeIds = participatedChallenges.map(p => p.challengeId);
+  if (challengeIds.length === 0) {
+    return {
+      participatedChallengeCount: 0,
+      totalParticipantCount: 0,
+      completedUserCount: 0,
+      challengeRelatedSalesCount: 0,
+    };
+  }
+
+  // 2. 병렬 처리
+  const [participants, completed, progress] = await Promise.all([
+    prisma.challengeParticipant.findMany({
+      where: {
+        challengeId: { in: challengeIds },
+        joinedCafeId: cafeIdNum,
+      },
+      select: { userId: true },
+      distinct: ['userId'],
+    }),
+
+    prisma.challengeParticipant.findMany({
+      where: {
+        challengeId: { in: challengeIds },
+        joinedCafeId: cafeIdNum,
+        status: 'completed',
+      },
+      select: { userId: true },
+      distinct: ['userId'],
+    }),
+
+    prisma.challengeParticipant.findMany({
+      where: {
+        challengeId: { in: challengeIds },
+        joinedCafeId: cafeIdNum,
+      },
+      select: { challenge: { select: { goalCount: true } } },
+    }),
+  ]);
+
+  const totalSales = progress.reduce((sum, p) => sum + p.challenge.goalCount, 0);
+
+  return {
+    participatedChallengeCount: challengeIds.length,
+    totalParticipantCount: participants.length,
+    completedUserCount: completed.length,
+    challengeRelatedSalesCount: totalSales,
+  };
+};
