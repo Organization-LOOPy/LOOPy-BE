@@ -4,7 +4,8 @@ import { getAvailableChallengesController,
          joinChallengeController,
          getInProgressChallengesController,
          getPastChallengesController,
-         getChallengeDetailController } from '../controllers/admin.challenge.controller.js';
+         getChallengeDetailController,
+         getChallengeStatistics } from '../controllers/admin.challenge.controller.js';
 
 const router = express.Router();
 
@@ -21,6 +22,9 @@ router.get('/:cafeId/challenges/in-progress',getInProgressChallengesController);
 
 // 과거 챌린지 조회
 router.get('/:cafeId/challenges/past', getPastChallengesController);
+
+// 챌린지 통계 조회
+router.get('/:cafeId/challenges/statistics', getChallengeStatistics);
 
 // 챌린지 상세 조회
 router.get('/:cafeId/challenges/:challengeId', getChallengeDetailController);

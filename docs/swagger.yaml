@@ -4990,6 +4990,48 @@ paths:
                       completedCount:
                         type: integer
 
+  /api/v1/owner/cafes/{cafeId}/challenges/statistics:
+    get:
+      tags:
+        - Admin Challenges
+      summary: 챌린지 통계 조회
+      description: 매장의 챌린지 참여 수, 참여자 수, 혜택 수령자 수, 챌린지를 통한 판매 건 수를 조회합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          schema:
+            type: integer
+          description: 매장 ID
+      responses:
+        '200':
+          description: 챌린지 통계 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  data:
+                    type: object
+                    properties:
+                      participatedChallengeCount:
+                        type: integer
+                        example: 5
+                      totalParticipantCount:
+                        type: integer
+                        example: 238
+                      completedUserCount:
+                        type: integer
+                        example: 200
+                      challengeRelatedSalesCount:
+                        type: integer
+                        example: 32
+
 components:
   securitySchemes:
     bearerAuth:
