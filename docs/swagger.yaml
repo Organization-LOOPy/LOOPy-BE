@@ -996,49 +996,11 @@ paths:
                     id: 1
                     name: "스타벅스 강남점"
                     address: "서울특별시 강남구 테헤란로 123"
-                    businessHours:
-                      - day: "MONDAY"
-                        breakEnd: null
-                        isClosed: false
-                        openTime: "07:00"
-                        closeTime: "22:00"
-                        breakStart: null
-                      - day: "TUESDAY"
-                        breakEnd: null
-                        isClosed: false
-                        openTime: "07:00"
-                        closeTime: "22:00"
-                        breakStart: null
-                      - day: "WEDNESDAY"
-                        breakEnd: null
-                        isClosed: false
-                        openTime: "07:00"
-                        closeTime: "22:00"
-                        breakStart: null
-                      - day: "THURSDAY"
-                        breakEnd: null
-                        isClosed: false
-                        openTime: "07:00"
-                        closeTime: "22:00"
-                        breakStart: null
-                      - day: "FRIDAY"
-                        breakEnd: null
-                        isClosed: false
-                        openTime: "07:00"
-                        closeTime: "22:00"
-                        breakStart: null
-                      - day: "SATURDAY"
-                        breakEnd: null
-                        isClosed: false
-                        openTime: "08:00"
-                        closeTime: "21:00"
-                        breakStart: null
-                      - day: "SUNDAY"
-                        breakEnd: null
-                        isClosed: false
-                        openTime: "08:00"
-                        closeTime: "21:00"
-                        breakStart: null
+                    businessHourType: "SAME_ALL_DAYS"
+                    businessHours: 
+                      "open": "10:00"
+                      "close": "20:00"
+                    breakTime: "14:00~15:00"
                     phone: "02-1234-5678"
                     websiteUrl: "https://starbucks.co.kr"
                     description: "프리미엄 커피 전문점"
@@ -1366,14 +1328,12 @@ paths:
                 success:
                   reviews:
                     - id: 15
-                      title: "최근 방문 후기"
                       content: "어제 다시 방문했는데 여전히 좋네요. 스콘이 새로 나왔던데 맛있더라고요. 다음에는 친구들도 데려올 예정이에요!"
                       nickname: "커피러버1"
                       createdAt: "2025-07-29T13:22:45.000Z"
                       images:
                         - "https://review-images.com/review_10_1.jpg"
                     - id: 14
-                      title: "데이트 코스로 추천"
                       content: "연인과 함께 갔는데 분위기도 좋고 음료도 맛있어서 대화가 더 즐거웠어요. 창가 자리 특히 예뻐요!"
                       nickname: "커피러버1"
                       createdAt: "2025-07-27T13:22:45.000Z"
@@ -1383,7 +1343,6 @@ paths:
                         - "https://review-images.com/review_9_3.jpg"
                         - "https://review-images.com/review_9_4.jpg"
                     - id: 1
-                      title: "정말 맛있는 커피집!"
                       content: "아메리카노가 정말 진하고 맛있어요. 매장도 깔끔하고 직원분들도 친절합니다."
                       nickname: "커피러버1"
                       createdAt: "2025-07-27T13:07:43.000Z"
@@ -1391,14 +1350,12 @@ paths:
                         - "https://review-images.com/review1_1.jpg"
                         - "https://review-images.com/review1_2.jpg"
                     - id: 2
-                      title: "분위기 좋은 카페"
                       content: "공부하기 좋은 환경이에요. 와이파이도 빠르고 콘센트도 많아서 노트북 사용하기 편해요."
                       nickname: "카페매니아2"
                       createdAt: "2025-07-25T13:07:43.000Z"
                       images:
                         - "https://review-images.com/review2_1.jpg"
                     - id: 13
-                      title: "직장인 단골 카페"
                       content: "회사 근처라서 자주 오는데 항상 일정한 퀄리티를 유지해주셔서 고마워요. 믿고 마시는 아메리카노입니다."
                       nickname: "커피러버1"
                       createdAt: "2025-07-24T13:22:45.000Z"
