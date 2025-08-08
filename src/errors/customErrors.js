@@ -345,6 +345,24 @@ export class ChallengeNotFoundError extends CustomError {
     );
   }
 }
+
+export class ChallengeAlreadyJoinedError extends CustomError {
+  constructor() {
+    super('이미 참여한 챌린지입니다.', 'CH002', 400);
+  }
+}
+
+export class ChallengeUnavailableError extends CustomError {
+  constructor(challengeId) {
+    super(
+      `현재 참여할 수 없는 챌린지입니다 (ID: ${challengeId})`,
+      'CH003',
+      400,
+      { challengeId }
+    );
+  }
+}
+
 //
 export class StampbookNotFoundError extends CustomError {
   constructor(message = "Not Found") {
