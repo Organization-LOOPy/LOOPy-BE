@@ -3834,7 +3834,7 @@ paths:
     get:
       tags: [Admin Cafe]
       summary: 내 카페 기본 정보 조회
-      description: 로그인한 사장님의 카페 기본 정보를 조회합니다.
+      description: 로그인한 사장님의 카페 기본 정보를 조회
       responses:
         200:
           description: 카페 기본 정보 조회 성공
@@ -3894,7 +3894,7 @@ paths:
     get:
       tags: [Admin Cafe]
       summary: 내 카페 운영 정보 조회
-      description: 사장님의 카페 운영 시간, 버튼 선택 상태, 해시태그 및 필터 키워드를 조회합니다.
+      description: 사장님의 카페 운영 시간, 버튼 선택 상태, 해시태그 및 필터 키워드를 조회
       responses:
         200:
           description: 운영 정보 조회 성공
