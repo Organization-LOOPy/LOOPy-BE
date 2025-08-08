@@ -141,7 +141,7 @@ export const cafeMapRepository = {
         name: true,
         latitude: true,
         longitude: true,
-        bookmarkedBy: {
+        stampBooks: {
           where: {
             userId: userId,
           },
@@ -153,8 +153,8 @@ export const cafeMapRepository = {
     // 북마크 정보를 isBookmarked로 변환
     return cafes.map((cafe) => ({
       ...cafe,
-      isBookmarked: cafe.bookmarkedBy.length > 0,
-      bookmarkedBy: undefined, // 응답에서 제거
+      isStamped: cafe.stampBoooks.length > 0,
+      stampBooks: undefined, // 응답에서 제거
     }));
   },
 };

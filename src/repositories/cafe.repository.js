@@ -97,6 +97,19 @@ export const cafeRepository = {
 
     return cafe;
   },
+  async findPhotos(cafeId) {
+    const photos = await prisma.CafePhoto.findMany({
+      where: { cafeId },
+      orderBy: { displayOrder: "asc" },
+      select: {
+        id: true,
+        photoUrl: true,
+        displayOrder: true,
+      },
+    });
+
+    return photos;
+  },
 };
 
 export const cafeNotificationRepository = {

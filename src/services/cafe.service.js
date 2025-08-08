@@ -9,7 +9,7 @@ import {
 import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
 export const cafeService = {
-  async getCafeDetails(_, cafeId, userId) {
+  async getCafeDetails(cafeId, userId) {
     const cafe = await cafeRepository.findCafeDetails(cafeId, userId);
 
     const cafeDetails = {
@@ -18,6 +18,7 @@ export const cafeService = {
         name: cafe.name,
         address: cafe.address,
         businessHours: cafe.businessHours,
+        breakTime: cafe.breakTime,
         phone: cafe.phone,
         websiteUrl: cafe.websiteUrl,
         description: cafe.description,
