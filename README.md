@@ -37,7 +37,7 @@ Client
   ↓
 Nginx (HTTPS 처리 및 리버스 프록시)
   ↓
-Node.js / FastAPI
+Node.js 
   ↓         ↓       ↓
  RDS       S3     Qdrant
 ```
