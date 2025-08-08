@@ -25,10 +25,10 @@ export const cafeSearchService = {
     region3,
     userId
   ) {
-    console / log("fuck you");
     const refinedX = parseFloat(x);
     const refinedY = parseFloat(y);
-    const query = (searchQuery ?? "").trim();
+    const query = (searchQuery ?? "").trim().replace(/"/g, "").normalize("NFC");
+    console.log("🔍 search query =", query);
 
     const selectedStoreFilters = Object.entries(storeFilters ?? {})
       .filter(([_, v]) => v)
@@ -56,17 +56,19 @@ export const cafeSearchService = {
     if (refinedRegion2) regionCondition.region2DepthName = refinedRegion2;
     if (refinedRegion3) regionCondition.region3DepthName = refinedRegion3;
 
-    // 검색어 & 지역 조건 분기 적용
     const hasSearchQuery = query && query.length > 0;
     const hasRegionFilter = Object.keys(regionCondition).length > 0;
 
-    if (!hasSearchQuery || (hasSearchQuery && hasRegionFilter)) {
+    // ✅ 수정: region 조건이 실제 있을 때만 넣기
+    if (hasRegionFilter) {
       whereConditions.AND.push(regionCondition);
     }
 
     // 검색어 조건
     if (hasSearchQuery) {
-      whereConditions.AND.push({ name: { contains: query } });
+      whereConditions.AND.push({
+        name: { contains: query },
+      });
     }
 
     // 스토어 필터
@@ -105,13 +107,16 @@ export const cafeSearchService = {
       });
     }
 
-    const finalWhereConditions =
-      whereConditions.AND.length > 0 ? whereConditions : {};
+    if (whereConditions.AND.length === 0) {
+      return {
+        fromNLP: false,
+        data: [],
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
 
-    console.log(
-      "Final where conditions:",
-      JSON.stringify(finalWhereConditions, null, 2)
-    );
+    const finalWhereConditions = whereConditions;
 
     const searchResults = await cafeSearchRepository.findCafeByInfos(
       finalWhereConditions,

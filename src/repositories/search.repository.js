@@ -3,20 +3,12 @@ import prisma from "../../prisma/client.js";
 
 export const cafeSearchRepository = {
   async findCafeByInfos(whereConditions, cursor, userId, take = 10) {
-    console.log(
-      "Repository where conditions:",
-      JSON.stringify(whereConditions, null, 2)
-    );
-    console.log("Cursor:", cursor, "Type:", typeof cursor);
-
     const whereClause = { ...whereConditions };
 
     // cursor가 문자열이고 유효할 때만 추가
     if (cursor && typeof cursor === "string" && cursor.trim() !== "") {
       whereClause.createdAt = { lt: new Date(cursor) };
     }
-
-    console.log("Final whereClause:", JSON.stringify(whereClause, null, 2));
 
     const cafeList = await prisma.cafe.findMany({
       where: whereClause,
@@ -39,7 +31,6 @@ export const cafeSearchRepository = {
             photoUrl: true,
           },
         },
-        // 북마크 정보 - 정확한 관계명 확인 필요
         bookmarkedBy: userId
           ? {
               where: { userId: userId },
@@ -52,6 +43,8 @@ export const cafeSearchRepository = {
       },
       take: take + 1,
     });
+
+    console.log(cafeList);
 
     // nextCursor 계산
     const hasMore = cafeList.length > take;
