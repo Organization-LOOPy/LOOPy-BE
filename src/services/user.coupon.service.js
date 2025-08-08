@@ -10,16 +10,34 @@ export const userCouponService = {
   async getUserCoupons(userId, status) {
     const now = new Date();
 
+    const commonInclude = {
+      couponTemplate: {
+        include: {
+          cafe: {
+            select: {
+              id: true,
+              photos: {
+                orderBy: { displayOrder: 'asc' },
+                take: 1,
+                select: { photoUrl: true }
+              }
+            }
+          }
+        }
+      }
+    };
+  
+
+
     if (status === 'usable') {
       return await prisma.userCoupon.findMany({
         where: {
           userId,
           status: 'active',
-          expiredAt: { gt: now },
         },
-        include: { couponTemplate: true },
+        include: commonInclude
       });
-    }
+    };
 
     if (status === 'past') {
       return await prisma.userCoupon.findMany({
@@ -27,10 +45,9 @@ export const userCouponService = {
           userId,
           OR: [
             { status: 'used' },
-            { expiredAt: { lte: now } },
           ],
         },
-        include: { couponTemplate: true },
+        include: commonInclude
       });
     }
 
