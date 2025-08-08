@@ -47,7 +47,6 @@ const register = new client.Registry();
 client.collectDefaultMetrics({ register });
 
 app.use(cors(corsOptions));
-setupSwagger(app);
 app.use(express.json());
 
 app.use(passport.initialize());

@@ -2848,26 +2848,41 @@ paths:
                     $ref: '#/components/schemas/StampBookExpiring'
 
   /api/v1/users/me/stampbooks/converted:
-      get:
-        summary: 환전 완료된 스탬프북 히스토리 조회
-        description: 사용자가 환전한 스탬프북 목록을 조회합니다. 최근 환전된 순으로 정렬되며, 각 스탬프북의 회차와 환전 일자를 포함합니다.
-        tags:
-          - Stamp
-        security:
-          - bearerAuth: []
-        responses:
-          '200':
-            description: 환전 히스토리 조회 성공
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ConvertedStampBookHistoryResponse'
-          '500':
-            description: 서버 오류
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
+    get:
+      summary: 환전 완료된 스탬프북 히스토리 조회
+      description: 사용자가 환전한 스탬프북 목록을 조회합니다. 최근 환전된 순으로 정렬되며, 각 스탬프북의 회차와 환전 일자를 포함합니다.
+      tags:
+        - Stamp
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 환전 히스토리 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConvertedStampBookHistoryResponse'
+              example:
+                status: SUCCESS
+                code: 200
+                message: 스탬프 히스토리 조회 성공
+                data:
+                  - stampBookId: 15
+                    cafeId: 7
+                    cafeName: 블루보틀 연남점
+                    cafeAddress: 서울특별시 마포구 연남동 123-45
+                    cafeImageUrl: https://example.com/photo.jpg
+                    round: 3
+                    displayText: 스탬프지 3장 완료
+                    convertedAt: "2025-07-31T13:45:00.000Z"
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
 
   /api/v1/users/me/stamps/total-count:
       get:
@@ -3144,59 +3159,59 @@ paths:
                 schema:
                   $ref: '#/components/schemas/ErrorResponse'
   /api/v1/user-coupons:
-  get:
-    tags:
-      - UserCoupons
-    summary: 사용자의 쿠폰 목록 조회
-    description: status 쿼리 파라미터로 사용 가능한 쿠폰 또는 지난 쿠폰을 조회합니다.
-    security:
-      - bearerAuth: []
-    parameters:
-      - name: status
-        in: query
-        required: false
-        schema:
-          type: string
-          enum: [usable, past]
-          default: usable
-        description: 조회할 쿠폰 상태 (usable: 사용 가능, past: 사용됨 또는 만료됨)
-    responses:
-      200:
-        description: 쿠폰 목록 조회 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                resultType:
-                  type: string
-                  example: SUCCESS
-                data:
-                  type: array
-                  items:
-                    $ref: '#/components/schemas/UserCoupon'
-      400:
-        description: 잘못된 쿠폰 상태 요청
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                resultType:
-                  type: string
-                  example: FAIL
-                error:
-                  type: object
-                  properties:
-                    errorCode:
-                      type: string
-                      example: U001
-                    reason:
-                      type: string
-                      example: 올바르지 않은 쿠폰 상태입니다: abc
-                    data:
-                      type: object
-                      nullable: true
+    get:
+      tags:
+        - UserCoupons
+      summary: 사용자의 쿠폰 목록 조회
+      description: status 쿼리 파라미터로 사용 가능한 쿠폰 또는 지난 쿠폰을 조회합니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [usable, past]
+            default: usable
+          description: 조회할 쿠폰 상태 (usable: 사용 가능, past: 사용됨 또는 만료됨)
+      responses:
+        200:
+          description: 쿠폰 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserCoupon'
+        400:
+          description: 잘못된 쿠폰 상태 요청
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: U001
+                      reason:
+                        type: string
+                        example: 올바르지 않은 쿠폰 상태입니다: abc
+                      data:
+                        type: object
+                        nullable: true
 
   /api/v1/user-coupons/{userCouponId}:
     patch:
@@ -3576,84 +3591,92 @@ paths:
   /api/v1/owner/cafes/operation:
     patch:
       tags: [Admin Cafe]
-      summary: 카페 운영 정보 수정
-      security:
-        - bearerAuth: []
+      summary: 내 카페 운영 정보 수정
+      description: 운영시간, 버튼 상태, 브레이크타임, 해시태그, 키워드 정보를 수정합니다.
       requestBody:
+        required: true
         content:
           application/json:
             schema:
               type: object
               required:
+                - businessHourType
                 - businessHours
               properties:
+                businessHourType:
+                  type: string
+                  description: 운영 시간 입력 방식 선택값
+                  enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
+                  example: WEEKDAY_WEEKEND
                 businessHours:
                   type: array
+                  description: 요일별 운영 시간 및 브레이크 타임 정보
                   items:
-                    type: object
-                    properties:
-                      day:
-                        type: string
-                      isClosed:
-                        type: boolean
-                      openTime:
-                        type: string
-                      closeTime:
-                        type: string
-                storeFilters:
-                  type: array
-                  items:
-                    type: string
-                takeOutFilters:
-                  type: array
-                  items:
-                    type: string
-                menuFilters:
-                  type: array
-                  items:
-                    type: string
+                    $ref: '#/components/schemas/CafeDetailBusinessHour'
+                breakTime:
+                  type: string
+                  description: 전체 브레이크 타임 (호환용, 현재 미사용 가능)
+                  example: "14:00~15:00"
                 keywords:
                   type: array
+                  description: 대표 해시태그 (최대 2개)
                   items:
                     type: string
-            example:
-              businessHours:
-                - day: "월"
-                  isClosed: false
-                  openTime: "09:00"
-                  closeTime: "18:00"
-                - day: "화"
-                  isClosed: false
-                  openTime: "09:00"
-                  closeTime: "18:00"
-                - day: "수"
-                  isClosed: false
-                  openTime: "09:00"
-                  closeTime: "18:00"
-                - day: "목"
-                  isClosed: false
-                  openTime: "09:00"
-                  closeTime: "18:00"
-                - day: "금"
-                  isClosed: false
-                  openTime: "09:00"
-                  closeTime: "18:00"
-                - day: "토"
-                  isClosed: true
-                - day: "일"
-                  isClosed: true
-              storeFilters:
-                - "1인석"
-              takeOutFilters:
-                - "테이크아웃"
-              menuFilters:
-                - "디카페인"
-              keywords:
-                - "1인석"
-                - "사이즈업"
+                    example: "루프탑"
+                storeFilters:
+                  type: array
+                  description: 매장 관련 키워드
+                  items:
+                    type: string
+                    example: "노트북"
+                takeOutFilters:
+                  type: array
+                  description: 테이크아웃 관련 키워드
+                  items:
+                    type: string
+                    example: "텀블러 할인"
+                menuFilters:
+                  type: array
+                  description: 메뉴 관련 키워드
+                  items:
+                    type: string
+                    example: "디카페인"
       responses:
         200:
-          description: 운영 정보 업데이트 성공
+          description: 운영 정보 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    description: 카페 ID
+                    example: 3
+                  businessHourType:
+                    type: string
+                    example: WEEKDAY_WEEKEND
+                  businessHours:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CafeDetailBusinessHour'
+                  storeFilters:
+                    type: array
+                    items:
+                      type: string
+                  takeOutFilters:
+                    type: array
+                    items:
+                      type: string
+                  menuFilters:
+                    type: array
+                    items:
+                      type: string
+                  keywords:
+                    type: array
+                    items:
+                      type: string
+
 
   /api/v1/owner/cafes/menus:
     post:
@@ -3806,64 +3829,167 @@ paths:
                 success:
                   message: "카페 이미지가 삭제되었습니다."
                   photoId: 4
-
-  /api/v1/owner/cafes/myCafe:
+              
+  /api/v1/owner/cafes/myCafe/basic:
     get:
       tags: [Admin Cafe]
-      summary: 내가 등록한 카페 조회
-      security:
-        - bearerAuth: []
+      summary: 내 카페 기본 정보 조회
+      description: 로그인한 사장님의 카페 기본 정보를 조회
       responses:
         200:
-          description: 카페 조회 성공
-    patch:
+          description: 카페 기본 정보 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  name:
+                    type: string
+                    description: 업체명
+                    example: "끄적끄적 카페"
+                  ownerName:
+                    type: string
+                    description: 대표자 이름
+                    example: "홍길동"
+                  address:
+                    type: string
+                    description: 상세 주소
+                    example: "서울 마포구 와우산로 123"
+                  region1DepthName:
+                    type: string
+                    description: 시/도
+                    example: "서울특별시"
+                  region2DepthName:
+                    type: string
+                    description: 시/군/구
+                    example: "마포구"
+                  region3DepthName:
+                    type: string
+                    description: 동/리
+                    example: "서교동"
+                  phone:
+                    type: string
+                    description: 전화번호
+                    example: "010-1234-5678"
+                  description:
+                    type: string
+                    description: 카페 소개글
+                    example: "감성 편지가 있는 공간"
+                  websiteUrl:
+                    type: string
+                    description: SNS 링크
+                    example: "https://instagram.com/yourcafe"
+                  photos:
+                    type: array
+                    description: 카페 사진 리스트
+                    items:
+                      type: object
+                      properties:
+                        photoUrl:
+                          type: string
+                          description: 사진 URL
+                          example: "https://s3.aws.com/cafe/photo1.jpg"
+
+  /api/v1/owner/cafes/myCafe/operation:
+    get:
       tags: [Admin Cafe]
-      summary: 내 카페 기본 정보 수정
-      description: 로그인된 사장님의 카페 기본 정보를 수정합니다.
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                name:
-                  type: string
-                  example: 테스트 카페
-                address:
-                  type: string
-                  example: 서울특별시 강남구 테헤란로 123
-                region1DepthName:
-                  type: string
-                  example: 서울특별시
-                region2DepthName:
-                  type: string
-                  example: 강남구
-                region3DepthName:
-                  type: string
-                  example: 역삼동
-                latitude:
-                  type: number
-                  format: float
-                  example: 37.123456
-                longitude:
-                  type: number
-                  format: float
-                  example: 127.123456
-                phone:
-                  type: string
-                  example: "02-1234-5678"
-                websiteUrl:
-                  type: string
-                  example: "https://example.com"
-                description:
-                  type: string
-                  example: "아늑한 분위기의 스페셜티 카페입니다."
+      summary: 내 카페 운영 정보 조회
+      description: 사장님의 카페 운영 시간, 버튼 선택 상태, 해시태그 및 필터 키워드를 조회
       responses:
-        '200':
-          description: 카페 정보 수정 성공
+        200:
+          description: 운영 정보 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  businessHourType:
+                    type: string
+                    description: 운영 시간 입력 방식 선택값
+                    enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
+                    example: WEEKDAY_WEEKEND
+                  businessHours:
+                    type: array
+                    description: 요일별 영업시간 및 브레이크 타임 정보
+                    items:
+                      $ref: '#/components/schemas/CafeDetailBusinessHour'
+                  hasNoHoliday:
+                    type: boolean
+                    description: 모든 요일이 영업 중인지 여부
+                    example: true
+                  keywords:
+                    type: array
+                    description: 대표 해시태그 (최대 2개)
+                    items:
+                      type: string
+                      example: "루프탑"
+                  selectedKeywords:
+                    type: object
+                    description: 선택한 카페 키워드
+                    properties:
+                      storeFilters:
+                        type: array
+                        description: 매장 필터 키워드
+                        items:
+                          type: string
+                          example: "노트북"
+                      takeOutFilters:
+                        type: array
+                        description: 포장 필터 키워드
+                        items:
+                          type: string
+                          example: "텀블러 할인"
+                      menuFilters:
+                        type: array
+                        description: 메뉴 필터 키워드
+                        items:
+                          type: string
+                          example: "디카페인"
+
+  /api/v1/owner/cafes/myCafe/all-menus:
+    get:
+      tags: [Admin Cafe]
+      summary: 내 카페 메뉴 전체 조회
+      description: 사장님이 등록한 모든 메뉴를 조회합니다.
+      responses:
+        200:
+          description: 메뉴 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    isRepresentative:
+                      type: boolean
+                      description: 대표 메뉴 여부
+                      example: true
+                    name:
+                      type: string
+                      description: 메뉴명
+                      example: "아이스 아메리카노"
+                    photoUrl:
+                      type: string
+                      description: 메뉴 이미지 URL
+                      example: "https://cdn.your-cafe.com/menu/americano.jpg"
+                    description:
+                      type: string
+                      description: 메뉴 설명
+                      example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
+                    price:
+                      type: integer
+                      description: 가격 (단위: 원)
+                      example: 4500
+
+  /api/v1/owner/cafes/menus-name:
+    get:
+      tags: [Admin Cafe]
+      summary: 내 카페 메뉴 요약 리스트 조회
+      description: 사장님의 카페에 등록된 메뉴의 이름, 가격, 대표 여부, 사진 URL 등을 간단히 조회합니다.
+      responses:
+        200:
+          description: 메뉴 요약 리스트 조회 성공
           content:
             application/json:
               schema:
@@ -3871,79 +3997,35 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 카페 정보 수정 성공
+                    example: 내 카페 메뉴 목록 조회 성공
                   data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 3
-                      name:
-                        type: string
-                        example: 테스트 카페
-                      address:
-                        type: string
-                        example: 서울특별시 강남구 테헤란로 123
-                      region1DepthName:
-                        type: string
-                        example: 서울특별시
-                      region2DepthName:
-                        type: string
-                        example: 강남구
-                      region3DepthName:
-                        type: string
-                        example: 역삼동
-                      latitude:
-                        type: number
-                        format: float
-                        example: 37.123456
-                      longitude:
-                        type: number
-                        format: float
-                        example: 127.123456
-                      phone:
-                        type: string
-                        example: "02-1234-5678"
-                      websiteUrl:
-                        type: string
-                        example: "https://example.com"
-                      description:
-                        type: string
-                        example: 아늑한 분위기의 스페셜티 카페입니다.
-        '404':
-          description: 카페 없음 또는 접근 권한 없음
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  errorCode:
-                    type: string
-                    example: CAFE_NOT_EXIST
-                  reason:
-                    type: string
-                    example: 등록된 카페가 없습니다.
-        '401':
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  errorCode:
-                    type: string
-                    example: UNAUTHORIZED
-                  reason:
-                    type: string
-                    example: 인증이 필요합니다.
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: "아이스 아메리카노"
+                        price:
+                          type: integer
+                          example: 4500
+                        photoUrl:
+                          type: string
+                          nullable: true
+                          example: "https://s3.amazonaws.com/cafe/menu1.jpg"
+                        isRepresentative:
+                          type: boolean
+                          example: true
 
 
   /api/v1/owner/stamps/stamp-images:
     post:
       summary: 스탬프 사진 등록
       description: 사장님이 스탬프 이미지를 업로드합니다. 기본 스탬프 외 추가 업로드는 최대 2개까지 가능합니다.
-      tags:
-        - Stamps
+      tags: [Admin Cafe]
       security:
         - bearerAuth: []
       requestBody:
@@ -3989,8 +4071,7 @@ paths:
     post:
       summary: 스탬프 정책 등록
       description: 사장님이 스탬프 적립 조건과 리워드 정책을 설정합니다.
-      tags:
-        - Stamps
+      tags: [Admin Cafe]
       security:
         - bearerAuth: []
       requestBody:
@@ -4094,8 +4175,7 @@ paths:
 
   /api/v1/owner/stamps/stamp-images:
     post:
-      tags:
-        - Admin Stamp
+      tags: [Admin Cafe]
       summary: 스탬프 이미지 업로드
       description: 
         사장님이 스탬프 이미지를 업로드합니다. 기본 이미지 1개 외에 최대 2개까지 등록 가능합니다.
@@ -4137,8 +4217,7 @@ paths:
 
   /api/v1/owner/stamps/stamp-policy:
     post:
-      tags:
-        - Admin Stamp
+      tags: [Admin Cafe]
       summary: 스탬프 정책 등록
       description: 
         사장님이 스탬프 적립 정책을 등록합니다. 금액 기준 또는 횟수 기준, 리워드 종류에 따라 조건이 달라집니다.
@@ -4230,8 +4309,7 @@ paths:
           description: 이미 등록된 정책 존재 시 에러
             
     get:
-      tags:
-        - Admin Stamp
+      tags: [Admin Cafe]
       summary: 스탬프 정책 조회
       description: 로그인한 사장님의 카페에 등록된 스탬프 정책을 조회합니다.
       security:
@@ -4302,8 +4380,7 @@ paths:
           description: 등록된 스탬프 정책이 없는 경우
 
     patch:
-      tags:
-        - Admin Stamp
+      tags: [Admin Cafe]
       summary: 스탬프 정책 수정
       description: 로그인한 사장님의 기존 스탬프 정책을 수정합니다.
       security:
@@ -5234,6 +5311,7 @@ components:
         - name
         - address
         - businessHours
+        - breakTime
         - phone
         - websiteUrl
         - description
@@ -5259,6 +5337,10 @@ components:
           items:
             $ref: '#/components/schemas/CafeDetailBusinessHour'
           description: 영업시간 정보
+        breakTime:
+          type: string
+          description: 브레이크 타임
+          example: "14:00~15:00"
         phone:
           type: string
           description: 전화번호
@@ -5312,7 +5394,14 @@ components:
       properties:
         day:
           type: string
-          enum: [MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY]
+          enum:
+            - MONDAY
+            - TUESDAY
+            - WEDNESDAY
+            - THURSDAY
+            - FRIDAY
+            - SATURDAY
+            - SUNDAY
           description: 요일
           example: "MONDAY"
         isClosed:
@@ -5321,19 +5410,19 @@ components:
           example: false
         openTime:
           type: string
-          description: 오픈 시간
+          description: 오픈 시간 (isClosed가 false일 때 필수)
           example: "09:00"
         closeTime:
           type: string
-          description: 마감 시간
+          description: 마감 시간 (isClosed가 false일 때 필수)
           example: "21:00"
         breakStart:
           type: string
-          description: 브레이크 타임 시작
+          description: 브레이크 타임 시작 (선택)
           example: "14:00"
         breakEnd:
           type: string
-          description: 브레이크 타임 종료
+          description: 브레이크 타임 종료 (선택)
           example: "15:00"
 
     CafeDetailPhoto:
@@ -5914,7 +6003,7 @@ components:
     StampBookExpiring:
       type: object
       properties:
-        id:
+        stampBookId:
           type: integer
           description: 스탬프북 ID
           example: 12
@@ -5930,6 +6019,10 @@ components:
           type: string
           description: 카페 주소
           example: 서울 서대문구 이화여대길 52
+        cafeImageUrl:
+          type: string
+          description: 카페 대표 이미지 URL
+          example: https://example.com/photo.jpg
         expiresAt:
           type: string
           format: date-time
@@ -5963,6 +6056,7 @@ components:
           type: string
           description: 안내 문구 ("n회 후 포인트로 자동 환전돼요!")
           example: 3회 후 포인트로 자동 환전돼요!
+
 
 
     StampConversionResult:
@@ -6032,6 +6126,7 @@ components:
           format: date-time
           description: 환전 완료 시각
           example: "2025-07-31T13:45:00.000Z"
+
 
     ConvertedStampBookHistoryResponse:
       type: object

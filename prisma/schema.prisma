@@ -335,6 +335,8 @@ model Cafe {
   longitude        Float
   ownerName        String     @map("owner_name") @db.VarChar(100)
   businessHours    Json?      @map("business_hours")
+  businessHourType  BusinessHourType? @default(DIFFERENT_EACH_DAY) @map("business_hour_type")
+  breakTime        String?    @map("break_time") @db.VarChar(100)
   phone            String?    @db.VarChar(20)
   websiteUrl       String?    @map("website_url") @db.Text
   description      String?    @db.Text
@@ -558,4 +560,10 @@ enum RewardType {
   DISCOUNT     // 금액 할인
   SIZE_UP      // 사이즈업
   FREE_DRINK   // 무료 음료
+}
+
+enum BusinessHourType {
+  SAME_ALL_DAYS
+  WEEKDAY_WEEKEND
+  DIFFERENT_EACH_DAY
 }
