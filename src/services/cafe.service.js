@@ -9,23 +9,25 @@ import {
 import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
 export const cafeService = {
-  async getCafeDetails(cafeId, userId) {
+  async getCafeDetails(cafeObject, cafeId, userId) {
     const cafe = await cafeRepository.findCafeDetails(cafeId, userId);
 
+    const cafeobject = cafeObject;
     const cafeDetails = {
       cafe: {
-        id: cafe.id,
-        name: cafe.name,
-        address: cafe.address,
-        businessHours: cafe.businessHours,
-        breakTime: cafe.breakTime,
-        phone: cafe.phone,
-        websiteUrl: cafe.websiteUrl,
-        description: cafe.description,
-        storeFilters: cafe.storeFilters,
-        takeOutFilters: cafe.takeOutFilters,
-        menuFilters: cafe.menuFilters,
-        keywords: cafe.keywords,
+        id: cafeobject.id,
+        name: cafeobject.name,
+        address: cafeobject.address,
+        businessHours: cafeobject.businessHours,
+        businessHourType: cafeobject.businessHourType,
+        breakTime: cafeobject.breakTime,
+        phone: cafeobject.phone,
+        websiteUrl: cafeobject.websiteUrl,
+        description: cafeobject.description,
+        storeFilters: cafeobject.storeFilters,
+        takeOutFilters: cafeobject.takeOutFilters,
+        menuFilters: cafeobject.menuFilters,
+        keywords: cafeobject.keywords,
       },
       photos: (cafe.photos ?? []).map((p) => ({
         id: p.id,

@@ -12,16 +12,6 @@ export const cafeRepository = {
       where: { id: cafeId },
       select: {
         id: true,
-        name: true,
-        address: true,
-        businessHours: true,
-        phone: true,
-        websiteUrl: true,
-        description: true,
-        storeFilters: true,
-        takeOutFilters: true,
-        menuFilters: true,
-        keywords: true,
 
         photos: {
           select: {
