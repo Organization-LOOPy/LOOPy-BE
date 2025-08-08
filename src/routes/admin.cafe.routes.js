@@ -5,11 +5,13 @@ import {
     postCafeMenu, 
     postCafePhotos, 
     completeCafeRegistration, 
-    getCafe, 
     updateCafe,
     getMyCafePhoto,
     deleteMyCafePhoto,
+    getAllCafeMenus,
     getMyCafeMenuList,
+    getMyCafeBasicInfo,
+    getMyCafeBusinessInfo,
 } from '../controllers/admin.cafe.controller.js';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
 import multer from 'multer';
@@ -32,10 +34,11 @@ router.post(
   postCafePhotos
 );
 router.patch('/complete',completeCafeRegistration);
-
-router.get('/myCafe', getCafe);
+router.get('/myCafe/basic', getMyCafeBasicInfo);
+router.get('/myCafe/operation', getMyCafeBusinessInfo);
 router.patch('/myCafe', updateCafe);
 router.get('/photos', getMyCafePhoto);
 router.delete('/photos/:photoId', deleteMyCafePhoto);
-router.get('/menus', getMyCafeMenuList);
+router.get('/all-menus', getAllCafeMenus);
+router.get('/menus-name', getMyCafeMenuList);
 export default router;
