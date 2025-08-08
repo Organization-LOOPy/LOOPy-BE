@@ -323,18 +323,7 @@ export class MissingUserCoordinate extends CustomError {
     super(message || "사용자 주소가 누락되었습니다", "S001", 400);
   }
 }
-//챌린지
-export class ChallengeNotFoundError extends CustomError {
-  constructor(challengeId) {
-    super(
-      `챌린지 ID ${challengeId}에 해당하는 챌린지를 찾을 수 없습니다.`,
-      "CH001",
-      404,
-      { challengeId }
-    );
-  }
-}
-//
+
 export class StampbookNotFoundError extends CustomError {
   constructor(message = "Not Found") {
     super(message);
@@ -614,7 +603,38 @@ export class QRNotFoundError extends CustomError {
   }
 }
 
+// 챌린지
+export class ChallengeNotFoundError extends Error {
+  constructor(message = "유효한 챌린지를 찾을 수 없습니다.") {
+    super(message);
+    this.name = "ChallengeNotFoundError";
+    this.statusCode = 404;
+  }
+}
 
+export class ChallengeNotActiveError extends Error {
+  constructor() {
+    super("해당 챌린지는 현재 참여할 수 없습니다.");
+    this.name = "ChallengeNotActiveError";
+    this.statusCode = 400;
+  }
+}
+
+export class AlreadyParticipatedError extends Error {
+  constructor() {
+    super("이미 참여 중인 챌린지입니다.");
+    this.name = "AlreadyParticipatedError";
+    this.statusCode = 400;
+  }
+}
+
+export class InvalidCafeParticipationError extends Error {
+  constructor() {
+    super("해당 매장은 챌린지 참여 가능한 매장이 아닙니다.");
+    this.name = "InvalidCafeParticipationError";
+    this.statusCode = 400;
+  }
+}
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
