@@ -69,10 +69,14 @@ export const cafeService = {
             goalCount: cafe.stampBooks[0].goalCount,
             expiresAt: cafe.stampBooks[0].expiresAt,
             stampBookId: cafe.stampBooks[0].id,
+            stampImages: (cafe.stampImages ?? []).map((image) => ({
+              id: image.id,
+              imageUrl: image.imageUrl,
+            })),
           }
         : null,
       bookmark: {
-        isBookmarked: !cafe.bookmaredBy,
+        isBookmarked: !cafe.bookmarkedBy,
       },
     };
 

@@ -90,10 +90,9 @@ export const cafeRepository = {
       },
     });
 
-    logger.debug(cafe);
-
     return cafe;
   },
+
   async findPhotos(cafeId) {
     const photos = await prisma.CafePhoto.findMany({
       where: { cafeId },

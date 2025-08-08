@@ -1114,6 +1114,9 @@ paths:
                     goalCount: 10
                     expiresAt: "2025-08-29T13:09:13.000Z"
                     stampBookId: 1
+                    stampImages:
+                      - id: 1
+                        imageUrl: "https://example.com/images/stamp1.png"
                   bookmark:
                     isBookmarked: true
         '401':
