@@ -58,6 +58,7 @@ const parseIfString = (value) => {
 
 export const updateCafeOperationInfo = async (userId, operationInfo) => {
   const parsedHours = parseIfString(operationInfo.businessHours);
+  const businessHourType = operationInfo.businessHourType;
 
   if (!Array.isArray(parsedHours)) {
     throw new InvalidBusinessHoursError('businessHours는 배열이어야 합니다.');
@@ -72,6 +73,11 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
     }
   }
 
+  const validTypes = ['SAME_ALL_DAYS', 'WEEKDAY_WEEKEND', 'DIFFERENT_EACH_DAY'];
+  if (businessHourType && !validTypes.includes(businessHourType)) {
+    throw new InvalidBusinessHoursError('유효하지 않은 businessHourType입니다.');
+  }
+
   const cafe = await prisma.cafe.findUnique({
     where: { ownerId: userId },
   });
@@ -84,6 +90,7 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
     where: { id: cafe.id },
     data: {
       businessHours: parsedHours,
+      businessHourType: businessHourType,
       breakTime: operationInfo.breakTime,
       storeFilters: parseIfString(operationInfo.storeFilters),
       takeOutFilters: parseIfString(operationInfo.takeOutFilters),
@@ -190,12 +197,90 @@ export const finishCafeRegistration = async (cafeId) => {
   });
 };
 
-export const getMyCafe = async (userId) => {
+export const getCafeBasicInfo = async (userId) => {
     return await prisma.cafe.findMany({
-        where: {
-            ownerId: userId,
+    where: {
+      ownerId: userId,
+    },
+    select: {
+      name: true,     
+      ownerName: true,   
+      address: true, 
+      region1DepthName: true,
+      region2DepthName: true,
+      region3DepthName: true,
+      phone: true,     
+      description: true, 
+      websiteUrl: true,  
+      photos: {
+        select: {
+          photoUrl: true,
         },
-    });
+      },
+    },
+  });
+};
+
+export const getCafeBusinessInfo = async (userId) => {
+    const cafe = await prisma.cafe.findFirst({
+    where: {
+      ownerId: userId,
+    },
+    select: {
+      businessHours: true,
+      businessHourType: true,
+      breakTime: true,        
+      keywords: true,         
+      storeFilters: true,  
+      takeOutFilters: true,   
+      menuFilters: true     
+    }
+  });
+
+  if (!cafe) throw new CafeNotExistError();
+
+  return {
+    businessHourType: cafe.businessHourType ?? 'DIFFERENT_EACH_DAY',
+    businessHours: cafe.businessHours ?? [],
+    hasNoHoliday: cafe.businessHours
+      ? cafe.businessHours.every((day) => day.isClosed === false)
+      : false,
+    keywords: cafe.keywords ?? [],
+    selectedKeywords: {
+      storeFilters: cafe.storeFilters ?? [],
+      takeOutFilters: cafe.takeOutFilters ?? [],
+      menuFilters: cafe.menuFilters ?? []
+    }
+  };
+};
+
+export const getCafeMenus = async (userId) => {
+  const cafe = await prisma.cafe.findFirst({
+    where: {
+      ownerId: userId,
+    },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!cafe) throw new CafeNotExistError();
+
+  return await prisma.cafeMenu.findMany({
+    where: {
+      cafeId: cafe.id,
+    },
+    select: {
+      isRepresentative: true,
+      name: true,
+      photoUrl: true,
+      description: true,
+      price: true,
+    },
+    orderBy: {
+      createdAt: 'asc',
+    },
+  });
 };
 
 export const updateMyCafe = async (userId, cafeId, updateData) => {
@@ -247,7 +332,7 @@ export const deleteCafePhoto = async (userId, photoId) => {
   return true;
 };
 
-export const getMyCafeMenus = async (userId) => {
+export const getMyCafeMenuNames = async (userId) => {
   const cafe = await prisma.cafe.findFirst({
     where: { ownerId: userId },
   });
