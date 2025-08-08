@@ -2504,68 +2504,44 @@ paths:
                         type: string
                         example: 챌린지 참여가 완료되었습니다.
 
-  /api/v1/challenges/{challengeId}/cafes:
-    get:
-      summary: 참여 가능 매장 조회
-      description: 특정 챌린지에 참여 가능한 카페 목록을 반환합니다. 카페는 '운영 중(active)' 상태인 것만 포함됩니다.
-      tags: [Challenge]
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: challengeId
-          required: true
-          schema:
-            type: integer
-          description: 대상 챌린지의 ID
-      responses:
-        '200':
-          description: 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  resultType:
-                    type: string
-                    example: SUCCESS
-                  error:
-                    type: string
-                    nullable: true
-                    example: null
-                  success:
-                    type: array
-                    description: 참여 가능한 카페 목록
-                    items:
-                      type: object
-                      properties:
-                        cafeId:
-                          type: integer
-                          example: 12
-                          description: 카페 ID
-                        name:
-                          type: string
-                          example: 카페 위니
-                          description: 카페 이름
-                        address:
-                          type: string
-                          example: 서울 서대문구 이화여대길 52
-                        region1DepthName:
-                          type: string
-                          example: 서울특별시
-                          description: 시/도
-                        region2DepthName:
-                          type: string
-                          example: 서대문구
-                          description: 구/군
-                        region3DepthName:
-                          type: string
-                          example: 이화동
-                          description: 동/읍/면
-                        distance:
-                          type: number
-                          example: 500
-                          description: 거리 (단위: 미터, 추후 위치 기반 계산 적용 예정)
+  success:
+  type: array
+  description: 참여 가능한 카페 목록
+  items:
+    type: object
+    properties:
+      cafeId:
+        type: integer
+        example: 12
+        description: 카페 ID
+      name:
+        type: string
+        example: 카페 위니
+        description: 카페 이름
+      address:
+        type: string
+        example: 서울 서대문구 이화여대길 52
+      image:
+        type: string
+        example: https://cdn.loopy.com/cafes/12.jpg
+        description: 카페 대표 이미지 URL
+      region1DepthName:
+        type: string
+        example: 서울특별시
+        description: 시/도
+      region2DepthName:
+        type: string
+        example: 서대문구
+        description: 구/군
+      region3DepthName:
+        type: string
+        example: 이화동
+        description: 동/읍/면
+      distance:
+        type: number
+        example: 500
+        description: 거리 (단위: 미터, 위치 기반 계산)
+
 
   /api/v1/users/me/challenges:
     get:
