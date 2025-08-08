@@ -11,6 +11,7 @@ export const cafeSearchService = {
   // 1. 검색어가 없는 경우 => 무조건 지역 필터 적용
   // 2. 검색어가 있으면 => 검색어 대로만 검색
   // 3. 검색어 & 지역 => 지역내 검색어 필터링
+  // 백준 풀기 조온나 싫다 ㅅㅂ...
   async findCafeList(
     cursor,
     x,
@@ -24,6 +25,7 @@ export const cafeSearchService = {
     region3,
     userId
   ) {
+    console / log("fuck you");
     const refinedX = parseFloat(x);
     const refinedY = parseFloat(y);
     const query = (searchQuery ?? "").trim();

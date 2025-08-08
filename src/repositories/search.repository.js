@@ -144,17 +144,22 @@ export const cafeMapRepository = {
         stampBooks: {
           where: {
             userId: userId,
+            expiresAt: { gte: new Date() },
           },
           select: { id: true },
         },
       },
     });
 
-    // 북마크 정보를 isBookmarked로 변환
-    return cafes.map((cafe) => ({
-      ...cafe,
-      isStamped: cafe.stampBoooks.length > 0,
-      stampBooks: undefined, // 응답에서 제거
-    }));
+    return cafes.map((cafe) => {
+      const isStamped =
+        Array.isArray(cafe.stampBooks) && cafe.stampBooks.length > 0;
+
+      return {
+        ...cafe,
+        isStamped,
+        stampBooks: undefined, // 응답에서 제거
+      };
+    });
   },
 };
