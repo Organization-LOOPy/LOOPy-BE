@@ -362,7 +362,6 @@ model Review {
   id        Int       @id @default(autoincrement())
   userId    Int       @map("user_id")
   cafeId    Int       @map("cafe_id")
-  title     String    @db.VarChar(255)
   content   String    @db.Text
   images    Json?
   createdAt DateTime  @default(now()) @map("created_at")
