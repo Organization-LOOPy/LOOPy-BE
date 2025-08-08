@@ -128,7 +128,7 @@ export const terminateCouponService = async (cafeId, couponId) => {
   });
 
   if (!coupon) {
-    throw new CouponNotFoundError(couponId); // ❌ 없는 쿠폰이거나 이미 종료된 경우
+    throw new CouponNotFoundError(couponId); 
   }
 
   const updatedCoupon = await prisma.couponTemplate.update({
