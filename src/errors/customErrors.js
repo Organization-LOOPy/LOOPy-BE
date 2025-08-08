@@ -317,12 +317,53 @@ export class CouponMissingMenuIdError extends CustomError {
   }
 }
 
+export class CouponNotFoundError extends CustomError {
+  constructor(couponId) {
+    super(
+      `해당 쿠폰(ID: ${couponId})을 찾을 수 없습니다.`,
+      'C014',
+      404
+    );
+  }
+}
+
+
 //검색 라우터
 export class MissingUserCoordinate extends CustomError {
   constructor(message) {
     super(message || "사용자 주소가 누락되었습니다", "S001", 400);
   }
 }
+//챌린지
+export class ChallengeNotFoundError extends CustomError {
+  constructor(challengeId) {
+    super(
+      `챌린지 ID ${challengeId}에 해당하는 챌린지를 찾을 수 없습니다.`,
+      "CH001",
+      404,
+      { challengeId }
+    );
+  }
+}
+
+export class ChallengeAlreadyJoinedError extends CustomError {
+  constructor() {
+    super('이미 참여한 챌린지입니다.', 'CH002', 400);
+  }
+}
+
+export class ChallengeUnavailableError extends CustomError {
+  constructor(challengeId) {
+    super(
+      `현재 참여할 수 없는 챌린지입니다 (ID: ${challengeId})`,
+      'CH003',
+      400,
+      { challengeId }
+    );
+  }
+}
+
+//
 
 export class StampbookNotFoundError extends CustomError {
   constructor(message = "Not Found") {

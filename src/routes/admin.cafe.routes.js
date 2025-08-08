@@ -8,8 +8,7 @@ import {
     updateCafe,
     getMyCafePhoto,
     deleteMyCafePhoto,
-    getAllCafeMenus,
-    getMyCafeMenuList,
+    getMyCafeMenus,
     getMyCafeBasicInfo,
     getMyCafeBusinessInfo,
 } from '../controllers/admin.cafe.controller.js';
@@ -39,6 +38,5 @@ router.get('/myCafe/operation', getMyCafeBusinessInfo);
 router.patch('/myCafe', updateCafe);
 router.get('/photos', getMyCafePhoto);
 router.delete('/photos/:photoId', deleteMyCafePhoto);
-router.get('/all-menus', getAllCafeMenus);
-router.get('/menus-name', getMyCafeMenuList);
+router.get('/menus', getMyCafeMenus);
 export default router;
