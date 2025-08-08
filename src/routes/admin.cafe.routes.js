@@ -11,6 +11,7 @@ import {
     getMyCafeMenus,
     getMyCafeBasicInfo,
     getMyCafeBusinessInfo,
+    getFirstCafePhotoController
 } from '../controllers/admin.cafe.controller.js';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
 import multer from 'multer';
@@ -39,4 +40,5 @@ router.patch('/myCafe', updateCafe);
 router.get('/photos', getMyCafePhoto);
 router.delete('/photos/:photoId', deleteMyCafePhoto);
 router.get('/menus', getMyCafeMenus);
+router.get('/photos/first', getFirstCafePhotoController);
 export default router;

@@ -3987,7 +3987,53 @@ paths:
                           type: string
                           example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
 
-
+  /api/v1/owner/cafes/photos/first:
+    get:
+      summary: 카페의 첫 번째 등록 사진 조회
+      description: 특정 카페에 등록된 사진 중 createdAt 기준으로 가장 먼저 등록된 사진 1장을 조회합니다.
+      tags:
+        - CafePhoto
+      parameters:
+        - in: path
+          name: cafeId
+          required: true
+          schema:
+            type: integer
+          description: 조회할 카페의 ID
+      responses:
+        200:
+          description: 첫 번째 사진 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  photo:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      cafeId:
+                        type: integer
+                      photoUrl:
+                        type: string
+                      displayOrder:
+                        type: integer
+                      createdAt:
+                        type: string
+                        format: date-time
+        404:
+          description: 등록된 사진이 없는 경우
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        400:
+          description: 잘못된 요청 (예: cafeId가 숫자가 아님)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /api/v1/owner/stamps/stamp-images:
     post:
