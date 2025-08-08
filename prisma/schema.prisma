@@ -279,7 +279,6 @@ model StampPolicy {
   menuId            Int?         @map("menu_id")          
 
   hasExpiry         Boolean   @default(false) @map("has_expiry")
-  rewardExpiresAt   DateTime? @map("reward_expires_at")   
 
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")

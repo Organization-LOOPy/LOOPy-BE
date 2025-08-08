@@ -5,7 +5,7 @@ info:
   version: 1.0.0
 
 servers:
-  - url: https://loopyxyz.duckdns.org
+  - url: http://localhost:3000
     description: 서버 배포 도메인 
 
 security:
@@ -4081,112 +4081,6 @@ paths:
                         format: date-time
                         example: 2025-07-31T14:10:00.000Z
 
-  /api/v1/owner/stamps/stamp-policy:
-    post:
-      summary: 스탬프 정책 등록
-      description: 사장님이 스탬프 적립 조건과 리워드 정책을 설정합니다.
-      tags: [Admin Cafe]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                conditionType:
-                  type: string
-                  enum: [금액 기준, 횟수 기준]
-                  example: 금액 기준
-                conditionDetail:
-                  type: object
-                  description: 적립 조건 상세 정보
-                  oneOf:
-                    - properties:
-                        amountThreshold:
-                          type: integer
-                          example: 5000
-                        stampCount:
-                          type: integer
-                          example: 1
-                    - properties:
-                        drinkCount:
-                          type: integer
-                          example: 10
-                        stampPerPurchase:
-                          type: integer
-                          example: 1
-                rewardType:
-                  type: string
-                  enum: [금액 할인, 무료 음료]
-                  example: 금액 할인
-                rewardDetail:
-                  type: object
-                  description: 리워드 상세 정보
-                  oneOf:
-                    - properties:
-                        discountAmount:
-                          type: integer
-                          example: 1000
-                    - properties:
-                        menuId:
-                          type: integer
-                          example: 3
-                isRewardPeriodLimited:
-                  type: boolean
-                  example: true
-                rewardExpiredAt:
-                  type: string
-                  format: date
-                  example: 2025-12-31
-      responses:
-        '201':
-          description: 스탬프 정책 등록 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 스탬프 정책이 성공적으로 등록되었습니다.
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 1
-                      cafeId:
-                        type: integer
-                        example: 4
-                      conditionType:
-                        type: string
-                        example: 금액 기준
-                      conditionDetail:
-                        type: object
-                        example:
-                          amountThreshold: 5000
-                          stampCount: 1
-                      rewardType:
-                        type: string
-                        example: 금액 할인
-                      rewardDetail:
-                        type: object
-                        example:
-                          discountAmount: 1000
-                      isRewardPeriodLimited:
-                        type: boolean
-                        example: true
-                      rewardExpiredAt:
-                        type: string
-                        format: date-time
-                        example: 2025-12-31T00:00:00.000Z
-                      createdAt:
-                        type: string
-                        format: date-time
-                        example: 2025-07-31T14:22:00.000Z
-
   /api/v1/owner/stamps/stamp-images:
     post:
       tags: [Admin Cafe]
@@ -4233,7 +4127,7 @@ paths:
     post:
       tags: [Admin Cafe]
       summary: 스탬프 정책 등록
-      description: 
+      description: >
         사장님이 스탬프 적립 정책을 등록합니다. 금액 기준 또는 횟수 기준, 리워드 종류에 따라 조건이 달라집니다.
       security:
         - bearerAuth: []
@@ -4247,7 +4141,6 @@ paths:
                 - selectedImageUrl
                 - conditionType
                 - rewardType
-                - hasExpiry
               properties:
                 selectedImageUrl:
                   type: string
@@ -4284,14 +4177,6 @@ paths:
                   type: integer
                   nullable: true
                   example: null
-                hasExpiry:
-                  type: boolean
-                  example: true
-                expiryDate:
-                  type: string
-                  format: date
-                  nullable: true
-                  example: "2025-12-31"
       responses:
         '201':
           description: 스탬프 정책 등록 성공
@@ -4313,8 +4198,6 @@ paths:
                       stampPerAmount: 1
                       rewardType: DISCOUNT
                       discountAmount: 1000
-                      hasExpiry: true
-                      rewardExpiresAt: 2025-12-31T00:00:00.000Z
         '400':
           description: 유효하지 않은 요청
         '401':
@@ -4325,7 +4208,8 @@ paths:
     get:
       tags: [Admin Cafe]
       summary: 스탬프 정책 조회
-      description: 로그인한 사장님의 카페에 등록된 스탬프 정책을 조회합니다.
+      description: > 
+        로그인한 사장님의 카페에 등록된 스탬프 정책을 조회합니다.
       security:
         - bearerAuth: []
       responses:
@@ -4375,13 +4259,6 @@ paths:
                         type: integer
                         nullable: true
                         example: null
-                      hasExpiry:
-                        type: boolean
-                        example: true
-                      rewardExpiresAt:
-                        type: string
-                        format: date-time
-                        example: "2025-12-31T00:00:00.000Z"
                       createdAt:
                         type: string
                         format: date-time
@@ -4396,7 +4273,8 @@ paths:
     patch:
       tags: [Admin Cafe]
       summary: 스탬프 정책 수정
-      description: 로그인한 사장님의 기존 스탬프 정책을 수정합니다.
+      description: >
+        로그인한 사장님의 기존 스탬프 정책을 수정합니다.
       security:
         - bearerAuth: []
       requestBody:
@@ -4409,7 +4287,6 @@ paths:
                 - selectedImageUrl
                 - conditionType
                 - rewardType
-                - hasExpiry
               properties:
                 selectedImageUrl:
                   type: string
@@ -4446,14 +4323,6 @@ paths:
                   type: integer
                   nullable: true
                   example: 3
-                hasExpiry:
-                  type: boolean
-                  example: true
-                expiryDate:
-                  type: string
-                  format: date
-                  nullable: true
-                  example: "2025-12-31"
       responses:
         '200':
           description: 스탬프 정책 수정 성공

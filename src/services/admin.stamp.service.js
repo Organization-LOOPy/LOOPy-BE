@@ -58,8 +58,6 @@ export const createStampPolicy = async (userId, policyData) => {
     rewardType,
     discountAmount,
     menuId,
-    hasExpiry,
-    expiryDate
   } = policyData;
 
   const cafe = await prisma.cafe.findFirst({
@@ -80,8 +78,6 @@ export const createStampPolicy = async (userId, policyData) => {
     rewardType === 'DISCOUNT' ? discountAmount : null;
   const rewardMenuId =
     rewardType === 'FREE_DRINK' ? menuId : null;
-  const rewardExpiresAt =
-    hasExpiry && expiryDate ? new Date(expiryDate) : null;
 
   const created = await prisma.stampPolicy.create({
     data: {
@@ -95,8 +91,6 @@ export const createStampPolicy = async (userId, policyData) => {
       rewardType,
       discountAmount: discount,
       menuId: rewardMenuId,
-      hasExpiry,
-      rewardExpiresAt,
     },
   });
 
@@ -125,8 +119,6 @@ export const updateStampPolicy = async (userId, policyData) => {
     rewardType,
     discountAmount,
     menuId,
-    hasExpiry,
-    expiryDate,
   } = policyData;
 
   const updated = await prisma.stampPolicy.update({
@@ -141,8 +133,6 @@ export const updateStampPolicy = async (userId, policyData) => {
       rewardType,
       discountAmount: rewardType === 'DISCOUNT' ? discountAmount : null,
       menuId: rewardType === 'FREE_DRINK' ? menuId : null,
-      hasExpiry,
-      rewardExpiresAt: hasExpiry ? new Date(expiryDate) : null,
     },
   });
 
@@ -161,8 +151,6 @@ export const updateStampPolicy = async (userId, policyData) => {
     rewardType: updated.rewardType,
     discountAmount: updated.discountAmount,
     menuId: updated.menuId,
-    hasExpiry: updated.hasExpiry,
-    rewardExpiresAt: updated.rewardExpiresAt,
   }, null, 2);
 
   if (bookmarkedUsers.length > 0) {
