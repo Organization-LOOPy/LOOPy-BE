@@ -4,11 +4,13 @@ import {
   addCafeMenu,
   addCafePhotos,
   finishCafeRegistration, 
-  getMyCafe, 
   updateMyCafe,
   getCafePhoto,
   deleteCafePhoto,
-  getMyCafeMenus, 
+  getMyCafeMenuNames, 
+  getCafeBasicInfo,
+  getCafeBusinessInfo,
+  getCafeMenus
 } from "../services/admin.cafe.service.js";
 
 import { CafeNotExistError } from '../errors/customErrors.js';
@@ -55,6 +57,7 @@ export const patchCafeOperationInfo = async (req, res, next) => {
       cafe: {
         id: updatedCafe.id,
         name: updatedCafe.name,
+        businessHourType: updatedCafe.businessHourType,
         businessHours: updatedCafe.businessHours,
         breakTime: updatedCafe.breakTime,
         storeFilters: updatedCafe.storeFilters,
@@ -143,14 +146,37 @@ export const completeCafeRegistration = async (req, res, next) => {
   }
 };
 
-
-export const getCafe = async (req, res, next) => {
+export const getMyCafeBasicInfo = async (req, res, next) => {
   try {
-    const userId = req.user.id;
-    const result = await getMyCafe(userId);
-    res.status(200).json(result);
+    const userId = req.user.id; 
+    const cafe = await getCafeBasicInfo(userId);
+    return res.status(200).json(cafe);
   } catch (err) {
     next(err);
+  }
+};
+
+export const getMyCafeBusinessInfo = async (req, res, next) => {
+  try {
+    const userId = req.user.id; 
+    const businessInfo = await getCafeBusinessInfo(userId);
+    return res.status(200).json(businessInfo);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getCafeAllMenus = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const menus = await getCafeMenus(userId);
+
+    res.status(200).json({
+      message: '카페 메뉴 목록 조회 성공',
+      menus,
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
@@ -199,10 +225,20 @@ export const deleteMyCafePhoto = async (req, res, next) => {
   }
 };
 
+export const getAllCafeMenus = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const menus = await cafeService.getCafeMenus(userId);
+    return res.status(200).json(menus);
+  } catch (err) {
+    next(err);
+  }
+};
+
 export const getMyCafeMenuList = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const menus = await getMyCafeMenus(userId);
+    const menus = await getMyCafeMenuNames(userId);
 
     res.status(200).json({
       message: '내 카페 메뉴 목록 조회 성공',
