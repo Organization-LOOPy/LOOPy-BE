@@ -317,6 +317,17 @@ export class CouponMissingMenuIdError extends CustomError {
   }
 }
 
+export class CouponNotFoundError extends CustomError {
+  constructor(couponId) {
+    super(
+      `해당 쿠폰(ID: ${couponId})을 찾을 수 없습니다.`,
+      'C014',
+      404
+    );
+  }
+}
+
+
 //검색 라우터
 export class MissingUserCoordinate extends CustomError {
   constructor(message) {
