@@ -452,6 +452,11 @@ export const getExpiringStampBooks = async (req, res, next) => {
             id: true,
             name: true,
             address: true,
+            photos: {
+              orderBy: { displayOrder: 'asc' },
+              take: 1,
+              select: { photoUrl: true },
+            },
           },
         },
         stamps: {
@@ -476,11 +481,14 @@ export const getExpiringStampBooks = async (req, res, next) => {
       const canExtend = !isCompleted && daysLeft <= 7 && daysLeft > 0;
       const previewRewardText = `${goalCount - currentCount}회 후 포인트로 자동 환전돼요!`;
 
+      const imageUrl = book.cafe.photos?.[0]?.photoUrl || null;
+
       return {
         stampBookId: book.id,
         cafeId: book.cafe.id,
         cafeName: book.cafe.name,
         cafeAddress: book.cafe.address,
+        cafeImageUrl: imageUrl,
         expiresAt: book.expiresAt,
         daysLeft,
         currentCount,

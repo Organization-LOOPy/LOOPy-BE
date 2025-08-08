@@ -5914,6 +5914,10 @@ components:
           type: string
           description: 카페 주소
           example: 서울 서대문구 이화여대길 52
+        cafeImageUrl:
+          type: string
+          description: 카페 대표 이미지 URL
+          example: https://example.com/photo.jpg
         expiresAt:
           type: string
           format: date-time
@@ -5947,6 +5951,7 @@ components:
           type: string
           description: 안내 문구 ("n회 후 포인트로 자동 환전돼요!")
           example: 3회 후 포인트로 자동 환전돼요!
+
 
 
     StampConversionResult:
