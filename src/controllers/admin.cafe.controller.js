@@ -7,7 +7,6 @@ import {
   updateMyCafe,
   getCafePhoto,
   deleteCafePhoto,
-  getMyCafeMenuNames, 
   getCafeBasicInfo,
   getCafeBusinessInfo,
   getCafeMenus
@@ -166,20 +165,6 @@ export const getMyCafeBusinessInfo = async (req, res, next) => {
   }
 };
 
-export const getCafeAllMenus = async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-    const menus = await getCafeMenus(userId);
-
-    res.status(200).json({
-      message: '카페 메뉴 목록 조회 성공',
-      menus,
-    });
-  } catch (error) {
-    next(error);
-  }
-};
-
 export const updateCafe = async (req, res, next) => {
   try {
     const userId = req.user.id;
@@ -225,20 +210,10 @@ export const deleteMyCafePhoto = async (req, res, next) => {
   }
 };
 
-export const getAllCafeMenus = async (req, res, next) => {
+export const getMyCafeMenus = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const menus = await cafeService.getCafeMenus(userId);
-    return res.status(200).json(menus);
-  } catch (err) {
-    next(err);
-  }
-};
-
-export const getMyCafeMenuList = async (req, res, next) => {
-  try {
-    const userId = req.user.id;
-    const menus = await getMyCafeMenuNames(userId);
+    const menus = await getCafeMenus(userId);
 
     res.status(200).json({
       message: '내 카페 메뉴 목록 조회 성공',
