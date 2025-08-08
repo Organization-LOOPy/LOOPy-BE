@@ -80,6 +80,13 @@ export const cafeRepository = {
             expiresAt: true,
           },
         },
+
+        stampImages: {
+          select: {
+            id: true,
+            imageUrl: true,
+          },
+        },
       },
     });
 

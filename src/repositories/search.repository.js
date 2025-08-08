@@ -43,6 +43,7 @@ export const cafeSearchRepository = {
       },
       take: take + 1,
     });
+
     // nextCursor 계산
     const hasMore = cafeList.length > take;
     const cafes = hasMore ? cafeList.slice(0, -1) : cafeList;

@@ -1852,17 +1852,17 @@ paths:
                           name: "스타벅스 강남역점"
                           latitude: 37.497175
                           longitude: 127.027926
-                          isBookmarked: false
+                          isStamped: false
                         - id: 11
                           name: "투썸플레이스 강남점"
                           latitude: 37.498234
                           longitude: 127.029871
-                          isBookmarked: false
+                          isStamped: false
                         - id: 13
                           name: "카페베네 강남역점"
                           latitude: 37.495876
                           longitude: 127.025431
-                          isBookmarked: false
+                          isStamped: false
                       totalCount: 3
                       searchRadius: 320
                       zoomLevel: "3"
@@ -1880,32 +1880,32 @@ paths:
                           name: "스타벅스 강남역점"
                           latitude: 37.497175
                           longitude: 127.027926
-                          isBookmarked: false
+                          isStamped: false
                         - id: 11
                           name: "투썸플레이스 강남점"
                           latitude: 37.498234
                           longitude: 127.029871
-                          isBookmarked: false
+                          isStamped: false
                         - id: 13
                           name: "카페베네 강남역점"
                           latitude: 37.495876
                           longitude: 127.025431
-                          isBookmarked: false
+                          isStamped: false
                         - id: 12
                           name: "블루보틀 강남점"
                           latitude: 37.499123
                           longitude: 127.030945
-                          isBookmarked: false
+                          isStamped: false
                         - id: 14
                           name: "로컬카페 '소소한하루'"
                           latitude: 37.500456
                           longitude: 127.032187
-                          isBookmarked: false
+                          isStamped: false
                         - id: 1
                           name: "로스터리 카페"
                           latitude: 37.5009
                           longitude: 127.0363
-                          isBookmarked: true
+                          isStamped: true
                       totalCount: 6
                       searchRadius: 2560
                       zoomLevel: "6"
@@ -2064,7 +2064,7 @@ paths:
                               type: array
                               items:
                                 type: string
-                              example: ["커피", "스타벅스", "강남"]
+                              example: ["커피", "강남"]
                             latitude:
                               type: number
                               format: float
