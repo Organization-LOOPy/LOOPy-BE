@@ -392,34 +392,23 @@ model Notification {
 }
 
 model CouponTemplate {
-  id               Int          @id @default(autoincrement())
-  cafeId           Int          @map("cafe_id")
-  name             String       @db.VarChar(255)
-  discountType     DiscountType @map("type") // "DISCOUNT" | "FREE_DRINK" | "SIZE_UP"
-  discountValue    Int?         @map("discount_value")       // DISCOUNT일 때만 사용
-  applicableMenuId Int?         @map("applicable_menu_id")
-  usageCondition   String?      @map("usage_condition") // 추가
-  startDate        DateTime?    @map("start_date")       // 추가
-  endDate          DateTime?    @map("end_date")         // 추가
-  isActive         Boolean      @default(true) @map("is_active")
-  createdAt        DateTime     @default(now()) @map("created_at")
-  
+  id               Int               @id @default(autoincrement())
+  cafeId           Int               @map("cafe_id")
+  name             String            @db.VarChar(255)
+  discountType     coupon_templates_type @map("type") // enum 타입 통일
+  discountValue    Int?              @map("discount_value")
+  applicableMenuId Int?              @map("applicable_menu_id")
+  usageCondition   String?           @map("usage_condition")
+  startDate        DateTime?         @map("start_date")
+  endDate          DateTime?         @map("end_date")
+  isActive         Boolean           @default(true) @map("is_active")
+  createdAt        DateTime          @default(now()) @map("created_at")
+  expiredAt        DateTime?         @map("expired_at")
+  validDays        Int?              @map("valid_days")
+
   // Relations
-  cafe           Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  applicableMenu CafeMenu?    @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
-  userCoupons    UserCoupon[]
-  id               Int                   @id @default(autoincrement())
-  cafeId           Int                   @map("cafe_id")
-  name             String                @db.VarChar(255)
-  isActive         Boolean               @default(true) @map("is_active")
-  createdAt        DateTime              @default(now()) @map("created_at")
-  applicableMenuId Int?                  @map("applicable_menu_id")
-  discountValue    Int?                  @map("discount_value")
-  expiredAt        DateTime              @map("expired_at")
-  discountType     coupon_templates_type @map("type")
-  validDays        Int                   @map("valid_days")
-  applicableMenu   CafeMenu?             @relation(fields: [applicableMenuId], references: [id])
-  cafe             Cafe                  @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  cafe             Cafe              @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  applicableMenu   CafeMenu?         @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
   userCoupons      UserCoupon[]
 
   @@index([applicableMenuId], map: "coupon_templates_applicable_menu_id_fkey")
@@ -440,17 +429,14 @@ model UserCoupon {
   updatedAt        DateTime?             @updatedAt @map("updated_at")
 
   // Relations
-  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  couponTemplate CouponTemplate @relation(fields: [couponTemplateId], references: [id], onDelete: Cascade)
-
-  updatedAt        DateTime              @updatedAt @map("updated_at")
-  couponTemplate   CouponTemplate        @relation(fields: [couponTemplateId], references: [id], onDelete: Cascade)
   user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponTemplate   CouponTemplate        @relation(fields: [couponTemplateId], references: [id], onDelete: Cascade)
 
   @@index([couponTemplateId], map: "user_coupons_coupon_template_id_fkey")
   @@index([userId], map: "user_coupons_user_id_fkey")
   @@map("user_coupons")
 }
+
 
 enum RoleType {
   CUSTOMER
