@@ -1,7 +1,9 @@
 import prisma from "../../prisma/client.js";
 import { uploadToS3 } from "../utils/s3.js";
 import {
-  InvalidReviewTitleError,
+  TooManyImagesError,
+  InvalidImageTypeError,
+  CafeNotFoundError,
   InvalidReviewContentError,
   ReviewNotFoundError,
   ForbiddenReviewAccessError,
@@ -14,11 +16,7 @@ export const createReview = async (req, res, next) => {
     const userId = req.user.id; 
     const files = req.files;
 
-    if (!title || title.length < 20) {
-      return next(new InvalidReviewTitleError(title));
-    }
-
-    if (!content || content.length < 500) {
+    if (!content || content.length > 500) {
       return next(new InvalidReviewContentError(content));
     }
 
@@ -39,9 +37,17 @@ export const createReview = async (req, res, next) => {
       );
     }
 
+    const cafe = await prisma.cafe.findUnique({
+      where: { id: parseInt(cafeId) },
+    });
+
+    if (!cafe) {
+      return next(new CafeNotFoundError(cafeId));
+    }
+
     const review = await prisma.review.create({
       data: {
-        title,
+        title: cafe.name,
         content,
         cafeId: parseInt(cafeId),
         userId,
@@ -51,7 +57,15 @@ export const createReview = async (req, res, next) => {
 
     return res.success({
       message: "리뷰 작성 성공",
-      review,
+      review: {
+        reviewId: review.id,
+        cafeId: review.cafeId,
+        userId: review.userId,
+        title: review.title,
+        content: review.content,
+        images: review.images || [],
+        createdAt: review.createdAt,
+      },
     });
   } catch (err) {
     next(err);
@@ -150,6 +164,7 @@ export const getMyReviews = async (req, res, next) => {
 
     const formatted = reviews.map((review) => ({
       reviewId: review.id,
+      userId: review.userId,
       cafeId: review.cafe.id,
       cafeName: review.cafe.name,
       title: review.title,

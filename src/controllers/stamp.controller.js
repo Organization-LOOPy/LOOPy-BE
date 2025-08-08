@@ -5,49 +5,83 @@ const prisma = new PrismaClient();
 import { StampbookNotFoundError } from "../errors/customErrors.js";
 import { BadRequestError } from '../errors/customErrors.js';
 
-//  [기능 1] 전체 스탬프북 조회
-// - 사용 화면: [마이페이지 > 스탬프북 리스트 화면]
-// - 현재 로그인한 유저가 보유한 모든 스탬프북을 조회
-// - 정렬 기준: 적립 많은 순(mostStamped) / 기한 짧은 순(shortestDeadline)
-
+// 1. 전체 스탬프북 조회
 export const getMyStampBooks = async (req, res, next) => {
   const userId = req.user.id;
   const { sortBy } = req.query;
 
   try {
-    // 1. 정렬 조건 설정
     let orderByClause;
     if (sortBy === 'mostStamped') {
-      orderByClause = { currentCount: 'desc' }; // 적립 많은 순
+      orderByClause = { currentCount: 'desc' };
     } else if (sortBy === 'shortestDeadline' || !sortBy) {
-      orderByClause = { expiresAt: 'asc' }; // 만료일 빠른 순
+      orderByClause = { expiresAt: 'asc' };
     } else {
       return res.fail('잘못된 정렬 기준입니다.', 400);
     }
 
-    // 2. 스탬프북 조회
     const stampBooks = await prisma.stampBook.findMany({
-      where: { userId },
+      where: {
+        userId,
+        convertedAt: null,
+        expiredAt: null,
+        isCompleted: false,
+      },
       include: {
-        cafe: true, // 카페 정보 포함 
+        cafe: {
+          select: {
+            id: true,
+            name: true,
+            address: true,
+            photos: {
+              orderBy: { displayOrder: 'asc' }, 
+              take: 1,                           
+              select: { photoUrl: true },
+            },
+          },
+        },
       },
       orderBy: orderByClause,
     });
 
-    // 3. 응답 가공
-    const response = stampBooks.map((sb) => ({
-      id: sb.id,
-      cafe: {
-        id: sb.cafe.id,
-        name: sb.cafe.name,
-        address: sb.cafe.address,
-        image: sb.cafe.image, // ✅ image 필드 추가
-      },
-      currentCount: sb.currentCount,
-      goalCount: sb.goalCount,
-      status: sb.status,
-      expiresAt: sb.expiresAt,
-    }));
+    const now = new Date();
+    const response = stampBooks.map((sb) => {
+      
+      let daysUntilExpiration = null;
+      let isExpired = false;
+      let isExpiringSoon = false;
+
+      if (sb.expiresAt) {
+        const today0 = new Date(now);           today0.setHours(0, 0, 0, 0);
+        const expiry0 = new Date(sb.expiresAt); expiry0.setHours(0, 0, 0, 0);
+        const diffMs = expiry0.getTime() - today0.getTime();
+        daysUntilExpiration = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+        isExpired = diffMs < 0;
+        isExpiringSoon = diffMs > 0 && daysUntilExpiration <= 3;
+      }
+
+      const remainCount = Math.max(sb.goalCount - sb.currentCount, 0);
+      const progressRatio = sb.goalCount > 0 ? sb.currentCount / sb.goalCount : 0;
+
+      return {
+        id: sb.id,
+        cafe: {
+          id: sb.cafe.id,
+          name: sb.cafe.name,
+          address: sb.cafe.address,
+          image: sb.cafe.photos?.[0]?.photoUrl,
+        },
+        currentCount: sb.currentCount,
+        goalCount: sb.goalCount,
+        status: sb.status,
+        expiresAt: sb.expiresAt,
+        remainCount,
+        progressRatio,
+        isExpired,
+        isExpiringSoon,
+        daysUntilExpiration,
+      };
+    });
 
     return res.success(response);
   } catch (err) {
@@ -56,11 +90,11 @@ export const getMyStampBooks = async (req, res, next) => {
   }
 };
 
-
+// 스탬프북 상세 조회
 export const getStampBookDetail = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const stampBookId = parseInt(req.params.stampBookId); // param에서 ID 추출
+    const stampBookId = parseInt(req.params.stampBookId, 10);
 
     if (isNaN(stampBookId)) {
       throw new BadRequestError('유효하지 않은 스탬프북 ID입니다.');
@@ -80,9 +114,7 @@ export const getStampBookDetail = async (req, res, next) => {
           },
         },
         stamps: {
-          orderBy: {
-            stampedAt: 'asc',
-          },
+          orderBy: { stampedAt: 'asc' },
           select: {
             id: true,
             stampedAt: true,
@@ -100,15 +132,31 @@ export const getStampBookDetail = async (req, res, next) => {
       throw new NotFoundError('존재하지 않는 스탬프북입니다.');
     }
 
-    // ⚙️ 유틸 필드 계산
-    const now = new Date();
-    const expiresAt = stampBook.expiresAt;
-    let isExpiringSoon = false;
-    let isExpired = false;
-    let daysUntilExpiration = null;
+    const sameCafeStampBooks = await prisma.stampBook.findMany({
+      where: {
+        userId,
+        cafeId: stampBook.cafe.id,
+      },
+      orderBy: {
+        createdAt: 'asc',
+      },
+      select: {
+        id: true,
+      },
+    });
 
-    if (expiresAt) {
-      const diffMs = expiresAt - now;
+    const currentIndex = sameCafeStampBooks.findIndex(sb => sb.id === stampBookId);
+    const nthStampBook = currentIndex >= 0 ? currentIndex + 1 : null;
+
+    const now = new Date();
+    const today0 = new Date(now); today0.setHours(0, 0, 0, 0);
+    let daysUntilExpiration = null;
+    let isExpired = false;
+    let isExpiringSoon = false;
+
+    if (stampBook.expiresAt) {
+      const expiry0 = new Date(stampBook.expiresAt); expiry0.setHours(0, 0, 0, 0);
+      const diffMs = expiry0.getTime() - today0.getTime();
       daysUntilExpiration = Math.floor(diffMs / (1000 * 60 * 60 * 24));
       isExpired = diffMs < 0;
       isExpiringSoon = diffMs > 0 && daysUntilExpiration <= 3;
@@ -132,7 +180,7 @@ export const getStampBookDetail = async (req, res, next) => {
       createdAt: stampBook.createdAt,
       updatedAt: stampBook.updatedAt,
       stamps: stampBook.stamps,
-
+      nthStampBook, 
       isExpiringSoon,
       isExpired,
       daysUntilExpiration,
@@ -149,6 +197,7 @@ export const getStampBookDetail = async (req, res, next) => {
   }
 };
 
+// 도장 적립
 
 export const addStamp = async (req, res, next) => {
   try {
@@ -195,7 +244,7 @@ export const addStamp = async (req, res, next) => {
       return res.error(400, '이미 모든 도장이 적립되었습니다.');
     }
 
-    // 도장 적립 처리
+    
     await prisma.stamp.create({
       data: {
         stampBookId,
@@ -210,15 +259,32 @@ export const addStamp = async (req, res, next) => {
 
     console.log("✅ [도장 적립] 적립 완료 - 개수:", updatedCount);
 
+    try {
+      await prisma.notification.create({
+        data: {
+          userId: stampBook.userId,
+          cafeId: stampBook.cafeId,
+          type: 'stamp',
+          title: '스탬프가 적립되었어요!',
+          content: '지금 방금 적립한 스탬프에 대해 리뷰를 작성해보세요 ✍️',
+          isRead: false,
+        },
+      });
+    } catch (notificationError) {
+      console.error("❌ [도장 적립] 알림 생성 실패:", notificationError);
+    }
+
     return res.success({
       stampCount: updatedCount,
       isStampbookCompleted: isCompleted,
     });
+    
   } catch (error) {
-    console.error('[addStamp] 오류 발생:', err);
+    console.error('[addStamp] 오류 발생:', error);
     next(error);
   }
 };
+
 
 //  [기능 4] 스탬프 → 포인트 환전
 // - 사용 화면: [스탬프북 상세 > ‘환전하기’ 버튼 클릭 시]
@@ -299,71 +365,6 @@ export const convertStampToPoint = async (req, res, next) => {
   }
 };
 
-// //  [기능 5] 환전 취소 -> 보류
-// // - 사용 화면: [환전 후 3일 이내 환전 취소 요청 시]
-// // - 유저가 환전한 스탬프북을 3일 이내에 취소할 수 있음
-// // - 포인트 회수, 스탬프북 상태 복구, 환불 기록 남김
-
-// export const cancelStampConversion = async (req, res, next) => {
-//   const userId = req.user.id;
-//   const stampBookId = parseInt(req.params.stampBookId, 10);
-
-//   try {
-//     const stampBook = await prisma.stampBook.findUnique({
-//       where: { id: stampBookId },
-//     });
-
-//     if (!stampBook) throw new NotFoundError("존재하지 않는 스탬프북입니다.");
-//     if (stampBook.userId !== userId)
-//       throw new ForbiddenError("본인의 스탬프북만 환전 취소할 수 있습니다.");
-//     if (!stampBook.isConverted || !stampBook.convertedAt)
-//       throw new BadRequestError("환전되지 않은 스탬프북입니다.");
-
-//     // 3일 이내 취소 가능 여부 확인
-//     const now = new Date();
-//     const convertedAt = new Date(stampBook.convertedAt);
-//     const diffInDays = (now - convertedAt) / (1000 * 60 * 60 * 24);
-//     if (diffInDays > 3)
-//       throw new BadRequestError("환전 취소는 3일 이내에만 가능합니다.");
-
-//     const stampCount = stampBook.currentStampCount;
-//     const refundPoint = stampCount * 100;
-
-//     // 트랜잭션으로 상태 복구 및 포인트 회수
-//     await prisma.$transaction([
-//       prisma.stampBook.update({
-//         where: { id: stampBookId },
-//         data: {
-//           isConverted: false,
-//           convertedAt: null,
-//           status: 'completed',
-//         },
-//       }),
-//       prisma.user.update({
-//         where: { id: userId },
-//         data: {
-//           totalPoint: {
-//             decrement: refundPoint,
-//           },
-//         },
-//       }),
-//       prisma.pointTransaction.create({
-//         data: {
-//           userId,
-//           stampBookId,
-//           point: -refundPoint,
-//           type: 'refunded',
-//           description: '스탬프 환전 취소',
-//         },
-//       }),
-//     ]);
-
-//     return res.success({ message: "환전 취소 완료", refundPoint });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
-
 //  [기능 6] 스탬프북 기간 연장
 // - 사용 화면: [스탬프북 상세 화면 > 연장 버튼 클릭 시]
 // - 진행 중인(active) 스탬프북만 1회 14일 연장 가능
@@ -424,7 +425,7 @@ export const extendStampBook = async (req, res, next) => {
   }
 };
 
-//   [기능 7] 소멸 임박 스탬프북 조회
+// [기능 7] 소멸 임박 스탬프북 조회
 // - 사용 화면: [마이페이지 or 홈 > “곧 만료돼요” 배너 영역]
 // - 만료까지 7일 이하 남은 active 상태의 스탬프북 조회
 // - 만료일 오름차순 정렬
@@ -453,16 +454,48 @@ export const getExpiringStampBooks = async (req, res, next) => {
             address: true,
           },
         },
+        stamps: {
+          select: { id: true },
+        },
       },
       orderBy: {
         expiresAt: 'asc',
       },
     });
 
-    return res.success(expiringBooks); 
-  } catch (err) {
-    console.error('[getExpiringStampBooks ERROR]', err);
-    next(err);
+    const result = expiringBooks.map((book) => {
+      const goalCount = book.goalCount;
+      const currentCount = book.stamps.length;
+      const progressRate = Math.floor((currentCount / goalCount) * 100);
+
+      const expiresAt = new Date(book.expiresAt);
+      const todayMidnight = new Date(today.toDateString());
+      const daysLeft = Math.ceil((expiresAt - todayMidnight) / (1000 * 60 * 60 * 24));
+
+      const isCompleted = book.isCompleted;
+      const canExtend = !isCompleted && daysLeft <= 7 && daysLeft > 0;
+      const previewRewardText = `${goalCount - currentCount}회 후 포인트로 자동 환전돼요!`;
+
+      return {
+        stampBookId: book.id,
+        cafeId: book.cafe.id,
+        cafeName: book.cafe.name,
+        cafeAddress: book.cafe.address,
+        expiresAt: book.expiresAt,
+        daysLeft,
+        currentCount,
+        goalCount,
+        progressRate,
+        isCompleted,
+        canExtend,
+        previewRewardText,
+      };
+    });
+
+    return res.success(result);
+  } catch (error) {
+    console.error('[getExpiringStampBooks ERROR]', error);
+    next(error);
   }
 };
 
@@ -488,20 +521,34 @@ export const getConvertedStampbooks = async (req, res, next) => {
       include: {
         cafe: {
           select: {
+            id: true,
             name: true,
             address: true,
+            photos: {
+              orderBy: { displayOrder: 'asc' },
+              take: 1,
+              select: { photoUrl: true },
+            },
           },
         },
       },
     });
 
-    const result = convertedBooks.map((book) => ({
-      stampBookId: book.id,
-      cafeName: book.cafe.name,
-      address: book.cafe.address,
-      round: book.round,
-      convertedAt: book.convertedAt,
-    }));
+    const result = convertedBooks.map((book) => {
+      const cafe = book.cafe;
+      const imageUrl = cafe.photos[0]?.photoUrl || null;
+
+      return {
+        stampBookId: book.id,
+        cafeId: cafe.id,
+        cafeName: cafe.name,
+        cafeAddress: cafe.address,
+        cafeImageUrl: imageUrl,
+        round: book.round,
+        displayText: `스탬프지 ${book.round}장 완료`,
+        convertedAt: book.convertedAt,
+      };
+    });
 
     return res.success(result);
   } catch (err) {
@@ -574,9 +621,9 @@ export const getLoopyLevelInfo = async (req, res, next) => {
   }
 };
 
-// [기능 11] 특정 카페에 대한 내 스탬프북 현황 조회
-// 사용 화면: [카페 상세 페이지 > 내 스탬프 현황]
-// 조건: 로그인한 유저가 해당 카페에 대해 보유한 스탬프북이 있어야 함
+// // [기능 11] 특정 카페에 대한 내 스탬프북 현황 조회
+// // 사용 화면: [카페 상세 페이지 > 내 스탬프 현황]
+// // 조건: 로그인한 유저가 해당 카페에 대해 보유한 스탬프북이 있어야 함
 
 export const getMyStampByCafe = async (req, res, next) => {
   const userId = req.user.id;
@@ -618,4 +665,4 @@ export const getMyStampByCafe = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
-};
+}

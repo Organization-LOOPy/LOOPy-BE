@@ -15,13 +15,14 @@ import userRouter from "./routes/user.routes.js";
 import pointRouter from "./routes/point.router.js";
 import reviewRouter from "./routes/review.routes.js";
 import challengeRoutes from "./routes/challenge.routes.js";
+import usercouponRoutes from "./routes/user.coupon.routes.js";
 
 import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
 
 import adminCafeRouter from "./routes/admin.cafe.routes.js";
 import adminStampRouter from "./routes/admin.stamp.routes.js";
-//import couponRouter from './routes/coupon.routes.js';
+import couponRouter from './routes/coupon.routes.js';
 import customerPageRouter from "./routes/customer.page.routes.js";
 import DashboardRouter from "./routes/dashboard.routes.js";
 
@@ -46,7 +47,6 @@ const register = new client.Registry();
 client.collectDefaultMetrics({ register });
 
 app.use(cors(corsOptions));
-setupSwagger(app);
 app.use(express.json());
 
 app.use(passport.initialize());
@@ -84,13 +84,13 @@ app.use("/api/v1/points", pointRouter);
 app.use("/api/v1/users", stampbookRouter);
 app.use("/api/v1", stampbookRouter);
 app.use("/api/v1/users/me/stampbooks", stampbookRouter);
+app.use("/api/v1/", usercouponRoutes);
 
 // 사장용
 app.use("/api/v1/owner/cafes", adminCafeRouter);
 app.use("/api/v1/owner/stamps", adminStampRouter);
-//app.use("/api/v1/owner/cafes/:cafeId/coupons", couponRouter);
+app.use("/api/v1/owner/cafes", couponRouter);
 app.use("/api/v1/owner/dashboard", DashboardRouter);
-
 // 페이지GET
 app.use("/api/v1/pages", customerPageRouter);
 
