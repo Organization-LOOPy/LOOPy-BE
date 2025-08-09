@@ -3925,7 +3925,7 @@ paths:
                           type: string
                           example: "디카페인"
 
-    /api/v1/owner/cafes/myCafe/menus:
+  /api/v1/owner/cafes/myCafe/menus:
     get:
       tags: [Admin Cafe]
       summary: 내 카페 메뉴 전체 요약 조회
