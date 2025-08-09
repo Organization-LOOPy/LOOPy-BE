@@ -35,20 +35,25 @@ jobs:
           echo "Pulling latest code..."
           git pull origin main
 
-          echo "Cleaning up unused Docker resources..."
-          docker container prune -f
-          docker image prune -a -f
-          docker volume prune -f
-          docker network prune -f
+          echo "Killing any process using port 3000..."
+          fuser -k 3000/tcp || true
 
-          echo "Stopping current container..."
+          echo "Stopping and removing old container..."
           docker stop loopy-app || true
           docker rm loopy-app || true
 
-          echo "Removing old image to force rebuild..."
+          echo "Removing old image..."
           docker rmi loopy-be || true
 
-          echo "Building new image with latest code (no cache)..."
+          echo "Cleaning up unused Docker resources..."
+          docker container prune -f
+          docker volume prune -f
+          docker network prune -f
+
+          echo "Cleaning up Docker build cache..."
+          docker builder prune -f  
+
+          echo "Building new image (no cache)..."
           docker build --no-cache -t loopy-be .
 
           echo "Starting new container..."
@@ -56,6 +61,12 @@ jobs:
 
           echo "Waiting for container to start..."
           sleep 15
+
+          echo "Running Prisma migration..."
+          docker exec loopy-app npx prisma migrate deploy
+
+          echo "Generating Prisma client..."
+          docker exec loopy-app npx prisma generate
 
           echo "Checking container status..."
           docker ps

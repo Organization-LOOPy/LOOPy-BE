@@ -9,7 +9,7 @@ export const cafeSearch = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const { x, y, searchQuery, cursor } = req.query;
-    const { storeFilter, takeOutFilter, menuFilter, addressInfo } = req.body;
+    const { storeFilters, takeOutFilters, menuFilters, addressInfo } = req.body;
 
     // 필수는 아님 -> 수정 필요
     if (!x || !y) {
@@ -21,9 +21,9 @@ export const cafeSearch = async (req, res, next) => {
       x,
       y,
       searchQuery,
-      storeFilter, // storeFilter (s 없음)
-      takeOutFilter, // takeOutFilter (s 없음)
-      menuFilter, // menuFilter (s 없음)
+      storeFilters,
+      takeOutFilters,
+      menuFilters,
       addressInfo?.region_1depth_name,
       addressInfo?.region_2depth_name,
       addressInfo?.region_3depth_name,

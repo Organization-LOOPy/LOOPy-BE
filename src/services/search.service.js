@@ -1,4 +1,5 @@
 import { logger } from "../utils/logger.js";
+import axios from "axios";
 import { cafeRepository } from "../repositories/cafe.repository.js";
 import {
   cafeSearchRepository,
@@ -8,6 +9,10 @@ import { getDistanceInMeters } from "../utils/geo.js";
 import { parseFiltersFromQuery } from "../utils/parserFilterFromJson.js";
 
 export const cafeSearchService = {
+  // 1. 검색어가 없는 경우 => 무조건 지역 필터 적용
+  // 2. 검색어가 있으면 => 검색어 대로만 검색
+  // 3. 검색어 & 지역 => 지역내 검색어 필터링
+  // 백준 풀기 조온나 싫다 ㅅㅂ...
   async findCafeList(
     cursor,
     x,
@@ -23,7 +28,8 @@ export const cafeSearchService = {
   ) {
     const refinedX = parseFloat(x);
     const refinedY = parseFloat(y);
-    const query = (searchQuery ?? "").trim();
+    const query = (searchQuery ?? "").trim().replace(/"/g, "").normalize("NFC");
+    console.log("🔍 search query =", query);
 
     const selectedStoreFilters = Object.entries(storeFilters ?? {})
       .filter(([_, v]) => v)
@@ -45,24 +51,29 @@ export const cafeSearchService = {
       AND: [],
     };
 
-    // 지역 조건 - null이 아닌 값만 추가
+    // 지역 조건 객체 구성
     const regionCondition = {};
     if (refinedRegion1) regionCondition.region1DepthName = refinedRegion1;
     if (refinedRegion2) regionCondition.region2DepthName = refinedRegion2;
     if (refinedRegion3) regionCondition.region3DepthName = refinedRegion3;
 
-    // 지역 조건이 있을 때만 추가
-    if (Object.keys(regionCondition).length > 0) {
+    const hasSearchQuery = query && query.length > 0;
+    const hasRegionFilter = Object.keys(regionCondition).length > 0;
+
+    // ✅ 수정: region 조건이 실제 있을 때만 넣기
+    if (hasRegionFilter) {
       whereConditions.AND.push(regionCondition);
     }
 
-    // 쿼리 조건 - 빈 문자열이 아닐 때만 추가
-    if (query && query.length > 0) {
-      whereConditions.AND.push({ name: { contains: query } });
+    // 검색어 조건
+    if (hasSearchQuery) {
+      whereConditions.AND.push({
+        name: { contains: query },
+      });
     }
 
     // 스토어 필터
-    if (selectedStoreFilters && selectedStoreFilters.length > 0) {
+    if (selectedStoreFilters.length > 0) {
       selectedStoreFilters.forEach((filter) => {
         whereConditions.AND.push({
           storeFilters: {
@@ -74,7 +85,7 @@ export const cafeSearchService = {
     }
 
     // 메뉴 필터
-    if (selectedMenuFilters && selectedMenuFilters.length > 0) {
+    if (selectedMenuFilters.length > 0) {
       selectedMenuFilters.forEach((filter) => {
         whereConditions.AND.push({
           menuFilters: {
@@ -86,7 +97,7 @@ export const cafeSearchService = {
     }
 
     // 테이크아웃 필터
-    if (selectedTakeOutFilters && selectedTakeOutFilters.length > 0) {
+    if (selectedTakeOutFilters.length > 0) {
       selectedTakeOutFilters.forEach((filter) => {
         whereConditions.AND.push({
           takeOutFilters: {
@@ -97,18 +108,20 @@ export const cafeSearchService = {
       });
     }
 
-    // AND 배열이 비어있으면 빈 객체로 설정
-    const finalWhereConditions =
-      whereConditions.AND.length > 0 ? whereConditions : {};
+    if (whereConditions.AND.length === 0) {
+      return {
+        fromNLP: false,
+        data: [],
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
 
-    console.log(
-      "Final where conditions:",
-      JSON.stringify(finalWhereConditions, null, 2)
-    );
+    const finalWhereConditions = whereConditions;
 
     const searchResults = await cafeSearchRepository.findCafeByInfos(
       finalWhereConditions,
-      cursor, // cursor는 문자열
+      cursor,
       userId
     );
 
@@ -121,23 +134,18 @@ export const cafeSearchService = {
           refinedY
         );
 
-        // 북마크 여부 확인
         const isBookmarked = cafe.bookmarkedBy && cafe.bookmarkedBy.length > 0;
 
         return {
           ...cafe,
-          distance: distance,
-          isBookmarked: isBookmarked,
+          distance,
+          isBookmarked,
         };
       });
 
-      // 정렬: 1순위 북마크, 2순위 거리
       const sortedCafes = cafesWithDistance.sort((a, b) => {
-        // 북마크 우선 정렬
         if (a.isBookmarked && !b.isBookmarked) return -1;
         if (!a.isBookmarked && b.isBookmarked) return 1;
-
-        // 둘 다 북마크이거나 둘 다 북마크가 아닌 경우, 거리순 정렬
         return a.distance - b.distance;
       });
 
@@ -149,12 +157,63 @@ export const cafeSearchService = {
       };
     }
 
-    return {
-      fromNLP: true,
-      data: [],
-      nextCursor: null,
-      hasMore: false,
-    };
+    try {
+      const nlpRes = await axios.post(
+        "http://localhost:8000/embedding/search",
+        {
+          query: query,
+        }
+      );
+
+      const cafeIds = nlpRes.data?.cafeIds ?? [];
+
+      if (cafeIds.length === 0) {
+        return {
+          fromNLP: true,
+          data: [],
+          nextCursor: null,
+          hasMore: false,
+        };
+      }
+
+      const nlpCafeResults = await cafeSearchRepository.findCafeByIds(
+        cafeIds,
+        userId
+      );
+
+      const cafesWithDistance = nlpCafeResults.map((cafe) => {
+        const distance = getDistanceInMeters(
+          cafe.latitude,
+          cafe.longitude,
+          refinedX,
+          refinedY
+        );
+
+        const isBookmarked = cafe.bookmarkedBy && cafe.bookmarkedBy.length > 0;
+
+        return {
+          ...cafe,
+          distance,
+          isBookmarked,
+        };
+      });
+
+      const sortedCafes = cafesWithDistance.sort((a, b) => {
+        if (a.isBookmarked && !b.isBookmarked) return -1;
+        if (!a.isBookmarked && b.isBookmarked) return 1;
+        return a.distance - b.distance;
+      });
+
+      return {
+        fromNLP: true,
+        data: sortedCafes,
+        nextCursor: null,
+        hasMore: false,
+      };
+    } catch (err) {
+      logger.error(`nlp서버 카페 검색 중 오류 발생: ${err.message}`);
+      next(err);
+    }
   },
 
   async getCafeDetails(cafe, x, y) {

@@ -32,20 +32,20 @@ export class InternalServerError extends CustomError {
 // 사용자 인증 관련
 
 export class NotFoundPhoneError extends CustomError {
-  constructor(reason = 'phoneNumber가 필요합니다.', data = null) {
-    super(reason, 'NOT_FOUND_PHONE_NUMBER', 404, data);
+  constructor(reason = "phoneNumber가 필요합니다.", data = null) {
+    super(reason, "NOT_FOUND_PHONE_NUMBER", 404, data);
   }
 }
 
 export class KakaoAccessTokenMissingError extends CustomError {
   constructor() {
-    super('카카오 access_token 응답 누락', 'KAKAO_ACCESS_TOKEN_MISSING', 500);
+    super("카카오 access_token 응답 누락", "KAKAO_ACCESS_TOKEN_MISSING", 500);
   }
 }
 
 export class KakaoUserIdMissingError extends CustomError {
   constructor() {
-    super('카카오 사용자 정보에 ID가 없습니다', 'KAKAO_USER_ID_MISSING', 500);
+    super("카카오 사용자 정보에 ID가 없습니다", "KAKAO_USER_ID_MISSING", 500);
   }
 }
 
@@ -79,7 +79,6 @@ export class UserNotFoundError extends CustomError {
   }
 }
 
-
 export class InvalidPasswordError extends CustomError {
   constructor() {
     super("비밀번호가 일치하지 않습니다.", "INVALID_PASSWORD", 401);
@@ -104,7 +103,7 @@ export class KakaoAlreadyLinkedError extends CustomError {
 
 export class MissingRoleError extends CustomError {
   constructor() {
-    super('역할 정보가 누락되었습니다.', 'ROLE_MISSING', 400);
+    super("역할 정보가 누락되었습니다.", "ROLE_MISSING", 400);
   }
 }
 
@@ -122,10 +121,14 @@ export class InvalidRoleError extends CustomError {
 
 export class RoleNotGrantedError extends CustomError {
   constructor(role) {
-    super(`해당 사용자는 ${role} 역할이 등록되어 있지 않습니다.`, "ROLE_NOT_GRANTED", 403, { role });
+    super(
+      `해당 사용자는 ${role} 역할이 등록되어 있지 않습니다.`,
+      "ROLE_NOT_GRANTED",
+      403,
+      { role }
+    );
   }
 }
-
 
 // 마이페이지
 export class InvalidNicknameError extends CustomError {
@@ -153,8 +156,8 @@ export class PreferenceSaveError extends CustomError {
 export class InvalidExitRoleError extends Error {
   constructor(expectedRole) {
     super(`요청은 ${expectedRole} 권한에서만 수행할 수 있습니다.`);
-    this.name = 'InvalidRoleError';
-    this.errorCode = 'INVALID_ROLE';
+    this.name = "InvalidRoleError";
+    this.errorCode = "INVALID_ROLE";
     this.statusCode = 403;
     this.data = { expectedRole };
   }
@@ -274,23 +277,17 @@ export class DuplicateCouponError extends CustomError {
 
 export class UserCouponNotFoundError extends CustomError {
   constructor(userCouponId) {
-    super(
-      `사용자 쿠폰을 찾을 수 없습니다. ID: ${userCouponId}`,
-      "C010",
-      404,
-      { userCouponId }
-    );
+    super(`사용자 쿠폰을 찾을 수 없습니다. ID: ${userCouponId}`, "C010", 404, {
+      userCouponId,
+    });
   }
 }
 
 export class UserCouponAlreadyUsedOrExpiredError extends CustomError {
   constructor(userCouponId) {
-    super(
-      `해당 쿠폰은 이미 사용되었거나 만료되었습니다.`,
-      "C011",
-      400,
-      { userCouponId }
-    );
+    super(`해당 쿠폰은 이미 사용되었거나 만료되었습니다.`, "C011", 400, {
+      userCouponId,
+    });
   }
 }
 
@@ -317,6 +314,12 @@ export class CouponMissingMenuIdError extends CustomError {
   }
 }
 
+export class CouponNotFoundError extends CustomError {
+  constructor(couponId) {
+    super(`해당 쿠폰(ID: ${couponId})을 찾을 수 없습니다.`, "C014", 404);
+  }
+}
+
 //검색 라우터
 export class MissingUserCoordinate extends CustomError {
   constructor(message) {
@@ -334,7 +337,26 @@ export class ChallengeNotFoundError extends CustomError {
     );
   }
 }
+
+export class ChallengeAlreadyJoinedError extends CustomError {
+  constructor() {
+    super("이미 참여한 챌린지입니다.", "CH002", 400);
+  }
+}
+
+export class ChallengeUnavailableError extends CustomError {
+  constructor(challengeId) {
+    super(
+      `현재 참여할 수 없는 챌린지입니다 (ID: ${challengeId})`,
+      "CH003",
+      400,
+      { challengeId }
+    );
+  }
+}
+
 //
+
 export class StampbookNotFoundError extends CustomError {
   constructor(message = "Not Found") {
     super(message);
@@ -348,7 +370,7 @@ export class StampbookNotFoundError extends CustomError {
 export class cafeNotFoundError extends CustomError {
   constructor(cafeId) {
     super(`ID ${cafeId}에 해당하는 카페가 존재하지 않습니다.`, "R001", 404, {
-      cafeId
+      cafeId,
     });
   }
 }
@@ -394,7 +416,7 @@ export class InvalidImageTypeError extends CustomError {
 
 export class TooManyImagesError extends CustomError {
   constructor(count) {
-  super(
+    super(
       `이미지는 최대 5개까지만 업로드할 수 있습니다. (받은 수량: ${count}개)`,
       400,
       "R007"
@@ -405,7 +427,7 @@ export class TooManyImagesError extends CustomError {
 export class NoActiveStampError extends CustomError {
   constructor(userId, cafeId) {
     super(
-    "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
+      "스탬프 적립을 시작하고 리뷰를 작성해보세요!",
       "R008",
       403,
       { userId, cafeId } // ← 이 부분
@@ -437,14 +459,18 @@ export class NotificationNotFoundError extends CustomError {
   }
 }
 
-
 // 사장용 api 커스텀 에러
 
 // 카페 관리
-// 1. 기본 정보 등록 
+// 1. 기본 정보 등록
 export class CafeNotExistError extends CustomError {
   constructor(cafeId) {
-    super(`ID ${cafeId}에 해당하는 카페를 찾을 수 없습니다.`, "CAFE_NOT_FOUND", 404, { cafeId });
+    super(
+      `ID ${cafeId}에 해당하는 카페를 찾을 수 없습니다.`,
+      "CAFE_NOT_FOUND",
+      404,
+      { cafeId }
+    );
   }
 }
 
@@ -460,14 +486,19 @@ export class UnauthCafeAccessError extends CustomError {
 
 export class CafeAlreadyExistError extends CustomError {
   constructor(userId) {
-    super(`이미 카페를 등록한 사용자입니다. (userId: ${userId})`, "CAFE_ALREADY_EXIST", 400, { userId });
+    super(
+      `이미 카페를 등록한 사용자입니다. (userId: ${userId})`,
+      "CAFE_ALREADY_EXIST",
+      400,
+      { userId }
+    );
   }
 }
 
 export class InvalidCafeBasicInfoError extends CustomError {
   constructor(missingFields = []) {
     super(
-      `카페 기본 정보에 누락된 필드가 있습니다: ${missingFields.join(', ')}`,
+      `카페 기본 정보에 누락된 필드가 있습니다: ${missingFields.join(", ")}`,
       "CAFE_BASIC_INFO_INVALID",
       400,
       { missingFields }
@@ -491,7 +522,7 @@ export class InvalidBusinessHoursError extends CustomError {
 export class DuplicateMenuNameError extends CustomError {
   constructor(duplicateNames) {
     super(
-      `중복된 메뉴 이름이 존재합니다: ${duplicateNames.join(', ')}`,
+      `중복된 메뉴 이름이 존재합니다: ${duplicateNames.join(", ")}`,
       "MENU_NAME_DUPLICATE",
       409,
       { duplicateNames }
@@ -501,20 +532,17 @@ export class DuplicateMenuNameError extends CustomError {
 
 export class InvalidMenuDataError extends CustomError {
   constructor(detail) {
-    super(
-      `메뉴 정보가 잘못되었습니다: ${detail}`,
-      "MENU_INVALID",
-      400,
-      { detail }
-    );
+    super(`메뉴 정보가 잘못되었습니다: ${detail}`, "MENU_INVALID", 400, {
+      detail,
+    });
   }
 }
 
 export class RepresentativeLimitExceededError extends CustomError {
   constructor() {
     super(
-      '대표 메뉴는 최대 2개까지만 등록할 수 있습니다.',
-      'REPRESENTATIVE_LIMIT_EXCEEDED',
+      "대표 메뉴는 최대 2개까지만 등록할 수 있습니다.",
+      "REPRESENTATIVE_LIMIT_EXCEEDED",
       400
     );
   }
@@ -534,26 +562,29 @@ export class InvalidPhotoUrlsError extends CustomError {
 
 // 4. 스탬프 정책
 export class InvalidStampPolicyError extends CustomError {
-  constructor(reason = '잘못된 스탬프 정책 요청입니다.', data = null) {
-    super(reason, 'INVALID_STAMP_POLICY', 400, data);
+  constructor(reason = "잘못된 스탬프 정책 요청입니다.", data = null) {
+    super(reason, "INVALID_STAMP_POLICY", 400, data);
   }
 }
 
 export class StampImageLimitExceededError extends CustomError {
-  constructor(reason = '스탬프 이미지는 최대 2개까지만 업로드할 수 있습니다..', data = null) {
-    super(reason, 'INVALID_STAMP_IMAGE', 400, data);
+  constructor(
+    reason = "스탬프 이미지는 최대 2개까지만 업로드할 수 있습니다..",
+    data = null
+  ) {
+    super(reason, "INVALID_STAMP_IMAGE", 400, data);
   }
 }
 
 export class NoStampImageError extends CustomError {
-  constructor(reason = '업로드할 이미지가 없습니다.', data = null) {
-    super(reason, 'NOT_FOUND_STAMP_IMAGE', 404, data);
+  constructor(reason = "업로드할 이미지가 없습니다.", data = null) {
+    super(reason, "NOT_FOUND_STAMP_IMAGE", 404, data);
   }
 }
 
 export class StampPolicyNotFoundError extends CustomError {
   constructor() {
-    super('등록된 스탬프 정책이 없습니다.', 'STAMP_POLICY_NOT_FOUND', 404);
+    super("등록된 스탬프 정책이 없습니다.", "STAMP_POLICY_NOT_FOUND", 404);
   }
 }
 
@@ -593,28 +624,42 @@ export class UnauthorizedPhotoDeleteError extends CustomError {
 }
 
 export class QRCodeError extends CustomError {
-  constructor(reason){
-    super(
-      `QR 코드 생성 실패`,
-      "QR_CODE_NOT_COMPLETED",
-      400,
-      { reason },
-    );
+  constructor(reason) {
+    super(`QR 코드 생성 실패`, "QR_CODE_NOT_COMPLETED", 400, { reason });
   }
 }
 
 export class QRNotFoundError extends CustomError {
-  constructor(reason){
-    super(
-      `QR 코드가 존재하지 않습니다.`,
-      "QR_CODE_NOT_FOUND",
-      404,
-      { reason },
-    );
+  constructor(reason) {
+    super(`QR 코드가 존재하지 않습니다.`, "QR_CODE_NOT_FOUND", 404, { reason });
   }
 }
 
+// 챌린지
 
+export class ChallengeNotActiveError extends Error {
+  constructor() {
+    super("해당 챌린지는 현재 참여할 수 없습니다.");
+    this.name = "ChallengeNotActiveError";
+    this.statusCode = 400;
+  }
+}
+
+export class AlreadyParticipatedError extends Error {
+  constructor() {
+    super("이미 참여 중인 챌린지입니다.");
+    this.name = "AlreadyParticipatedError";
+    this.statusCode = 400;
+  }
+}
+
+export class InvalidCafeParticipationError extends Error {
+  constructor() {
+    super("해당 매장은 챌린지 참여 가능한 매장이 아닙니다.");
+    this.name = "InvalidCafeParticipationError";
+    this.statusCode = 400;
+  }
+}
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
