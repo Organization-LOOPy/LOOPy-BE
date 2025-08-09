@@ -7,6 +7,7 @@ import {
 } from "../repositories/search.repository.js";
 import { getDistanceInMeters } from "../utils/geo.js";
 import { parseFiltersFromQuery } from "../utils/parserFilterFromJson.js";
+import { nlpSearch } from "./nlp.search.js";
 
 export const cafeSearchService = {
   // 1. 검색어가 없는 경우 => 무조건 지역 필터 적용
@@ -158,13 +159,7 @@ export const cafeSearchService = {
     }
 
     try {
-      const nlpRes = await axios.post(
-        "http://localhost:8000/embedding/search",
-        {
-          query: query,
-        }
-      );
-
+      const nlpRes = await nlpSearch(searchQuery);
       const cafeIds = nlpRes.data?.cafeIds ?? [];
 
       if (cafeIds.length === 0) {
