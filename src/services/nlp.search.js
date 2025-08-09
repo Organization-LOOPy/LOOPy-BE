@@ -9,7 +9,24 @@ const qdrant = new QdrantClient({
   apiKey: process.env.QDRANT_API_KEY,
 });
 
-export const nlpSearch = async (searchQuery) => {
+function toLine(name, value) {
+  if (value == null) return "";
+  if (Array.isArray(value)) return `${name}: ${value.join(", ")}`;
+  if (typeof value === "object") return `${name}: ${JSON.stringify(value)}`;
+  return `${name}: ${String(value)}`;
+}
+
+export function parseAreaToRegions(area) {
+  if (!area || typeof area !== "string") return {};
+  const [r1, r2, r3] = area.trim().split(/\s+/).filter(Boolean);
+  const res = {};
+  if (r1) res.region1DepthName = r1;
+  if (r2) res.region2DepthName = r2;
+  if (r3) res.region3DepthName = r3;
+  return res;
+}
+
+export const nlpSearch = async (searchQuery, limit = 10) => {
   try {
     const query = (searchQuery ?? "").trim();
     if (!query) return { cafeIds: [] };
@@ -18,8 +35,11 @@ export const nlpSearch = async (searchQuery) => {
       model: "text-embedding-3-small",
       input: query,
     });
-    logger.debug(embeddingRes);
-    const vector = embeddingRes.data[0].embedding;
+    const vector = embeddingRes?.data?.[0]?.embedding;
+    if (!Array.isArray(vector)) {
+      logger.warn("nlpSearch: empty embedding vector");
+      return { cafeIds: [] };
+    }
 
     const searchRes = await qdrant.search({
       collection_name: "cafes",
@@ -27,23 +47,19 @@ export const nlpSearch = async (searchQuery) => {
       limit: 10,
       with_payload: true,
     });
-    logger.debug(searchRes);
-    const cafeIds = searchRes.map((hit) => hit.payload?.cafeId).filter(Boolean);
+
+    const cafeIds = (searchRes ?? [])
+      .map((hit) => hit?.payload?.cafeId)
+      .filter(Boolean);
 
     return { cafeIds };
   } catch (err) {
     logger.error("qdrant 조회중 오류 발생", err);
-    return { cafeId: [] };
+    return { cafeIds: [] };
   }
 };
 
-function toLine(name, value) {
-  if (value == null) return "";
-  if (Array.isArray(value)) return `${name}: ${value.join(", ")}`;
-  if (typeof value === "object") return `${name}: ${JSON.stringify(value)}`;
-  return `${name}: ${String(value)}`;
-}
-
+//---------------------------------카ㅏㅏ페ㅔㅔ임베딩----------------------
 function buildCafeText(cafe, menus) {
   const lines = [];
   lines.push(toLine("name", cafe.name));
@@ -65,7 +81,6 @@ function buildCafeText(cafe, menus) {
 
 async function summarizeCafe(cafe, menus) {
   const raw = buildCafeText(cafe, menus);
-
   const prompt = [
     {
       role: "system",
@@ -74,7 +89,15 @@ async function summarizeCafe(cafe, menus) {
     },
     {
       role: "user",
-      content: `다음 카페 정보를 정확히 3줄로 요약해주세요.\n- 불릿포인트나 번호 사용 금지\n- 각 줄은 최대 120자 이내\n- 1줄: 카페 이름 + 분위기/설명\n- 2줄: 대표 메뉴/특징\n- 3줄: 키워드/필터\n\n텍스트:\n${raw}`,
+      content: `다음 카페 정보를 정확히 3줄로 요약해주세요.
+- 불릿포인트나 번호 사용 금지
+- 각 줄은 최대 120자 이내
+- 1줄: 카페 이름 + 분위기/설명
+- 2줄: 대표 메뉴/특징
+- 3줄: 키워드/필터
+
+텍스트:
+${raw}`,
     },
   ];
 
@@ -91,28 +114,21 @@ async function summarizeCafe(cafe, menus) {
       .slice(0, 3)
       .join("\n") ?? "";
 
-  if (!text) throw err;
-
   return text.slice(0, 600);
 }
 
-export const cafeEmbedding = async (cafe) => {
+export const cafeEmbedding = async (cafe, next) => {
   try {
-    if (!cafe?.id)
-      throw new Error("cafeEmbedding: invalid cafe object (missing id)");
-
+    if (!cafe?.id) throw new Error("cafeEmbedding: invalid cafe object");
     const menus = await cafeRepository.findMenu(cafe.id);
 
-    //3줄 요약
     const summary = await summarizeCafe(cafe, menus);
-
     const embeddingRes = await openai.embeddings.create({
-      model: "text-embedding-3-small", // 1536차원
+      model: "text-embedding-3-small",
       input: summary,
     });
     const vector = embeddingRes.data[0].embedding;
 
-    //Qdrant 업서트
     const upsertRes = await qdrant.upsert({
       collection_name: "cafes",
       wait: true,
@@ -122,25 +138,23 @@ export const cafeEmbedding = async (cafe) => {
           vector,
           payload: {
             cafeId: cafe.id,
+            region1DepthName: cafe.region1DepthName ?? null,
+            region2DepthName: cafe.region2DepthName ?? null,
+            region3DepthName: cafe.region3DepthName ?? null,
+            summary,
           },
         },
       ],
     });
 
-    return { ok: true, upsertRes, summary };
+    return { ok: true, upsertRes, summary, dim: vector.length };
   } catch (err) {
     logger.error("카페정보 임베딩중 오류 발생:", err);
     next(err);
   }
 };
 
-function toLine(name, value) {
-  if (value == null) return "";
-  if (Array.isArray(value)) return `${name}: ${value.join(", ")}`;
-  if (typeof value === "object") return `${name}: ${JSON.stringify(value)}`;
-  return `${name}: ${String(value)}`;
-}
-
+//----------------------------손님고객님의 취이향 임베딩 ----------------------------------------
 function buildPreferenceText(p) {
   const lines = [];
   lines.push("TYPE: USER_PREFERENCE_V1");
@@ -153,7 +167,6 @@ function buildPreferenceText(p) {
 
 async function summarizePreference(p) {
   const raw = buildPreferenceText(p);
-
   const prompt = [
     {
       role: "system",
@@ -187,7 +200,6 @@ ${raw}`,
       .slice(0, 3)
       .join("\n") ?? "";
 
-  if (!text) throw new Error("summarizePreference: empty summary");
   return text.slice(0, 600);
 }
 
@@ -196,11 +208,11 @@ export const userPreferenceEmbedding = async (
   preferredStore,
   preferredTakeout,
   preferredMenu,
-  extraFilters
+  extraFilters,
+  preferredArea, // 문자열 "서울 강남구 역삼동"
+  next
 ) => {
   try {
-    if (!userId) throw new Error("userPreferenceEmbedding: invalid userId");
-
     const pref = {
       preferredStore,
       preferredTakeout,
@@ -208,10 +220,9 @@ export const userPreferenceEmbedding = async (
       extraFilters,
     };
 
-    // 1) 3줄 요약
     const summary = await summarizePreference(pref);
+    const regions = parseAreaToRegions(preferredArea);
 
-    // 2) 기존 summary 비교 (같으면 스킵)
     const existing = await qdrant
       .retrieve?.({
         collection_name: "user_preferences",
@@ -229,14 +240,12 @@ export const userPreferenceEmbedding = async (
       return { ok: true, updated: false, reason: "no-change", summary };
     }
 
-    // 3) 임베딩 생성 (1536차원)
     const embeddingRes = await openai.embeddings.create({
       model: "text-embedding-3-small",
       input: summary,
     });
     const vector = embeddingRes.data[0].embedding;
 
-    // 4) Qdrant 업서트
     const upsertRes = await qdrant.upsert({
       collection_name: "user_preferences",
       wait: true,
@@ -246,17 +255,8 @@ export const userPreferenceEmbedding = async (
           vector,
           payload: {
             userId: String(userId),
-            ver: "USER_PREFERENCE_V1",
             summary,
-            preference: {
-              preferredStore,
-              preferredTakeout,
-              preferredMenu,
-              extraFilters,
-            },
-            // 필터용 평면 키(선택)
-            store: preferredStore ?? null,
-            takeout: preferredTakeout ?? null,
+            ...regions, // region1DepthName, region2DepthName, region3DepthName
           },
         },
       ],
