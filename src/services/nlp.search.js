@@ -70,11 +70,11 @@ async function summarizeCafe(cafe, menus) {
     {
       role: "system",
       content:
-        "You are a helpful assistant that writes ultra-concise 3-line summaries for semantic search embeddings.",
+        "당신은 의미 기반 검색(semantic search) 임베딩에 적합한, 매우 간결한 3줄 요약을 작성하는 유능한 어시스턴트입니다.",
     },
     {
       role: "user",
-      content: `Summarize the following cafe profile into EXACTLY 3 lines.\n- No bullets, no numbering.\n- Each line <= 120 chars.\n- Line 1: name + vibe/description\n- Line 2: notable menus/features\n- Line 3: region/tags/filters\n\nTEXT:\n${raw}`,
+      content: `다음 카페 정보를 정확히 3줄로 요약해주세요.\n- 불릿포인트나 번호 사용 금지\n- 각 줄은 최대 120자 이내\n- 1줄: 카페 이름 + 분위기/설명\n- 2줄: 대표 메뉴/특징\n- 3줄: 키워드/필터\n\n텍스트:\n${raw}`,
     },
   ];
 
@@ -91,7 +91,7 @@ async function summarizeCafe(cafe, menus) {
       .slice(0, 3)
       .join("\n") ?? "";
 
-  if (!text) throw new Error("Failed to summarize cafe");
+  if (!text) throw err;
 
   return text.slice(0, 600);
 }
@@ -112,7 +112,7 @@ export const cafeEmbedding = async (cafe) => {
     });
     const vector = embeddingRes.data[0].embedding;
 
-    // 4) Qdrant 업서트
+    //Qdrant 업서트
     const upsertRes = await qdrant.upsert({
       collection_name: "cafes",
       wait: true,
@@ -123,10 +123,7 @@ export const cafeEmbedding = async (cafe) => {
           payload: {
             cafeId: cafe.id,
             name: cafe.name ?? null,
-            region1: cafe.region1DepthName ?? null,
-            region2: cafe.region2DepthName ?? null,
-            region3: cafe.region3DepthName ?? null,
-            summary, // 검색 결과 프리뷰용으로 저장하면 좋음
+            summary,
           },
         },
       ],
