@@ -3145,6 +3145,17 @@ paths:
                           format: date-time
                           nullable: true
                           example: null
+                        cafeId:
+                        type: integer
+                        example: 5
+                        cafeImage:
+                          type: string
+                          nullable: true
+                          example: https://cdn.loopy.com/cafes/5/main.jpg
+                        usageCondition:
+                          type: string
+                          nullable: true
+                          example: 1만원 이상 구매 시
                         couponTemplate:
                           type: object
                           properties:
