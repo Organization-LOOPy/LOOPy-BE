@@ -3946,46 +3946,46 @@ paths:
                           type: string
                           example: "디카페인"
 
-    /api/v1/owner/cafes/myCafe/menus:
-      get:
-        tags: [Admin Cafe]
-        summary: 내 카페 메뉴 전체 요약 조회
-        description: 사장님이 등록한 모든 메뉴의 요약 정보를 조회합니다.
-        responses:
-          200:
-            description: 메뉴 요약 리스트 조회 성공
-            content:
-              application/json:
-                schema:
-                  type: object
-                  properties:
-                    message:
-                      type: string
-                      example: 내 카페 메뉴 목록 조회 성공
-                    data:
-                      type: array
-                      items:
-                        type: object
-                        properties:
-                          id:
-                            type: integer
-                            example: 1
-                          name:
-                            type: string
-                            example: "아이스 아메리카노"
-                          price:
-                            type: integer
-                            example: 4500
-                          photoUrl:
-                            type: string
-                            nullable: true
-                            example: "https://s3.amazonaws.com/cafe/menu1.jpg"
-                          isRepresentative:
-                            type: boolean
-                            example: true
-                          description:
-                            type: string
-                            example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
+  /api/v1/owner/cafes/myCafe/menus:
+    get:
+      tags: [Admin Cafe]
+      summary: 내 카페 메뉴 전체 요약 조회
+      description: 사장님이 등록한 모든 메뉴의 요약 정보를 조회합니다.
+      responses:
+        200:
+          description: 메뉴 요약 리스트 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 내 카페 메뉴 목록 조회 성공
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 1
+                        name:
+                          type: string
+                          example: "아이스 아메리카노"
+                        price:
+                          type: integer
+                          example: 4500
+                        photoUrl:
+                          type: string
+                          nullable: true
+                          example: "https://s3.amazonaws.com/cafe/menu1.jpg"
+                        isRepresentative:
+                          type: boolean
+                          example: true
+                        description:
+                          type: string
+                          example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
 
   /api/v1/owner/cafes/photos/first:
     get:
