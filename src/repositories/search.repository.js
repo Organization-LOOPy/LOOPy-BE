@@ -3,20 +3,12 @@ import prisma from "../../prisma/client.js";
 
 export const cafeSearchRepository = {
   async findCafeByInfos(whereConditions, cursor, userId, take = 10) {
-    console.log(
-      "Repository where conditions:",
-      JSON.stringify(whereConditions, null, 2)
-    );
-    console.log("Cursor:", cursor, "Type:", typeof cursor);
-
     const whereClause = { ...whereConditions };
 
     // cursor가 문자열이고 유효할 때만 추가
     if (cursor && typeof cursor === "string" && cursor.trim() !== "") {
       whereClause.createdAt = { lt: new Date(cursor) };
     }
-
-    console.log("Final whereClause:", JSON.stringify(whereClause, null, 2));
 
     const cafeList = await prisma.cafe.findMany({
       where: whereClause,
@@ -39,7 +31,6 @@ export const cafeSearchRepository = {
             photoUrl: true,
           },
         },
-        // 북마크 정보 - 정확한 관계명 확인 필요
         bookmarkedBy: userId
           ? {
               where: { userId: userId },
@@ -65,6 +56,43 @@ export const cafeSearchRepository = {
       nextCursor,
       hasMore,
     };
+  },
+
+  async findCafeByIds(cafeIds, userId) {
+    return await prisma.cafe.findMany({
+      where: {
+        id: { in: cafeIds },
+      },
+      select: {
+        id: true,
+        name: true,
+        address: true,
+        keywords: true,
+        latitude: true,
+        longitude: true,
+        region1DepthName: true,
+        region2DepthName: true,
+        region3DepthName: true,
+        createdAt: true,
+        photos: {
+          orderBy: { displayOrder: "asc" },
+          take: 1,
+          select: {
+            id: true,
+            photoUrl: true,
+          },
+        },
+        bookmarkedBy: userId
+          ? {
+              where: { userId: userId },
+              select: { id: true },
+            }
+          : false,
+      },
+      orderBy: {
+        createdAt: "asc",
+      },
+    });
   },
 };
 
@@ -141,20 +169,25 @@ export const cafeMapRepository = {
         name: true,
         latitude: true,
         longitude: true,
-        bookmarkedBy: {
+        stampBooks: {
           where: {
             userId: userId,
+            expiresAt: { gte: new Date() },
           },
           select: { id: true },
         },
       },
     });
 
-    // 북마크 정보를 isBookmarked로 변환
-    return cafes.map((cafe) => ({
-      ...cafe,
-      isBookmarked: cafe.bookmarkedBy.length > 0,
-      bookmarkedBy: undefined, // 응답에서 제거
-    }));
+    return cafes.map((cafe) => {
+      const isStamped =
+        Array.isArray(cafe.stampBooks) && cafe.stampBooks.length > 0;
+
+      return {
+        ...cafe,
+        isStamped,
+        stampBooks: undefined, // 응답에서 제거
+      };
+    });
   },
 };

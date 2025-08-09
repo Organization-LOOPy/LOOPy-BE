@@ -12,16 +12,6 @@ export const cafeRepository = {
       where: { id: cafeId },
       select: {
         id: true,
-        name: true,
-        address: true,
-        businessHours: true,
-        phone: true,
-        websiteUrl: true,
-        description: true,
-        storeFilters: true,
-        takeOutFilters: true,
-        menuFilters: true,
-        keywords: true,
 
         photos: {
           select: {
@@ -90,12 +80,46 @@ export const cafeRepository = {
             expiresAt: true,
           },
         },
+
+        stampImages: {
+          select: {
+            id: true,
+            imageUrl: true,
+          },
+        },
+
+        StampPolicy: {
+          select: {
+            id: true,
+            rewardType: true,
+            reward_description: true,
+            discountAmount: true,
+            menu: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
     });
 
-    logger.debug(cafe);
-
     return cafe;
+  },
+
+  async findPhotos(cafeId) {
+    const photos = await prisma.CafePhoto.findMany({
+      where: { cafeId },
+      orderBy: { displayOrder: "asc" },
+      select: {
+        id: true,
+        photoUrl: true,
+        displayOrder: true,
+      },
+    });
+
+    return photos;
   },
 };
 
@@ -210,7 +234,6 @@ export const cafeReviewRepository = {
       where: whereClause,
       select: {
         id: true,
-        title: true,
         content: true,
         createdAt: true,
         images: true,

@@ -9,22 +9,58 @@ import {
 import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
 export const cafeService = {
-  async getCafeDetails(_, cafeId, userId) {
+  async getCafeDetails(cafeObject, cafeId, userId) {
     const cafe = await cafeRepository.findCafeDetails(cafeId, userId);
+
+    const cafeobject = cafeObject;
+
+    let stampBook = null;
+    let stampPolicyMessage = null;
+
+    if ((cafe.stampBooks ?? []).length > 0) {
+      const stampBookData = cafe.stampBooks[0];
+      stampBook = {
+        id: stampBookData.id,
+        currentCount: stampBookData.currentCount,
+        goalCount: stampBookData.goalCount,
+        expiresAt: stampBookData.expiresAt,
+        stampBookId: stampBookData.id,
+        stampImages: (cafe.stampImages ?? []).map((image) => ({
+          id: image.id,
+          imageUrl: image.imageUrl,
+        })),
+      };
+    } else if (cafe.StampPolicy) {
+      const policy = cafe.StampPolicy;
+      const rewardType = policy.rewardType;
+      const menuName = policy.menu?.name ?? "";
+
+      if (rewardType === "FREE_DRINK") {
+        stampPolicyMessage = `${menuName} 무료 쿠폰을 받을 수 있어요`;
+      } else if (rewardType === "DISCOUNT") {
+        stampPolicyMessage = `${menuName} ${policy.discountAmount}원 할인 쿠폰을 받을 수 있어요`;
+      } else if (rewardType === "SIZE_UP") {
+        stampPolicyMessage = `${menuName} 사이즈업 쿠폰을 받을 수 있어요`;
+      } else {
+        stampPolicyMessage = policy.reward_description;
+      }
+    }
 
     const cafeDetails = {
       cafe: {
-        id: cafe.id,
-        name: cafe.name,
-        address: cafe.address,
-        businessHours: cafe.businessHours,
-        phone: cafe.phone,
-        websiteUrl: cafe.websiteUrl,
-        description: cafe.description,
-        storeFilters: cafe.storeFilters,
-        takeOutFilters: cafe.takeOutFilters,
-        menuFilters: cafe.menuFilters,
-        keywords: cafe.keywords,
+        id: cafeobject.id,
+        name: cafeobject.name,
+        address: cafeobject.address,
+        businessHours: cafeobject.businessHours,
+        businessHourType: cafeobject.businessHourType,
+        breakTime: cafeobject.breakTime,
+        phone: cafeobject.phone,
+        websiteUrl: cafeobject.websiteUrl,
+        description: cafeobject.description,
+        storeFilters: cafeobject.storeFilters,
+        takeOutFilters: cafeobject.takeOutFilters,
+        menuFilters: cafeobject.menuFilters,
+        keywords: cafeobject.keywords,
       },
       photos: (cafe.photos ?? []).map((p) => ({
         id: p.id,
@@ -59,17 +95,10 @@ export const cafeService = {
         startDate: a.challenge.startDate,
         endDate: a.challenge.endDate,
       })),
-      stampBook: (cafe.stampBooks ?? [])[0]
-        ? {
-            id: cafe.stampBooks[0].id,
-            currentCount: cafe.stampBooks[0].currentCount,
-            goalCount: cafe.stampBooks[0].goalCount,
-            expiresAt: cafe.stampBooks[0].expiresAt,
-            stampBookId: cafe.stampBooks[0].id,
-          }
-        : null,
+      stampBook,
+      stampPolicyMessage,
       bookmark: {
-        isBookmarked: !cafe.bookmaredBy,
+        isBookmarked: !cafe.bookmarkedBy,
       },
     };
 
@@ -135,7 +164,6 @@ export const cafeReviewService = {
 
     const reviewDetails = actualReviews.map((review) => ({
       id: review.id,
-      title: review.title,
       content: review.content,
       nickname: review.user.nickname,
       userProfileImage: review.user.profileImageUrl,
