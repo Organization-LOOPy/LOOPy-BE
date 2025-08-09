@@ -9,7 +9,8 @@ import {
   deleteCafePhoto,
   getCafeBasicInfo,
   getCafeBusinessInfo,
-  getCafeMenus
+  getCafeMenus,
+  getFirstCafePhotoByOwner
 } from "../services/admin.cafe.service.js";
 
 import { CafeNotExistError } from '../errors/customErrors.js';
@@ -219,6 +220,16 @@ export const getMyCafeMenus = async (req, res, next) => {
       message: '내 카페 메뉴 목록 조회 성공',
       data: menus,
     });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getFirstCafePhotoController = async (req, res, next) => {
+  try {
+    const ownerId = req.user.id;
+    const photo = await getFirstCafePhotoByOwner(ownerId);
+    res.status(200).json({ photo });
   } catch (error) {
     next(error);
   }
