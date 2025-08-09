@@ -1,20 +1,22 @@
-import { 
+import {
   createMyCafeBasicInfo,
   updateCafeOperationInfo,
   addCafeMenu,
   addCafePhotos,
-  finishCafeRegistration, 
+  finishCafeRegistration,
   updateMyCafe,
   getCafePhoto,
   deleteCafePhoto,
   getCafeBasicInfo,
   getCafeBusinessInfo,
   getCafeMenus,
-  getFirstCafePhotoByOwner
+  getFirstCafePhotoByOwner,
 } from "../services/admin.cafe.service.js";
 
-import { CafeNotExistError } from '../errors/customErrors.js';
-import prisma from '../../prisma/client.js';
+import { CafeNotExistError } from "../errors/customErrors.js";
+import prisma from "../../prisma/client.js";
+
+import { cafeEmbedding } from "../services/nlp.search.js";
 
 export const postCafeBasicInfo = async (req, res, next) => {
   try {
@@ -24,7 +26,7 @@ export const postCafeBasicInfo = async (req, res, next) => {
     const cafe = await createMyCafeBasicInfo(userId, basicInfo);
 
     res.status(201).json({
-      message: '카페 기본 정보가 등록되었습니다.',
+      message: "카페 기본 정보가 등록되었습니다.",
       cafe: {
         id: cafe.id,
         name: cafe.name,
@@ -37,8 +39,8 @@ export const postCafeBasicInfo = async (req, res, next) => {
         longitude: cafe.longitude,
         phone: cafe.phone,
         websiteUrl: cafe.websiteUrl,
-        description: cafe.description
-      }
+        description: cafe.description,
+      },
     });
   } catch (error) {
     next(error);
@@ -53,7 +55,7 @@ export const patchCafeOperationInfo = async (req, res, next) => {
     const updatedCafe = await updateCafeOperationInfo(userId, operationInfo);
 
     res.status(200).json({
-      message: '카페 운영 정보가 업데이트되었습니다.',
+      message: "카페 운영 정보가 업데이트되었습니다.",
       cafe: {
         id: updatedCafe.id,
         name: updatedCafe.name,
@@ -73,14 +75,14 @@ export const patchCafeOperationInfo = async (req, res, next) => {
 
 export const postCafeMenu = async (req, res, next) => {
   try {
-    console.log('[DEBUG] req.file:', req.file);
-    console.log('[DEBUG] req.body:', req.body);
+    console.log("[DEBUG] req.file:", req.file);
+    console.log("[DEBUG] req.body:", req.body);
 
     const userId = req.user.id;
     const createdMenu = await addCafeMenu(userId, req.body, req.file);
 
     res.status(201).json({
-      message: '카페 메뉴가 등록되었습니다.',
+      message: "카페 메뉴가 등록되었습니다.",
       data: createdMenu,
     });
   } catch (err) {
@@ -88,14 +90,13 @@ export const postCafeMenu = async (req, res, next) => {
   }
 };
 
-
 export const postCafePhotos = async (req, res, next) => {
   try {
     const { cafeId } = req.params;
     const userId = req.user.id;
 
     const cafe = await prisma.cafe.findFirst({
-      where: { ownerId: userId }
+      where: { ownerId: userId },
     });
 
     if (!cafe) throw new CafeNotExistError();
@@ -103,15 +104,15 @@ export const postCafePhotos = async (req, res, next) => {
     const uploadedUrls = [];
 
     for (const [index, file] of req.files.entries()) {
-      const s3Url = await uploadToS3(file, 'cafes'); 
+      const s3Url = await uploadToS3(file, "cafes");
       uploadedUrls.push({ url: s3Url, displayOrder: index });
     }
 
     const createdPhotos = await addCafePhotos(cafe.id, uploadedUrls);
 
     res.status(201).json({
-      message: '카페 사진이 등록되었습니다.',
-      cafePhotos: createdPhotos.map(photo => ({
+      message: "카페 사진이 등록되었습니다.",
+      cafePhotos: createdPhotos.map((photo) => ({
         id: photo.id,
         photoUrl: photo.photoUrl,
         displayOrder: photo.displayOrder,
@@ -128,15 +129,17 @@ export const completeCafeRegistration = async (req, res, next) => {
     const userId = req.user.id;
 
     const cafe = await prisma.cafe.findFirst({
-      where: { ownerId: userId }
+      where: { ownerId: userId },
     });
 
     if (!cafe) throw new CafeNotExistError();
 
     const updatedCafe = await finishCafeRegistration(cafe.id);
 
+    await cafeEmbedding(updatedCafe);
+
     res.status(200).json({
-      message: '카페 등록이 완료되었습니다.',
+      message: "카페 등록이 완료되었습니다.",
       cafe: {
         status: updatedCafe.status,
       },
@@ -148,7 +151,7 @@ export const completeCafeRegistration = async (req, res, next) => {
 
 export const getMyCafeBasicInfo = async (req, res, next) => {
   try {
-    const userId = req.user.id; 
+    const userId = req.user.id;
     const cafe = await getCafeBasicInfo(userId);
     return res.status(200).json(cafe);
   } catch (err) {
@@ -158,7 +161,7 @@ export const getMyCafeBasicInfo = async (req, res, next) => {
 
 export const getMyCafeBusinessInfo = async (req, res, next) => {
   try {
-    const userId = req.user.id; 
+    const userId = req.user.id;
     const businessInfo = await getCafeBusinessInfo(userId);
     return res.status(200).json(businessInfo);
   } catch (err) {
@@ -171,7 +174,7 @@ export const updateCafe = async (req, res, next) => {
     const userId = req.user.id;
 
     const cafe = await prisma.cafe.findFirst({
-      where: { ownerId: userId }
+      where: { ownerId: userId },
     });
 
     if (!cafe) throw new CafeNotExistError();
@@ -202,7 +205,7 @@ export const deleteMyCafePhoto = async (req, res, next) => {
     const result = await deleteCafePhoto(userId, photoId);
 
     return res.status(200).json({
-      resultType: 'SUCCESS',
+      resultType: "SUCCESS",
       error: null,
       success: result,
     });
@@ -217,7 +220,7 @@ export const getMyCafeMenus = async (req, res, next) => {
     const menus = await getCafeMenus(userId);
 
     res.status(200).json({
-      message: '내 카페 메뉴 목록 조회 성공',
+      message: "내 카페 메뉴 목록 조회 성공",
       data: menus,
     });
   } catch (error) {
