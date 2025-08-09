@@ -996,7 +996,7 @@ paths:
                     id: 1
                     name: "스타벅스 강남점"
                     address: "서울특별시 강남구 테헤란로 123"
-                    businessHourType: "SAME_ALL_DAYS"
+                    businessHourType: "ALL_DAYS"
                     businessHours: 
                       "open": "10:00"
                       "close": "20:00"
@@ -1117,6 +1117,7 @@ paths:
                     stampImages:
                       - id: 1
                         imageUrl: "https://example.com/images/stamp1.png"
+                  stampPolicyMessage: "스탬프북 없는 경우에만: 아메리카노 무료 쿠폰을 받을 수 있어요"
                   bookmark:
                     isBookmarked: true
         '401':

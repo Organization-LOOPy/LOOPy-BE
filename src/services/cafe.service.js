@@ -30,8 +30,9 @@ export const cafeService = {
           imageUrl: image.imageUrl,
         })),
       };
-    } else if (cafe.StampPolicy) {
-      const policy = cafe.StampPolicy;
+    } else {
+      const policy = cafe.stampPolicies;
+      console.log(policy);
       const rewardType = policy.rewardType;
       const menuName = policy.menu?.name ?? "";
 
@@ -41,10 +42,9 @@ export const cafeService = {
         stampPolicyMessage = `${menuName} ${policy.discountAmount}원 할인 쿠폰을 받을 수 있어요`;
       } else if (rewardType === "SIZE_UP") {
         stampPolicyMessage = `${menuName} 사이즈업 쿠폰을 받을 수 있어요`;
-      } else {
-        stampPolicyMessage = policy.reward_description;
       }
     }
+    console.log(stampPolicyMessage);
 
     const cafeDetails = {
       cafe: {

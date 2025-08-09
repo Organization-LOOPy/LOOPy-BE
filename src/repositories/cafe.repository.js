@@ -88,11 +88,10 @@ export const cafeRepository = {
           },
         },
 
-        StampPolicy: {
+        stampPolicies: {
           select: {
             id: true,
             rewardType: true,
-            reward_description: true,
             discountAmount: true,
             menu: {
               select: {
@@ -104,6 +103,8 @@ export const cafeRepository = {
         },
       },
     });
+
+    console.log(cafe);
 
     return cafe;
   },
