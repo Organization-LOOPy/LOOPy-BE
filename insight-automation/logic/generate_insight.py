@@ -1,35 +1,41 @@
-import random
-from utils.perplexity import fetch_cafe_trend
-from logic.trend_prompt import get_menu_prompt, get_feature_prompt
-from logic.sources.perplexity import get_trending_menu_info, get_popular_cafe_features
-from logic.sources.insight_weekly import get_weekly_comparison_insight
-from datetime import datetime
+from datetime import datetime, timezone, timedelta
+from typing import Dict, Any
 
-def choose_insight_type():
-    today = datetime.now()
-    if today.weekday() == 0:  # 월요일마다 주간 분석
-        return "weekly_report"
-    return random.choice(["popular_menu", "cafe_feature"])
+from logic.sources.insight_monthly import (
+    get_monthly_indicators,
+    synthesize_monthly_insight,
+)
+from logic.sources.perplexity import (
+    get_trending_menu_info,
+    get_popular_cafe_features,
+)
 
-def generate_insight():
-    today = datetime.datetime.now()
-    weekday = today.weekday()  # 0 = Monday, 6 = Sunday
+KST = timezone(timedelta(hours=9))
 
-    if weekday == 6:  # 일요일엔 과거 지표 비교
-        insight_type = 'performance_comparison'
-        content = get_weekly_comparison_insight()
-    else:
-        options = ['popular_menus', 'cafe_features']
-        chosen = random.choice(options)
 
-        if chosen == 'popular_menus':
-            insight_type = 'popular_menus'
-            content = get_trending_menu_info()
-        else:
-            insight_type = 'cafe_features'
-            content = get_popular_cafe_features()
+def generate_insight(cafe_id: int = 1, enforce_schedule: bool = True) -> Dict[str, Any]:
+    """
+    한 달에 한 번만 생성하는 인사이트.
+    - 기본은 지난달 KPI 기반(지표 중심)
+    - Perplexity 트렌드(메뉴/특징)를 짧게 덧붙여 제공
+    - enforce_schedule=True면 매월 1일이 아닐 때 생성 스킵
+    """
+    now = datetime.now(KST)
+    if enforce_schedule and now.day != 1:
+        return {
+            "type": "skipped",
+            "reason": "Monthly insight runs only on day=1 (KST). Set enforce_schedule=False to override."
+        }
 
-    return {
-        'type': insight_type,
-        'content': content,
-    }
+    # 1) 지난달 지표
+    indicators = get_monthly_indicators(cafe_id, now)
+
+    # 2) 트렌드 수집
+    menus = get_trending_menu_info()       
+    features = get_popular_cafe_features() 
+
+    # 3) LLM 종합(지표 → 결론/액션 중심, 마지막에 트렌드 참고)
+    result = synthesize_monthly_insight(indicators, menus, features)
+
+    # 4) 필요하면 여기서 result["content"]를 jsonsafe로 파싱해 dict로 바꿔 저장 가능
+    return result

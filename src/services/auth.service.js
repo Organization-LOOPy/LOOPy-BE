@@ -16,13 +16,11 @@ import { generateQRCode } from './user.service.js';
 // 이메일 기반 회원가입
 export const signupService = async (body) => {
   const { email, password, nickname, phoneNumber, agreements, role } = body;
-
-  if (!email || !password || !nickname || !phoneNumber || !role) {
+  console.log('📌 signup req.body:', body);
+  if (!password || !nickname ||  !role) {
     throw new MissingFieldsError([
-      "email",
       "password",
       "nickname",
-      "phoneNumber",
       "role",
     ]);
   }
