@@ -7,10 +7,8 @@ import {
 } from "../repositories/search.repository.js";
 import { getDistanceInMeters } from "../utils/geo.js";
 import { parseFiltersFromQuery } from "../utils/parserFilterFromJson.js";
-import { nlpSearch } from "./nlp.search.js";
-import { prisma } from "../db/prisma.js";
-import { getDistanceInMeters } from "../utils/geo.js";
-import { nlpSearch, preferenceTopK } from "../nlp/nlp.search.service.js";
+import { nlpSearch, preferenceTopK } from "./nlp.search.js";
+import prisma from "../../prisma/client.js";
 
 /** "서울 강남구 역삼동" → {region1:"서울", region2:"강남구", region3:"역삼동"} */
 function parsePreferredArea(area) {
@@ -162,11 +160,9 @@ export const cafeSearchService = {
     if (hasRegionFilter) whereConditions.AND.push(effectiveRegionCond);
 
     if (hasSearchQuery) {
-      // 기본 RDB 이름 contains 검색
       whereConditions.AND.push({ name: { contains: query } });
     }
 
-    // 필터(AND 누적) - 필요 시 OR 그룹으로 확장 가능
     selectedStoreFilters.forEach((f) =>
       whereConditions.AND.push({ storeFilters: { path: [f], equals: true } })
     );
@@ -177,7 +173,7 @@ export const cafeSearchService = {
       whereConditions.AND.push({ takeOutFilters: { path: [f], equals: true } })
     );
 
-    // 모든 조건이 비면 안전하게 preference 추천으로 대체
+    // 모든 조건이 비면 안전하게 preference
     if (whereConditions.AND.length === 0) {
       const pref = await preferenceTopK(userId, { topK: 30 });
       const cafeIds = pref.cafeIds ?? [];

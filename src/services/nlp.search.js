@@ -59,6 +59,47 @@ export const nlpSearch = async (searchQuery, limit = 10) => {
   }
 };
 
+export async function preferenceTopK(userId, opts = {}) {
+  const topK = Number(opts.topK ?? 30);
+  if (!userId) return { cafeIds: [] };
+
+  try {
+    // 사용자 벡터 조회
+    const prefPoint = await qdrant
+      .retrieve({
+        collection_name: "user_preferences",
+        ids: [String(userId)],
+        with_payload: true,
+        with_vectors: true,
+      })
+      .catch((e) => {
+        logger.warn("preferenceTopK: retrieve failed", e?.message);
+        return null;
+      });
+
+    const point = Array.isArray(prefPoint) ? prefPoint[0] : null;
+    const vector = point?.vector;
+
+    if (!Array.isArray(vector)) {
+      logger.info("preferenceTopK: no user vector");
+      return { cafeIds: [] };
+    }
+
+    const hits = await qdrant.search({
+      collection_name: "cafes",
+      vector,
+      limit: topK,
+      with_payload: true,
+    });
+
+    const cafeIds = (hits ?? []).map((h) => h?.payload?.cafeId).filter(Boolean);
+
+    return { cafeIds };
+  } catch (err) {
+    logger.error("preferenceTopK: 오류", err);
+    next(err);
+  }
+}
 //---------------------------------카ㅏㅏ페ㅔㅔ임베딩----------------------
 function buildCafeText(cafe, menus) {
   const lines = [];
