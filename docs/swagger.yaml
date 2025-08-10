@@ -3508,6 +3508,7 @@ paths:
     post:
       tags: [Admin Cafe]
       summary: 카페 기본 정보 등록
+      description: 로그인된 사장님의 카페 기본 정보를 등록합니다.
       security:
         - bearerAuth: []
       requestBody:
@@ -3565,12 +3566,63 @@ paths:
       responses:
         201:
           description: 카페 기본 정보 등록 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 카페 기본 정보가 등록되었습니다.
+                  cafe:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        example: 2
+                      name:
+                        type: string
+                        example: 카페 루피
+                      ownerName:
+                        type: string
+                        example: 유진
+                      address:
+                        type: string
+                        example: 서울특별시 강남구 테헤란로 123
+                      region1DepthName:
+                        type: string
+                        example: 서울특별시
+                      region2DepthName:
+                        type: string
+                        example: 강남구
+                      region3DepthName:
+                        type: string
+                        example: 역삼동
+                      latitude:
+                        type: number
+                        format: float
+                        example: 37.500123
+                      longitude:
+                        type: number
+                        format: float
+                        example: 127.036456
+                      phone:
+                        type: string
+                        example: "010-1234-5678"
+                      websiteUrl:
+                        type: string
+                        example: https://...
+                      description:
+                        type: string
+                        example: 루피가 운영하는 아늑한 카페입니다.
 
   /api/v1/owner/cafes/operation:
     patch:
       tags: [Admin Cafe]
       summary: 내 카페 운영 정보 수정
-      description: 운영시간, 버튼 상태, 브레이크타임, 해시태그, 키워드 정보를 수정합니다.
+      description: 운영시간 타입, 요일별 운영시간/브레이크타임, 매장/테이크아웃/메뉴 필터, 키워드를 수정합니다.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -3593,32 +3645,48 @@ paths:
                     $ref: '#/components/schemas/CafeDetailBusinessHour'
                 breakTime:
                   type: string
-                  description: 전체 브레이크 타임 (호환용, 현재 미사용 가능)
+                  description: 전체 브레이크 타임(옵션, 레거시 호환)
                   example: "14:00~15:00"
-                keywords:
-                  type: array
-                  description: 대표 해시태그 (최대 2개)
-                  items:
-                    type: string
-                    example: "루프탑"
                 storeFilters:
                   type: array
                   description: 매장 관련 키워드
                   items:
                     type: string
-                    example: "노트북"
+                  example: ["노트북", "주차 가능"]
                 takeOutFilters:
                   type: array
                   description: 테이크아웃 관련 키워드
                   items:
                     type: string
-                    example: "텀블러 할인"
+                  example: ["텀블러 할인"]
                 menuFilters:
                   type: array
                   description: 메뉴 관련 키워드
                   items:
                     type: string
-                    example: "디카페인"
+                  example: ["디카페인"]
+                keywords:
+                  type: array
+                  description: 대표 키워드(최대 2개 권장)
+                  items:
+                    type: string
+                  example: ["1인석", "조용한"]
+            example:
+              businessHourType: SAME_ALL_DAYS
+              businessHours:
+                - day: MONDAY
+                  isClosed: false
+                  openTime: "09:00"
+                  closeTime: "21:00"
+                  breakStart: "14:00"
+                  breakEnd: "15:00"
+                - day: TUESDAY
+                  isClosed: true
+              breakTime: "14:00~15:00"
+              storeFilters: ["노트북", "주차 가능"]
+              takeOutFilters: ["텀블러 할인"]
+              menuFilters: ["디카페인"]
+              keywords: ["1인석", "조용한"]
       responses:
         200:
           description: 운영 정보 수정 성공
@@ -3627,33 +3695,72 @@ paths:
               schema:
                 type: object
                 properties:
-                  id:
-                    type: integer
-                    description: 카페 ID
-                    example: 3
-                  businessHourType:
+                  message:
                     type: string
-                    example: WEEKDAY_WEEKEND
-                  businessHours:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CafeDetailBusinessHour'
-                  storeFilters:
-                    type: array
-                    items:
-                      type: string
-                  takeOutFilters:
-                    type: array
-                    items:
-                      type: string
-                  menuFilters:
-                    type: array
-                    items:
-                      type: string
-                  keywords:
-                    type: array
-                    items:
-                      type: string
+                    example: 카페 운영 정보가 업데이트되었습니다.
+                  cafe:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: 카페 ID
+                        example: 3
+                      name:
+                        type: string
+                        example: 카페 루피
+                      businessHourType:
+                        type: string
+                        example: WEEKDAY_WEEKEND
+                      businessHours:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/CafeDetailBusinessHour'
+                      breakTime:
+                        type: string
+                        example: "14:30~17:00"
+                      storeFilters:
+                        type: array
+                        items:
+                          type: string
+                        example: ["노트북", "주차 가능"]
+                      takeOutFilters:
+                        type: array
+                        items:
+                          type: string
+                        example: ["텀블러 할인"]
+                      menuFilters:
+                        type: array
+                        items:
+                          type: string
+                        example: ["디카페인"]
+                      keywords:
+                        type: array
+                        items:
+                          type: string
+                        example: ["1인석", "조용한"]
+              examples:
+                success:
+                  summary: 성공 예시
+                  value:
+                    message: 카페 운영 정보가 업데이트되었습니다.
+                    cafe:
+                      id: 3
+                      name: 카페 루피
+                      businessHourType: WEEKDAY_WEEKEND
+                      businessHours:
+                        - day: MONDAY
+                          isClosed: false
+                          openTime: "09:00"
+                          closeTime: "21:00"
+                          breakStart: "14:00"
+                          breakEnd: "15:00"
+                        - day: TUESDAY
+                          isClosed: true
+                      breakTime: "14:30~17:00"
+                      storeFilters: ["노트북", "주차 가능"]
+                      takeOutFilters: ["텀블러 할인"]
+                      menuFilters: ["디카페인"]
+                      keywords: ["1인석", "조용한"]
 
 
   /api/v1/owner/cafes/menus:
@@ -3872,7 +3979,9 @@ paths:
     get:
       tags: [Admin Cafe]
       summary: 내 카페 운영 정보 조회
-      description: 사장님의 카페 운영 시간, 버튼 선택 상태, 해시태그 및 필터 키워드를 조회
+      description: 사장님의 카페 운영 시간, 휴무 정보, 대표 해시태그 및 필터 키워드를 조회합니다.
+      security:
+        - bearerAuth: []
       responses:
         200:
           description: 운영 정보 조회 성공
@@ -3888,41 +3997,228 @@ paths:
                     example: WEEKDAY_WEEKEND
                   businessHours:
                     type: array
-                    description: 요일별 영업시간 및 브레이크 타임 정보
+                    description: 요일별 영업시간(브레이크 타임은 옵션)
                     items:
                       $ref: '#/components/schemas/CafeDetailBusinessHour'
                   hasNoHoliday:
                     type: boolean
-                    description: 모든 요일이 영업 중인지 여부
-                    example: true
+                    description: 일주일 내 휴무일이 없는지 여부
+                    example: false
                   keywords:
                     type: array
-                    description: 대표 해시태그 (최대 2개)
+                    description: 대표 해시태그(최대 2개 권장)
                     items:
                       type: string
-                      example: "루프탑"
+                    example: ["조용한 분위기", "아늑한 조명"]
                   selectedKeywords:
                     type: object
-                    description: 선택한 카페 키워드
+                    description: 선택된 카페 키워드(필터)
                     properties:
                       storeFilters:
                         type: array
-                        description: 매장 필터 키워드
+                        description: 매장 관련 필터
                         items:
                           type: string
-                          example: "노트북"
+                        example: ["노트북", "단체석"]
                       takeOutFilters:
                         type: array
-                        description: 포장 필터 키워드
+                        description: 포장/테이크아웃 관련 필터
                         items:
                           type: string
-                          example: "텀블러 할인"
+                        example: ["포장 가능", "텀블러 할인"]
                       menuFilters:
                         type: array
-                        description: 메뉴 필터 키워드
+                        description: 메뉴 관련 필터
                         items:
                           type: string
-                          example: "디카페인"
+                        example: ["비건", "저당"]
+              examples:
+                success:
+                  summary: 성공 예시
+                  value:
+                    businessHourType: WEEKDAY_WEEKEND
+                    businessHours:
+                      - day: MONDAY
+                        isClosed: false
+                        openTime: "09:00"
+                        closeTime: "21:00"
+                      - day: TUESDAY
+                        isClosed: false
+                        openTime: "09:00"
+                        closeTime: "21:00"
+                      - day: WEDNESDAY
+                        isClosed: false
+                        openTime: "09:00"
+                        closeTime: "21:00"
+                      - day: THURSDAY
+                        isClosed: false
+                        openTime: "09:00"
+                        closeTime: "21:00"
+                      - day: FRIDAY
+                        isClosed: false
+                        openTime: "09:00"
+                        closeTime: "21:00"
+                      - day: SATURDAY
+                        isClosed: true
+                      - day: SUNDAY
+                        isClosed: true
+                    hasNoHoliday: false
+                    keywords:
+                      - "조용한 분위기"
+                      - "아늑한 조명"
+                    selectedKeywords:
+                      storeFilters: ["노트북", "단체석"]
+                      takeOutFilters: ["포장 가능", "텀블러 할인"]
+                      menuFilters: ["비건", "저당"]
+
+
+  /api/v1/owner/cafes/myCafe:
+    patch:
+      tags: [Admin Cafe]
+      summary: 내 카페 기본 정보 수정
+      description: 로그인된 사장님의 카페 기본 정보를 수정합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                  example: 카페 루피
+                ownerName:
+                  type: string
+                  example: 테스터
+                address:
+                  type: string
+                  example: 서울특별시 강남구 테헤란로 123
+                region1DepthName:
+                  type: string
+                  example: 서울특별시
+                region2DepthName:
+                  type: string
+                  example: 강남구
+                region3DepthName:
+                  type: string
+                  example: 역삼동
+                latitude:
+                  type: number
+                  format: float
+                  example: 37.500123
+                longitude:
+                  type: number
+                  format: float
+                  example: 127.036456
+                phone:
+                  type: string
+                  example: "010-1234-5678"
+                websiteUrl:
+                  type: string
+                  example: https://...
+                description:
+                  type: string
+                  example: 루피가 운영하는 아늑한 카페입니다.
+      responses:
+        '200':
+          description: 카페 기본 정보 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                    example: 3
+                  name:
+                    type: string
+                    example: 카페 루피
+                  ownerId:
+                    type: integer
+                    example: 7
+                  address:
+                    type: string
+                    example: 서울특별시 강남구 테헤란로 123
+                  region1DepthName:
+                    type: string
+                    example: 서울특별시
+                  region2DepthName:
+                    type: string
+                    example: 강남구
+                  region3DepthName:
+                    type: string
+                    example: 역삼동
+                  latitude:
+                    type: number
+                    format: float
+                    example: 37.500123
+                  longitude:
+                    type: number
+                    format: float
+                    example: 127.036456
+                  ownerName:
+                    type: string
+                    example: 유진
+                  businessHours:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        day:
+                          type: string
+                          example: MONDAY
+                        isClosed:
+                          type: boolean
+                          example: false
+                        openTime:
+                          type: string
+                          example: "09:00"
+                        closeTime:
+                          type: string
+                          example: "21:00"
+                        breakStart:
+                          type: string
+                          example: "14:00"
+                        breakEnd:
+                          type: string
+                          example: "15:00"
+                  breakTime:
+                    type: string
+                    example: 14:30~17:00
+                  phone:
+                    type: string
+                    example: "010-1234-5678"
+                  websiteUrl:
+                    type: string
+                    example: https://cafe-loopy.kr
+                  description:
+                    type: string
+                    example: 루피가 운영하는 아늑한 카페입니다.
+                  storeFilters:
+                    type: string
+                    example: 넓은좌석
+                  takeOutFilters:
+                    type: string
+                    example: 테이크아웃
+                  menuFilters:
+                    type: string
+                    example: 카페라떼
+                  keywords:
+                    type: string
+                    example: 테스트 키워드
+                  status:
+                    type: string
+                    example: active
+                  createdAt:
+                    type: string
+                    format: date-time
+                    example: "2025-08-06T18:34:37.901Z"
+                  updatedAt:
+                    type: string
+                    format: date-time
+                    example: "2025-08-06T18:51:13.045Z"
 
   /api/v1/owner/cafes/myCafe/menus:
     get:
@@ -4168,20 +4464,87 @@ paths:
                     example: 스탬프 정책이 등록되었습니다.
                   data:
                     type: object
-                    example:
+                    properties:
+                      id:
+                        type: integer
+                        example: 1
+                      cafeId:
+                        type: integer
+                        example: 1
+                      selectedImageUrl:
+                        type: string
+                        example: https://.../stamps/1691223649_1.png
+                      conditionType:
+                        type: string
+                        enum: [AMOUNT, COUNT]
+                        example: AMOUNT
+                      minAmount:
+                        type: integer
+                        nullable: true
+                        example: 5000
+                      stampPerAmount:
+                        type: integer
+                        nullable: true
+                        example: 1
+                      drinkCount:
+                        type: integer
+                        nullable: true
+                        example: null
+                      stampPerCount:
+                        type: integer
+                        nullable: true
+                        example: null
+                      rewardType:
+                        type: string
+                        enum: [DISCOUNT, SIZE_UP, FREE_DRINK]
+                        example: DISCOUNT
+                      discountAmount:
+                        type: integer
+                        nullable: true
+                        example: 1000
+                      menuId:
+                        type: integer
+                        nullable: true
+                        example: null
+                      hasExpiry:
+                        type: boolean
+                        example: false
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: 2025-08-01T08:45:26.664Z
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        example: 2025-08-01T08:45:26.664Z
+              examples:
+                success:
+                  summary: 성공 예시
+                  value:
+                    message: 스탬프 정책이 등록되었습니다.
+                    data:
                       id: 1
-                      cafeId: 3
-                      selectedImageUrl: https://...
+                      cafeId: 1
+                      selectedImageUrl: https://.../stamps/1691223649_1.png
                       conditionType: AMOUNT
+                      minAmount: 5000
                       stampPerAmount: 1
+                      drinkCount: null
+                      stampPerCount: null
                       rewardType: DISCOUNT
                       discountAmount: 1000
+                      menuId: null
+                      hasExpiry: false
+                      createdAt: "2025-08-01T08:45:26.664Z"
+                      updatedAt: "2025-08-01T08:45:26.664Z"
         '400':
           description: 유효하지 않은 요청
         '401':
           description: 인증되지 않은 사용자
         '409':
           description: 이미 등록된 정책 존재 시 에러
+
+
             
     get:
       tags: [Admin Cafe]
@@ -4206,17 +4569,25 @@ paths:
                     properties:
                       id:
                         type: integer
-                        example: 1
+                        example: 2
                       cafeId:
                         type: integer
-                        example: 4
+                        example: 2
                       selectedImageUrl:
                         type: string
-                        example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/stamp1.png
+                        example: https://.../stamps/stamp2.png
                       conditionType:
                         type: string
                         enum: [AMOUNT, COUNT]
                         example: COUNT
+                      minAmount:
+                        type: integer
+                        nullable: true
+                        example: null
+                      stampPerAmount:
+                        type: integer
+                        nullable: true
+                        example: null
                       drinkCount:
                         type: integer
                         nullable: true
@@ -4229,20 +4600,45 @@ paths:
                         type: string
                         enum: [DISCOUNT, SIZE_UP, FREE_DRINK]
                         example: FREE_DRINK
-                      menuId:
-                        type: integer
-                        nullable: true
-                        example: 3
                       discountAmount:
                         type: integer
                         nullable: true
                         example: null
+                      menuId:
+                        type: integer
+                        nullable: true
+                        example: 3
+                      hasExpiry:
+                        type: boolean
+                        example: false
                       createdAt:
                         type: string
                         format: date-time
+                        example: 2025-08-01T14:41:15.463Z
                       updatedAt:
                         type: string
                         format: date-time
+                        example: 2025-08-01T15:17:36.723Z
+              examples:
+                success:
+                  summary: 성공 예시
+                  value:
+                    message: 스탬프 정책 조회 성공
+                    data:
+                      id: 2
+                      cafeId: 2
+                      selectedImageUrl: https://.../stamps/stamp2.png
+                      conditionType: COUNT
+                      minAmount: null
+                      stampPerAmount: null
+                      drinkCount: 10
+                      stampPerCount: 1
+                      rewardType: FREE_DRINK
+                      discountAmount: null
+                      menuId: 3
+                      hasExpiry: false
+                      createdAt: "2025-08-01T14:41:15.463Z"
+                      updatedAt: "2025-08-01T15:17:36.723Z"
         '401':
           description: 인증되지 않은 사용자
         '404':
@@ -4314,7 +4710,79 @@ paths:
                     example: 스탬프 정책이 수정되었습니다.
                   data:
                     type: object
-                    $ref: '#/components/schemas/StampPolicy'
+                    properties:
+                      id:
+                        type: integer
+                        example: 2
+                      cafeId:
+                        type: integer
+                        example: 2
+                      selectedImageUrl:
+                        type: string
+                        example: https://.../stamps/stamp2.png
+                      conditionType:
+                        type: string
+                        enum: [AMOUNT, COUNT]
+                        example: COUNT
+                      minAmount:
+                        type: integer
+                        nullable: true
+                        example: null
+                      stampPerAmount:
+                        type: integer
+                        nullable: true
+                        example: null
+                      drinkCount:
+                        type: integer
+                        nullable: true
+                        example: 10
+                      stampPerCount:
+                        type: integer
+                        nullable: true
+                        example: 1
+                      rewardType:
+                        type: string
+                        enum: [DISCOUNT, SIZE_UP, FREE_DRINK]
+                        example: FREE_DRINK
+                      discountAmount:
+                        type: integer
+                        nullable: true
+                        example: null
+                      menuId:
+                        type: integer
+                        nullable: true
+                        example: 3
+                      hasExpiry:
+                        type: boolean
+                        example: false
+                      createdAt:
+                        type: string
+                        format: date-time
+                        example: 2025-08-01T14:41:15.463Z
+                      updatedAt:
+                        type: string
+                        format: date-time
+                        example: 2025-08-01T15:17:36.723Z
+              examples:
+                success:
+                  summary: 성공 예시
+                  value:
+                    message: 스탬프 정책이 수정되었습니다.
+                    data:
+                      id: 2
+                      cafeId: 2
+                      selectedImageUrl: https://.../stamps/stamp2.png
+                      conditionType: COUNT
+                      minAmount: null
+                      stampPerAmount: null
+                      drinkCount: 10
+                      stampPerCount: 1
+                      rewardType: FREE_DRINK
+                      discountAmount: null
+                      menuId: 3
+                      hasExpiry: false
+                      createdAt: "2025-08-01T14:41:15.463Z"
+                      updatedAt: "2025-08-01T15:17:36.723Z"
         '400':
           description: 유효하지 않은 요청
         '401':
@@ -4322,73 +4790,101 @@ paths:
         '404':
           description: 정책이 존재하지 않음
 
-    /api/v1/owner/dashboard/stamp-stats:
-      get:
-        tags:
-          - Admin Dashboard
-        summary: 내 카페 스탬프 통계 조회
-        description: |
-          사장님의 카페에 대해 아래 항목들의 통계를 조회합니다.
-          - 오늘 적립된 스탬프 수
-          - 이번 주(월~일) 적립된 스탬프 수
-          - 이번 주 요일별 스탬프 적립 수
-          - 스탬프를 적립한 고객 수 (중복 제거)
-          - 전체 스탬프 적립 수
-          - 리워드 지급 수 (스탬프북이 goalCount에 도달한 경우)
-        security:
-          - bearerAuth: []
-        responses:
-          '200':
-            description: 스탬프 통계 조회 성공
-            content:
-              application/json:
-                schema:
-                  type: object
-                  properties:
-                    message:
-                      type: string
-                      example: 스탬프 통계 조회 성공
-                    data:
-                      type: object
-                      properties:
-                        todayStampCount:
-                          type: integer
-                          example: 5
-                        thisWeekStampCount:
-                          type: integer
-                          example: 20
-                        weeklyStats:
+  /api/v1/owner/dashboard/stamp-stats:
+    get:
+      tags:
+        - Admin Dashboard
+      summary: 내 카페 스탬프 통계 조회
+      description: |
+        사장님의 카페에 대해 아래 항목들의 통계를 조회합니다.
+        - 오늘 적립된 스탬프 수
+        - 이번 주(월~일) 적립된 스탬프 수
+        - 이번 주 일자별 스탬프 적립 수 (YYYY-MM-DD 기준)
+        - 스탬프를 적립한 고객 수 (중복 제거)
+        - 전체 스탬프 적립 수
+        - 리워드 지급 수 (스탬프북이 goalCount에 도달한 경우)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 스탬프 통계 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 통계 조회 성공
+                  data:
+                    type: object
+                    properties:
+                      todayStampCount:
+                        type: integer
+                        example: 0
+                      thisWeekStampCount:
+                        type: integer
+                        example: 0
+                      totalStampCount:
+                        type: integer
+                        example: 0
+                      uniqueUserCount:
+                        type: integer
+                        example: 0
+                      rewardGivenCount:
+                        type: integer
+                        example: 0
+                      dailyStampCounts:
+                        type: array
+                        description: 이번 주 일자별 스탬프 적립 수
+                        items:
                           type: object
-                          description: 이번 주 요일별 스탬프 수
-                          example:
-                            Mon: 2
-                            Tue: 3
-                            Wed: 5
-                            Thu: 4
-                            Fri: 3
-                            Sat: 2
-                            Sun: 1
-                        totalStampCount:
-                          type: integer
-                          example: 150
-                        uniqueUserCount:
-                          type: integer
-                          example: 40
-                        rewardGivenCount:
-                          type: integer
-                          example: 10
-          '401':
-            description: 인증되지 않은 사용자
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
-          '500':
-            description: 서버 오류
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
+                          properties:
+                            date:
+                              type: string
+                              format: date
+                              example: "2025-08-01"
+                            count:
+                              type: integer
+                              example: 0
+              examples:
+                success:
+                  summary: 성공 예시
+                  value:
+                    message: 스탬프 통계 조회 성공
+                    data:
+                      todayStampCount: 0
+                      thisWeekStampCount: 0
+                      totalStampCount: 0
+                      uniqueUserCount: 0
+                      rewardGivenCount: 0
+                      dailyStampCounts:
+                        - date: "2025-07-28"
+                          count: 0
+                        - date: "2025-07-29"
+                          count: 0
+                        - date: "2025-07-30"
+                          count: 0
+                        - date: "2025-07-31"
+                          count: 0
+                        - date: "2025-08-01"
+                          count: 0
+                        - date: "2025-08-02"
+                          count: 0
+                        - date: "2025-08-03"
+                          count: 0
+        '401':
+          description: 인증되지 않은 사용자
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/users/owner:
     delete:
