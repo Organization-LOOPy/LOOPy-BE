@@ -1651,7 +1651,7 @@ paths:
       description: 카페 ID로 특정 카페의 상세 정보를 조회합니다
       operationId: getCafeInfo
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: cafeId
           in: path
@@ -1766,7 +1766,7 @@ paths:
       description: 좌표와 줌 레벨을 기반으로 주변 카페를 검색하고 다양한 필터를 적용합니다
       operationId: searchCafesOnMap
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: x
           in: query
