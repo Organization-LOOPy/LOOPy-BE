@@ -32,16 +32,23 @@ export const cafeService = {
       };
     } else {
       const policy = cafe.stampPolicies;
-      console.log(policy);
-      const rewardType = policy.rewardType;
-      const menuName = policy.menu?.name ?? "";
 
-      if (rewardType === "FREE_DRINK") {
-        stampPolicyMessage = `${menuName} 무료 쿠폰을 받을 수 있어요`;
-      } else if (rewardType === "DISCOUNT") {
-        stampPolicyMessage = `${menuName} ${policy.discountAmount}원 할인 쿠폰을 받을 수 있어요`;
-      } else if (rewardType === "SIZE_UP") {
-        stampPolicyMessage = `${menuName} 사이즈업 쿠폰을 받을 수 있어요`;
+      if (policy) {
+        const rewardType = policy.rewardType;
+        const menuName = policy.menu?.name ?? "";
+
+        if (rewardType === "FREE_DRINK") {
+          stampPolicyMessage = `${menuName} 무료 쿠폰을 받을 수 있어요`;
+        } else if (rewardType === "DISCOUNT") {
+          stampPolicyMessage = `${menuName} ${
+            policy.discountAmount ?? 0
+          }원 할인 쿠폰을 받을 수 있어요`;
+        } else if (rewardType === "SIZE_UP") {
+          stampPolicyMessage = `${menuName} 사이즈업 쿠폰을 받을 수 있어요`;
+        }
+      } else {
+        //null가드 추가...
+        stampPolicyMessage = null;
       }
     }
 
@@ -97,7 +104,7 @@ export const cafeService = {
       stampBook,
       stampPolicyMessage,
       bookmark: {
-        isBookmarked: !cafe.bookmarkedBy,
+        isBookmarked: (cafe.bookmarkedBy?.length ?? 0) > 0,
       },
     };
 
