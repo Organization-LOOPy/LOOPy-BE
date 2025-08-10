@@ -44,7 +44,6 @@ export const cafeService = {
         stampPolicyMessage = `${menuName} 사이즈업 쿠폰을 받을 수 있어요`;
       }
     }
-    console.log(stampPolicyMessage);
 
     const cafeDetails = {
       cafe: {
