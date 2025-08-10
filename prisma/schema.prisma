@@ -237,30 +237,30 @@ model Stamp {
 }
 
 model StampPolicy {
-  id                Int       @id @default(autoincrement())
-  cafeId            Int       @unique @map("cafe_id")
-  selectedImageUrl  String    @map("selected_image_url") @db.Text
+  id               Int    @id @default(autoincrement())
+  cafeId           Int    @unique @map("cafe_id")
+  selectedImageUrl String @map("selected_image_url") @db.Text
 
   // 적립 조건
-  conditionType     ConditionType        @map("condition_type") 
-  minAmount         Int?                 @map("min_amount")  
-  stampPerAmount    Int?                 @map("stamp_per_amount")
-  drinkCount        Int?                 @map("drink_count")    
-  stampPerCount     Int?                 @map("stamp_per_count")  
+  conditionType  ConditionType @map("condition_type")
+  minAmount      Int?          @map("min_amount")
+  stampPerAmount Int?          @map("stamp_per_amount")
+  drinkCount     Int?          @map("drink_count")
+  stampPerCount  Int?          @map("stamp_per_count")
 
   // 리워드
-  rewardType        RewardType   @map("reward_type") 
-  discountAmount    Int?         @map("discount_amount")  
-  menuId            Int?         @map("menu_id")          
+  rewardType     RewardType @map("reward_type")
+  discountAmount Int?       @map("discount_amount")
+  menuId         Int?       @map("menu_id")
 
-  hasExpiry         Boolean   @default(false) @map("has_expiry")
+  hasExpiry Boolean @default(false) @map("has_expiry")
 
-  createdAt         DateTime  @default(now()) @map("created_at")
-  updatedAt         DateTime  @updatedAt @map("updated_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
 
   // Relations
-  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  menu     CafeMenu? @relation(fields: [menuId], references: [id], onDelete: SetNull)
+  cafe Cafe      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  menu CafeMenu? @relation(fields: [menuId], references: [id], onDelete: SetNull)
 
   @@map("stamp_policies")
 }
@@ -309,12 +309,12 @@ model Cafe {
   keywords                      Json?
   status                        CafeStatus                @default(inactive)
   createdAt                     DateTime                  @default(now()) @map("created_at")
-  updatedAt                     DateTime                  @map("updated_at")
+  updatedAt                     DateTime                  @updatedAt @map("updated_at")
   ownerId                       Int                       @unique @map("owner_id")
   region1DepthName              String                    @map("region_1depth_name") @db.VarChar(50)
   region2DepthName              String                    @map("region_2depth_name") @db.VarChar(50)
   region3DepthName              String                    @map("region_3depth_name") @db.VarChar(50)
-  businessHourType              cafes_business_hour_type? @default(ALL_DAYS) @map("business_hour_type")
+  businessHourType              cafes_business_hour_type? @default(SAME_ALL_DAYS) @map("business_hour_type")
   breakTime                     String?                   @map("break_time") @db.VarChar(20)
   menu                          CafeMenu[]
   photos                        CafePhoto[]
@@ -397,24 +397,24 @@ model Notification {
 }
 
 model CouponTemplate {
-  id               Int               @id @default(autoincrement())
-  cafeId           Int               @map("cafe_id")
-  name             String            @db.VarChar(255)
+  id               Int                   @id @default(autoincrement())
+  cafeId           Int                   @map("cafe_id")
+  name             String                @db.VarChar(255)
   discountType     coupon_templates_type @map("type") // enum 타입 통일
-  discountValue    Int?              @map("discount_value")
-  applicableMenuId Int?              @map("applicable_menu_id")
-  usageCondition   String?           @map("usage_condition")
-  startDate        DateTime?         @map("start_date")
-  endDate          DateTime?         @map("end_date")
-  isActive         Boolean           @default(true) @map("is_active")
-  createdAt        DateTime          @default(now()) @map("created_at")
-  expiredAt        DateTime?         @map("expired_at")
-  validDays        Int?              @map("valid_days")
+  discountValue    Int?                  @map("discount_value")
+  applicableMenuId Int?                  @map("applicable_menu_id")
+  usageCondition   String?               @map("usage_condition")
+  startDate        DateTime?             @map("start_date")
+  endDate          DateTime?             @map("end_date")
+  isActive         Boolean               @default(true) @map("is_active")
+  createdAt        DateTime              @default(now()) @map("created_at")
+  expiredAt        DateTime?             @map("expired_at")
+  validDays        Int?                  @map("valid_days")
 
   // Relations
-  cafe             Cafe              @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  applicableMenu   CafeMenu?         @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
-  userCoupons      UserCoupon[]
+  cafe           Cafe         @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  applicableMenu CafeMenu?    @relation(fields: [applicableMenuId], references: [id], onDelete: SetNull)
+  userCoupons    UserCoupon[]
 
   @@index([applicableMenuId], map: "coupon_templates_applicable_menu_id_fkey")
   @@index([cafeId], map: "coupon_templates_cafe_id_fkey")
@@ -434,14 +434,13 @@ model UserCoupon {
   updatedAt        DateTime?             @updatedAt @map("updated_at")
 
   // Relations
-  user             User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  couponTemplate   CouponTemplate        @relation(fields: [couponTemplateId], references: [id], onDelete: Cascade)
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  couponTemplate CouponTemplate @relation(fields: [couponTemplateId], references: [id], onDelete: Cascade)
 
   @@index([couponTemplateId], map: "user_coupons_coupon_template_id_fkey")
   @@index([userId], map: "user_coupons_user_id_fkey")
   @@map("user_coupons")
 }
-
 
 enum RoleType {
   CUSTOMER
@@ -513,7 +512,7 @@ enum coupon_templates_type {
 }
 
 enum cafes_business_hour_type {
-  WEEKDAY_ONLY
-  WEEKEND_ONLY
-  ALL_DAYS
+  SAME_ALL_DAYS
+  WEEKDAY_WEEKEND
+  EACH_DAY_DIFFERENT
 }

@@ -3,6 +3,7 @@ import { signupService, loginService,
 
 export const signup = async (req, res, next) => {
   try {
+    console.log('📌 signup req.body:', req.body);
     const result = await signupService(req.body);
     return res.status(201).json(result);
   } catch (err) {
