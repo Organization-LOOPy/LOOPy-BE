@@ -2,7 +2,7 @@ import express from "express";
 import {
     getMyStampBooks,
     getStampBookDetail,
-    addStamp,
+    // addStamp,
     convertStampToPoint,
     extendStampBook,
     getConvertedStampbooks,
@@ -29,7 +29,7 @@ router.get("/users/me/stampbooks/total-count", getTotalStampCount);
 router.get("/users/me/stampbooks/loopy-level", getLoopyLevelInfo);
 
 router.get("/users/me/stampbooks/:stampBookId", getStampBookDetail);
-router.post("/users/me/stampbooks/:stampBookId/stamps", addStamp);
+// router.post("/users/me/stampbooks/:stampBookId/stamps", addStamp);
 router.post("/users/me/stampbooks/:stampBookId/convert", convertStampToPoint);
 router.patch("/users/me/stampbooks/:stampBookId/extend", extendStampBook);
 router.get('/cafes/:cafeId/my-stamp', authenticateJWT, getMyStampByCafe);

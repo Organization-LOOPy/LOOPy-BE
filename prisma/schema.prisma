@@ -191,34 +191,40 @@ model Badge {
 }
 
 model StampBook {
-  id                Int                @id @default(autoincrement())
-  userId            Int                @map("user_id")
-  cafeId            Int                @map("cafe_id")
-  currentCount      Int                @default(0) @map("current_count")
-  goalCount         Int                @map("goal_count")
-  rewardDetail      String             @map("reward_detail") @db.VarChar(255)
-  startedAt         DateTime           @map("started_at")
-  lastVisitedAt     DateTime?          @map("last_visited_at")
-  expiresAt         DateTime           @map("expires_at")
-  extendedAt        DateTime?          @map("extended_at")
-  expiredAt         DateTime?          @map("expired_at")
-  completedAt       DateTime?          @map("completed_at")
-  convertedAt       DateTime?          @map("converted_at")
-  status            StampBookStatus
-  isCompleted       Boolean            @default(false) @map("is_completed")
-  isConverted       Boolean            @default(false) @map("is_converted")
-  createdAt         DateTime           @default(now()) @map("created_at")
-  updatedAt         DateTime           @updatedAt @map("updated_at")
-  round             Int                @default(1) @map("round")
-  pointTransactions PointTransaction[]
-  cafe              Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stamps            Stamp[]
+  id           Int       @id @default(autoincrement())
+  userId       Int       @map("user_id")
+  cafeId       Int       @map("cafe_id")
+  currentCount Int       @default(0) @map("current_count")
+  goalCount    Int       @map("goal_count")
 
-  @@unique([userId, cafeId])
+  rewardDetail String    @map("reward_detail") @db.VarChar(255)
+  selectedRewardType  RewardType?
+  selectedRewardMeta  Json?
+
+  startedAt    DateTime  @map("started_at")
+  lastVisitedAt DateTime? @map("last_visited_at")
+  expiresAt    DateTime  @map("expires_at")
+  extendedAt   DateTime? @map("extended_at")
+  expiredAt    DateTime? @map("expired_at")
+  completedAt  DateTime? @map("completed_at")
+  convertedAt  DateTime? @map("converted_at")
+  status       StampBookStatus
+  isCompleted  Boolean   @default(false) @map("is_completed")
+  isConverted  Boolean   @default(false) @map("is_converted")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  round        Int       @default(1) @map("round")
+
+  pointTransactions PointTransaction[]
+  cafe  Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stamps Stamp[]
+
+  @@unique([userId, cafeId, round])
   @@index([cafeId], map: "stamp_books_cafe_id_fkey")
   @@map("stamp_books")
 }
+
 
 model Stamp {
   id            Int       @id @default(autoincrement())
