@@ -73,7 +73,6 @@ app.get('/metrics', async (req, res) => {
 
 
 // 고객용
-app.use("/api/v1/challenges", challengeRoutes);
 
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
@@ -87,6 +86,7 @@ app.use("/api/v1/users", stampbookRouter);
 app.use("/api/v1", stampbookRouter);
 app.use("/api/v1/users/me/stampbooks", stampbookRouter);
 app.use("/api/v1/", usercouponRoutes);
+app.use("/api/v1/challenges", challengeRoutes);
 
 // 사장용
 app.use("/api/v1/owner/cafes", adminCafeRouter);
