@@ -3114,7 +3114,7 @@ paths:
             default: usable
           description: 조회할 쿠폰 상태 (usable: 사용 가능, past: 사용됨 또는 만료됨)
       responses:
-        200:
+        '200':
           description: 쿠폰 목록 조회 성공
           content:
             application/json:
@@ -3146,31 +3146,30 @@ paths:
                           format: date-time
                           nullable: true
                           example: null
+                        cafeId:
+                          type: integer
+                          example: 5
+                        cafeImage:
+                          type: string
+                          nullable: true
+                          example: https://cdn.loopy.com/cafes/5/main.jpg
+                        usageCondition:
+                          type: string
+                          nullable: true
+                          example: 1만원 이상 구매 시
                         couponTemplate:
                           type: object
                           properties:
-                            name:
+                            name: { type: string, example: 아메리카노 1000원 할인 }
+                            discountType:
                               type: string
-                              example: 아메리카노 1000원 할인
-                            usageCondition:
-                              type: string
-                              nullable: true
-                              example: 1만원 이상 구매 시
-                            cafe:
-                              type: object
-                              properties:
-                                id:
-                                  type: integer
-                                  example: 5
-                                photos:
-                                  type: array
-                                  items:
-                                    type: object
-                                    properties:
-                                      photoUrl:
-                                        type: string
-                                        example: https://cdn.loopy.com/cafes/5/photo1.jpg
-        400:
+                              enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
+                              example: DISCOUNT
+                            discountValue: { type: integer, nullable: true, example: 1000 }
+                            applicableMenuId: { type: integer, nullable: true, example: 17 }
+                            startDate: { type: string, format: date-time, nullable: true, example: 2025-08-10T00:00:00.000Z }
+                            endDate: { type: string, format: date-time, nullable: true, example: 2025-08-31T23:59:59.000Z }
+        '400':
           description: 잘못된 쿠폰 상태 요청
           content:
             application/json:
@@ -3926,7 +3925,7 @@ paths:
                           type: string
                           example: "디카페인"
 
-    /api/v1/owner/cafes/myCafe/menus:
+  /api/v1/owner/cafes/myCafe/menus:
     get:
       tags: [Admin Cafe]
       summary: 내 카페 메뉴 전체 요약 조회

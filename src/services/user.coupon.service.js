@@ -8,47 +8,66 @@ import {
 
 export const userCouponService = {
   async getUserCoupons(userId, status) {
-    const now = new Date();
-
     const commonInclude = {
       couponTemplate: {
-        include: {
+        select: {
+          usageCondition: true,
           cafe: {
             select: {
               id: true,
               photos: {
                 orderBy: { displayOrder: 'asc' },
                 take: 1,
-                select: { photoUrl: true }
-              }
-            }
-          }
-        }
-      }
+                select: { photoUrl: true },
+              },
+            },
+          },
+          name: true,
+          discountType: true,
+          discountValue: true,
+          applicableMenuId: true,
+          startDate: true,
+          endDate: true,
+        },
+      },
     };
   
 
 
     if (status === 'usable') {
-      return await prisma.userCoupon.findMany({
+      const coupons = await prisma.userCoupon.findMany({
         where: {
           userId,
           status: 'active',
         },
-        include: commonInclude
+        include: commonInclude,
       });
-    };
+
+      return coupons.map((c) => ({
+        ...c,
+        cafeId: c.couponTemplate?.cafe?.id ?? null,
+        cafeImage: c.couponTemplate?.cafe?.photos?.[0]?.photoUrl ?? null,
+        usageCondition: c.couponTemplate?.usageCondition ?? null,
+      }));
+    }
 
     if (status === 'past') {
-      return await prisma.userCoupon.findMany({
+      const coupons = await prisma.userCoupon.findMany({
         where: {
           userId,
           OR: [
             { status: 'used' },
           ],
         },
-        include: commonInclude
+        include: commonInclude,
       });
+
+      return coupons.map((c) => ({
+        ...c,
+        cafeId: c.couponTemplate?.cafe?.id ?? null,
+        cafeImage: c.couponTemplate?.cafe?.photos?.[0]?.photoUrl ?? null,
+        usageCondition: c.couponTemplate?.usageCondition ?? null,
+      }));
     }
 
     throw new InvalidCouponStatusError(status);
