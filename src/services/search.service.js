@@ -1,5 +1,4 @@
 import { logger } from "../utils/logger.js";
-import axios from "axios";
 import { cafeRepository } from "../repositories/cafe.repository.js";
 import {
   cafeSearchRepository,
@@ -21,6 +20,7 @@ function parsePreferredArea(area) {
   };
 }
 
+//검색 쿼리 전처리
 function normalizeQuery(s) {
   return (s ?? "").trim().replace(/"/g, "").normalize("NFC");
 }
@@ -32,6 +32,7 @@ function pickTrueKeys(obj) {
 function hasAnyKeys(o) {
   return !!o && Object.keys(o).length > 0;
 }
+//지역 필터링 전처리
 function buildRegionCondition(region1, region2, region3) {
   const cond = {};
   if (region1) cond.region1DepthName = region1.trim();
@@ -39,6 +40,7 @@ function buildRegionCondition(region1, region2, region3) {
   if (region3) cond.region3DepthName = region3.trim();
   return cond;
 }
+//거리 순으로 정렬
 function applyDistanceAndSort(rows, x, y) {
   const withDistance = rows.map((cafe) => {
     const distance = getDistanceInMeters(cafe.latitude, cafe.longitude, x, y);
@@ -55,6 +57,7 @@ function applyDistanceAndSort(rows, x, y) {
   return withDistance;
 }
 
+//사용자의 취향 지역
 async function getUserPreferredAreaCond(userId) {
   if (!userId) return {};
   try {
@@ -115,7 +118,7 @@ export const cafeSearchService = {
     // 1) 처음 리스팅: 검색어 X, (스토어/메뉴/테이크아웃) 필터 X
     if (!hasSearchQuery && !hasAnyFilter) {
       // 사용자 preference 임베딩 Top-K → cafeIds → RDB
-      const pref = await preferenceTopK(userId, { topK: 30 });
+      const pref = await preferenceTopK(userId, { topK: 15 });
       const cafeIds = pref.cafeIds ?? [];
 
       if (cafeIds.length === 0) {
@@ -124,7 +127,7 @@ export const cafeSearchService = {
 
       let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
 
-      // 지역 조건이 있으면 코드단에서 필터
+      // 지역 조건이 있으면 필터
       if (hasRegionFilter) {
         rows = rows.filter((c) => {
           if (
@@ -154,7 +157,7 @@ export const cafeSearchService = {
       };
     }
 
-    // 2) RDB 조건 구성
+    // 2) RDB 검색 조건 구성
     const whereConditions = { AND: [] };
 
     if (hasRegionFilter) whereConditions.AND.push(effectiveRegionCond);
@@ -173,9 +176,9 @@ export const cafeSearchService = {
       whereConditions.AND.push({ takeOutFilters: { path: [f], equals: true } })
     );
 
-    // 모든 조건이 비면 안전하게 preference
+    // 모든 조건이 비면 preference로 검색
     if (whereConditions.AND.length === 0) {
-      const pref = await preferenceTopK(userId, { topK: 30 });
+      const pref = await preferenceTopK(userId, { topK: 15 });
       const cafeIds = pref.cafeIds ?? [];
       if (cafeIds.length === 0)
         return { fromNLP: true, data: [], nextCursor: null, hasMore: false };
@@ -189,7 +192,7 @@ export const cafeSearchService = {
       };
     }
 
-    // 3) 우선 RDB 검색
+    // 우선 RDB 검색
     const searchResults = await cafeSearchRepository.findCafeByInfos(
       whereConditions,
       cursor,
@@ -205,9 +208,9 @@ export const cafeSearchService = {
       };
     }
 
-    // 4) 검색어가 있었다면 임베딩 검색 폴백
+    // 검색어가 있었다면 임베딩 검색 폴백
     if (hasSearchQuery) {
-      const nlpRes = await nlpSearch(query, 20);
+      const nlpRes = await nlpSearch(query);
       const cafeIds = Array.isArray(nlpRes?.cafeIds) ? nlpRes.cafeIds : [];
 
       if (cafeIds.length === 0) {
@@ -246,8 +249,8 @@ export const cafeSearchService = {
       };
     }
 
-    // 5) (검색어 X, 필터만 있음) + RDB 결과 없음 → 마지막으로 preference 기반 보강
-    const pref = await preferenceTopK(userId, { topK: 30 });
+    //(검색어 X, 필터만 있음) + RDB 결과 없음 → 마지막으로 preference 기반 보강
+    const pref = await preferenceTopK(userId, { topK: 15 });
     const cafeIds = pref.cafeIds ?? [];
     if (cafeIds.length === 0)
       return { fromNLP: true, data: [], nextCursor: null, hasMore: false };

@@ -26,7 +26,7 @@ export function parseAreaToRegions(area) {
   return res;
 }
 
-export const nlpSearch = async (searchQuery, limit = 10) => {
+export const nlpSearch = async (searchQuery) => {
   try {
     const query = (searchQuery ?? "").trim();
     if (!query) return { cafeIds: [] };
@@ -44,7 +44,7 @@ export const nlpSearch = async (searchQuery, limit = 10) => {
     const searchRes = await qdrant.search({
       collection_name: "cafes",
       vector,
-      limit: 10,
+      limit: 15,
       with_payload: true,
     });
 
@@ -60,7 +60,7 @@ export const nlpSearch = async (searchQuery, limit = 10) => {
 };
 
 export async function preferenceTopK(userId, opts = {}) {
-  const topK = Number(opts.topK ?? 30);
+  const topK = Number(opts.topK ?? 15);
   if (!userId) return { cafeIds: [] };
 
   try {
