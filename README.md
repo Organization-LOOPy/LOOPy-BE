@@ -25,7 +25,6 @@
 ┣ 📂middlewares/         # 인증, 에러 핸들링, 로깅 등
 ┣ 📂utils/               # 공통 함수, 헬퍼
 ┣ 📂config/              # 환경 설정 (DB, dotenv 등)
-┣ 📂loaders/             # 서버, DB 등 초기 설정 (선택)
 ┗ 📜app.js               # 앱 초기화 (Express 세팅)
 ```
 
@@ -135,8 +134,8 @@ console.log 대신 사용, 개발/배포 환경마다 다르게 로그를 관리
 ```
 
 **morganMiddleware** - HTTP요청 로그 기록
-
 info: GET /user 304 - - 1.382 ms 이런 형식으로 로그 기록
+
 ---
 
 ### 서버 관리 명령어
