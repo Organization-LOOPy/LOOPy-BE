@@ -15,6 +15,7 @@ export const userCouponService = {
           cafe: {
             select: {
               id: true,
+              name: true,
               photos: {
                 orderBy: { displayOrder: 'asc' },
                 take: 1,
@@ -46,6 +47,7 @@ export const userCouponService = {
       return coupons.map((c) => ({
         ...c,
         cafeId: c.couponTemplate?.cafe?.id ?? null,
+        cafeName: c.couponTemplate?.cafe?.name ?? null,
         cafeImage: c.couponTemplate?.cafe?.photos?.[0]?.photoUrl ?? null,
         usageCondition: c.couponTemplate?.usageCondition ?? null,
       }));
@@ -65,6 +67,7 @@ export const userCouponService = {
       return coupons.map((c) => ({
         ...c,
         cafeId: c.couponTemplate?.cafe?.id ?? null,
+        cafeName: c.couponTemplate?.cafe?.name ?? null,
         cafeImage: c.couponTemplate?.cafe?.photos?.[0]?.photoUrl ?? null,
         usageCondition: c.couponTemplate?.usageCondition ?? null,
       }));
