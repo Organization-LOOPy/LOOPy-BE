@@ -8,13 +8,14 @@ import {
   verifyChallengeForUser,
 } from "../controllers/admin.user.controller.js";
 
+import { responseHandler } from '../middlewares/responseHandler.js';
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
-
-import { verifyActionToken } from "../middlewares/verifyActionToken.js";
+import { verifyActionToken } from "../utils/verifyActionToken.js";
 
 const router = express.Router();
 
 router.use(authenticateJWT);
+router.use(responseHandler);
 
 router.get("/users/search", getUserByPhone);
 router.post("/users/:userId/stamps", verifyActionToken("ADD_STAMP"), addStampToUser);

@@ -2835,38 +2835,52 @@ paths:
 
   /api/v1/users/me/stampbooks/converted:
     get:
-      summary: 환전 완료된 스탬프북 히스토리 조회
-      description: 사용자가 환전한 스탬프북 목록을 조회합니다. 최근 환전된 순으로 정렬되며, 각 스탬프북의 회차와 환전 일자를 포함합니다.
-      tags:
-        - Stamp
+      summary: 환전 완료된 스탬프북 히스토리(카페별 그룹)
+      description: 사용자가 환전한 스탬프북을 **카페별로 그룹핑**하여 최근 환전 순으로 반환합니다.
+      tags: [Stamp]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 환전 히스토리 조회 성공
+          description: 환전 히스토리(카페별) 조회 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ConvertedStampBookHistoryResponse'
+                $ref: '#/components/schemas/ConvertedStampBookHistoryByCafeSuccessResponse'
               example:
                 status: SUCCESS
                 code: 200
-                message: 스탬프 히스토리 조회 성공
+                message: 환전 히스토리(카페별) 조회 성공
                 data:
-                  - stampBookId: 15
-                    cafeId: 7
+                  - cafeId: 7
                     cafeName: 블루보틀 연남점
                     cafeAddress: 서울특별시 마포구 연남동 123-45
                     cafeImageUrl: https://example.com/photo.jpg
-                    round: 3
-                    displayText: 스탬프지 3장 완료
-                    convertedAt: "2025-07-31T13:45:00.000Z"
+                    completedCount: 2
+                    items:
+                      - stampBookId: 15
+                        round: 3
+                        completedAt: "2025-07-30T09:00:00.000Z"
+                        convertedAt: "2025-07-31T13:45:00.000Z"
+                        displayText: 스탬프지 3장 완료
+                      - stampBookId: 11
+                        round: 2
+                        completedAt: "2025-06-10T10:00:00.000Z"
+                        convertedAt: "2025-06-10T12:00:00.000Z"
+                        displayText: 스탬프지 2장 완료
         '500':
           description: 서버 오류
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+
+          '500':
+            description: 서버 오류
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
 
 
 
@@ -4934,10 +4948,13 @@ paths:
 
   /api/v1/owner/users/search:
     get:
-      summary: 전화번호로 고객 조회 (스탬프 적립 전용)
-      description: 점주가 전화번호로 고객을 조회하고, 현재 카페 기준 진행중 스탬프북 정보와 1회용 액션 토큰을 발급받습니다.
+      summary: 전화번호로 고객 조회 (스탬프북 자동 생성 포함)
+      description: |
+        - 전화번호로 고객을 검색합니다.  
+        - 현재 카페에서 진행 중인 스탬프북이 없으면 자동으로 새 스탬프북을 생성합니다.  
+        - 반환된 `actionToken`은 즉시 스탬프 적립 API에 사용할 수 있습니다.  
       tags:
-        - Admin - Users
+        - Owner - User
       security:
         - bearerAuth: []
       parameters:
@@ -4946,63 +4963,117 @@ paths:
           required: true
           schema:
             type: string
-            example: "010-1234-5678"
-          description: 하이픈 포함/미포함 가능. 서버에서 숫자만 추출하여 조회.
+            example: "01012345678"
+          description: 하이픈(-) 없이 입력한 전화번호
       responses:
         '200':
           description: 고객 정보 조회 성공
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/UserByPhoneResponse'
-              examples:
-                success:
-                  value:
-                    status: SUCCESS
-                    code: 200
-                    message: 고객 정보 조회 성공
-                    data:
-                      userId: 42
-                      nickname: "별다방단골"
-                      phone: "010-1234-5678"
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: string
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      userId:
+                        type: integer
+                        example: 1
+                      nickname:
+                        type: string
+                        example: 도장냥이
+                      phone:
+                        type: string
+                        example: 010-1234-5678
                       stamp:
-                        totalCount: 18
-                        currentStampBook:
-                          stampBookId: 77
-                          currentCount: 6
-                          goalCount: 10
-                          progressRate: 60
-                          expiresAt: "2025-08-25T00:00:00.000Z"
-                          daysLeft: 14
+                        type: object
+                        properties:
+                          totalCount:
+                            type: integer
+                            description: 전체 스탬프북 개수
+                            example: 5
+                          currentStampBook:
+                            type: object
+                            nullable: true
+                            properties:
+                              stampBookId:
+                                type: integer
+                                example: 12
+                              currentCount:
+                                type: integer
+                                example: 0
+                              goalCount:
+                                type: integer
+                                example: 10
+                              progressRate:
+                                type: integer
+                                example: 0
+                              expiresAt:
+                                type: string
+                                format: date-time
+                                example: 2025-09-12T00:00:00.000Z
+                              daysLeft:
+                                type: integer
+                                example: 30
                       point:
-                        total: 2300
-                      actionToken: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                        type: object
+                        properties:
+                          total:
+                            type: integer
+                            example: 1200
+                      actionToken:
+                        type: string
+                        description: 스탬프 적립 시 사용 가능한 액션 토큰
+                        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+              example:
+                resultType: SUCCESS
+                error: null
+                success:
+                  userId: 1
+                  nickname: 도장냥이
+                  phone: 010-1234-5678
+                  stamp:
+                    totalCount: 5
+                    currentStampBook:
+                      stampBookId: 12
+                      currentCount: 0
+                      goalCount: 10
+                      progressRate: 0
+                      expiresAt: "2025-09-12T00:00:00.000Z"
+                      daysLeft: 30
+                  point:
+                    total: 1200
+                  actionToken: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
         '400':
-          description: 잘못된 요청 (전화번호 누락 등)
+          description: 잘못된 요청
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ErrorResponse'
-              examples:
-                missingPhone:
-                  value:
-                    status: FAIL
-                    code: 400
-                    message: 전화번호 입력 누락
-                    data: null
+                type: object
+                properties:
+                  reason:
+                    type: string
+                example:
+                  reason: 전화번호 입력 누락
         '404':
-          description: 해당 전화번호의 고객 없음
+          description: 고객을 찾을 수 없음
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/phoneErrorResponse'
-              examples:
-                notFound:
-                  value:
-                    status: FAIL
-                    code: 404
-                    message: 해당 전화번호의 고객을 찾을 수 없습니다.
-                    data: null
+                type: object
+                properties:
+                  reason:
+                    type: string
+                example:
+                  reason: 해당 전화번호의 고객을 찾을 수 없습니다.
+
 
 
 components:
@@ -6349,13 +6420,21 @@ components:
         data:
           $ref: '#/components/schemas/StampConversionResult'
 
-    ConvertedStampBookHistoryItem:
+    ConvertedStampBookHistoryByCafeSuccessResponse:
       type: object
       properties:
-        stampBookId:
-          type: integer
-          description: 스탬프북 ID
-          example: 15
+        status: { type: string, example: SUCCESS }
+        code: { type: integer, example: 200 }
+        message: { type: string, example: 환전 히스토리(카페별) 조회 성공 }
+        data:
+          type: array
+          description: 카페별 그룹 목록
+          items:
+            $ref: '#/components/schemas/ConvertedStampBookCafeGroup'
+
+    ConvertedStampBookCafeGroup:
+      type: object
+      properties:
         cafeId:
           type: integer
           description: 카페 ID
@@ -6374,37 +6453,42 @@ components:
           nullable: true
           description: 카페 썸네일 이미지 URL
           example: https://example.com/photo.jpg
+        completedCount:
+          type: integer
+          description: 해당 카페에서 환전 완료된 스탬프북 개수
+          example: 2
+        items:
+          type: array
+          description: 해당 카페의 환전 완료 스탬프북 목록
+          items:
+            $ref: '#/components/schemas/ConvertedStampBookHistoryItem'
+
+    ConvertedStampBookHistoryItem:
+      type: object
+      properties:
+        stampBookId:
+          type: integer
+          description: 스탬프북 ID
+          example: 15
         round:
           type: integer
-          description: 해당 카페에서 몇 번째 스탬프북인지
+          description: 해당 카페에서 몇 번째 스탬프북인지(회차)
           example: 3
-        displayText:
+        completedAt:
           type: string
-          description: 스탬프북 완료 문구
-          example: 스탬프지 3장 완료
+          format: date-time
+          nullable: true
+          description: 목표 달성 시각(모두 모았어요)
+          example: "2025-07-30T09:00:00.000Z"
         convertedAt:
           type: string
           format: date-time
           description: 환전 완료 시각
           example: "2025-07-31T13:45:00.000Z"
-
-
-    ConvertedStampBookHistoryResponse:
-      type: object
-      properties:
-        status:
+        displayText:
           type: string
-          example: SUCCESS
-        code:
-          type: integer
-          example: 200
-        message:
-          type: string
-          example: 스탬프 히스토리 조회 성공
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/ConvertedStampBookHistoryItem'
+          description: 리스트 보조 문구
+          example: 스탬프지 3장 완료
 
       
     TotalStampCountResult:

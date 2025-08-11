@@ -1,4 +1,4 @@
-import { verifyActionTokenJwt, markJtiUsed, isJtiUsed } from "../actionToken.js";
+import { verifyActionTokenJwt,} from "../utils/actionToken.js";
 
 export const verifyActionToken = (purpose) => async (req, res, next) => {
   const token = req.headers['x-action-token'];

@@ -19,7 +19,16 @@ export const responseHandler = (req, res, next) => {
     });
   };
 
+  res.fail = (reason, statusCode = 400) => {
+    return res.status(statusCode).json({
+      resultType: "FAIL",
+      error: { errorCode: "FAIL", reason, data: null },
+      success: null,
+    });
+  };
+
   next();
+
 };
 
 export default responseHandler;
