@@ -4417,13 +4417,12 @@ paths:
         '404':
           description: 등록된 사진이 없는 경우
 
-  /api/v1/admin/stamps/stamp-images:
+  /api/v1/owner/stamps/stamp-images:
     post:
       tags: [Admin Cafe]
       summary: 스탬프 이미지 업로드
       description: |
-        스탬프 이미지는 카페별로 최대 2개까지 등록 가능합니다.
-        (기본 이미지 1개 + 업로드 2개 중 선택 구조라면, 총 등록 가능 개수는 정책에 맞게 조정하세요)
+        사장님이 스탬프 이미지를 업로드합니다. 카페별 최대 2개까지 등록 가능합니다.
       security:
         - bearerAuth: []
       requestBody:
@@ -4458,15 +4457,100 @@ paths:
                     example: 스탬프 이미지 업로드 성공
                   data:
                     type: array
+                    description: 업로드된 스탬프 이미지 목록
                     items:
-                      type: string
-                      example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/xxxxxxxx-xxxx.png
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 3
+                        imageUrl:
+                          type: string
+                          example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/xxxxxxxx-xxxx.png
         '400':
-          description: 유효하지 않은 요청(파일 없음, 이미지 2개 초과 등)
+          description: 유효하지 않은 요청(파일 없음, 2개 초과 등)
         '401':
           description: 인증 실패
         '415':
           description: 지원하지 않는 파일 형식
+    
+    get:
+      tags: [Admin Cafe]
+      summary: 스탬프 이미지 전체 조회
+      description: 로그인된 사장님의 카페에 등록된 스탬프 이미지 목록을 최신순으로 반환합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지 조회 성공
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 12
+                        imageUrl:
+                          type: string
+                          example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/xxxxxxxx-xxxx.png
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: 2025-08-11T05:00:00.000Z
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: 2025-08-11T05:00:00.000Z
+        '401':
+          description: 인증 실패
+        '404':
+          description: 카페를 찾을 수 없음
+
+  /api/v1/admin/stamps/stamp-images/{imageId}:
+    delete:
+      tags: [Admin Cafe]
+      summary: 스탬프 이미지 삭제
+      description: 로그인된 사장님의 카페에 등록된 스탬프 이미지 1장을 삭제합니다. (S3에서 삭제 후 DB 레코드 삭제)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: imageId
+          required: true
+          schema:
+            type: integer
+          description: 삭제할 스탬프 이미지의 ID
+      responses:
+        '200':
+          description: 스탬프 이미지 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지 삭제 성공
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: 잘못된 요청 (imageId 유효하지 않음)
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음 (해당 카페의 소유자가 아님)
+        '404':
+          description: 스탬프 이미지가 존재하지 않음
 
   /api/v1/owner/stamps/stamp-policy:
     post:

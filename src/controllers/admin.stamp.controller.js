@@ -1,22 +1,26 @@
-import { uploadStampImagesService } from '../services/admin.stamp.service.js';
 import { 
   createStampPolicy,
   updateStampPolicy,  
   getMyStampPolicy, 
+  uploadStampImagesService,
+  deleteStampImageService,
+  getMyStampImagesService 
 } from '../services/admin.stamp.service.js';
 
 export const uploadStampImages = async (req, res, next) => {
   try {
     const userId = req.user.id;
+    const files = req.files;
 
-    if (!req.files || req.files.length === 0) {
-      return res.status(400).json({ message: '업로드할 파일이 없습니다.' });
+    if (!files || files.length === 0) {
+      return res.status(400).json({ message: '이미지 파일이 필요합니다.' });
     }
-    const imageUrls = await uploadStampImagesService(userId, req.files);
 
-    res.status(201).json({
+    const result = await uploadStampImagesService(userId, files);
+
+    return res.status(201).json({
       message: '스탬프 이미지 업로드 성공',
-      data: imageUrls,
+      data: result,
     });
   } catch (err) {
     next(err);
@@ -61,6 +65,38 @@ export const getStampPolicy = async (req, res, next) => {
     res.status(200).json({
       message: '스탬프 정책 조회 성공',
       data: policy,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteStampImage = async (req, res, next) => {
+  try {
+    const userId = Number(req.user.id);
+    const imageId = Number(req.params.imageId);
+
+    if (!Number.isInteger(imageId)) {
+      return res.status(400).json({ message: '유효하지 않은 imageId' });
+    }
+
+    const ok = await deleteStampImageService(userId, imageId);
+    return res.status(200).json({
+      message: '스탬프 이미지 삭제 성공',
+      success: ok,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getMyStampImages = async (req, res, next) => {
+  try {
+    const userId = Number(req.user.id);
+    const images = await getMyStampImagesService(userId);
+    return res.status(200).json({
+      message: '스탬프 이미지 조회 성공',
+      data: images,
     });
   } catch (err) {
     next(err);
