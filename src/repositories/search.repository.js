@@ -45,11 +45,11 @@ export const cafeSearchRepository = {
           },
           select: { id: true },
         },
-        orderBy: {
-          createdAt: "asc",
-        },
-        take: take + 1,
       },
+      orderBy: {
+        createdAt: "asc",
+      },
+      take: take + 1,
     });
 
     // nextCursor 계산
