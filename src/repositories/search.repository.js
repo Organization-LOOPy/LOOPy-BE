@@ -38,6 +38,13 @@ export const cafeSearchRepository = {
             }
           : false,
       },
+      stampBooks: {
+        where: {
+          userId: userId,
+          expiresAt: { gte: new Date() },
+        },
+        select: { id: true },
+      },
       orderBy: {
         createdAt: "asc",
       },
