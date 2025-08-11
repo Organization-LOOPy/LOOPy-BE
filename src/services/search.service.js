@@ -41,7 +41,7 @@ function buildRegionCondition(region1, region2, region3) {
   return cond;
 }
 
-// 필터를 임베딩 질의로 변환(간단 키워드 뭉치)  // [ADDED]
+// 필터를 임베딩 질의로 변환(간단 키워드 뭉치)
 function buildQueryFromFilters(storeFilters, takeOutFilters, menuFilters) {
   const s = pickTrueKeys(storeFilters);
   const t = pickTrueKeys(takeOutFilters);
@@ -56,8 +56,8 @@ function applyDistanceAndSort(rows, x, y) {
     const distance = getDistanceInMeters(
       parseFloat(cafe.latitude),
       parseFloat(cafe.longitude),
-      parseFloat(y), // [FIX] 사용자 y(위도)
-      parseFloat(x) // [FIX] 사용자 x(경도)
+      parseFloat(y),
+      parseFloat(x)
     );
     const isBookmarked =
       Array.isArray(cafe.bookmarkedBy) && cafe.bookmarkedBy.length > 0;
@@ -117,8 +117,8 @@ export const cafeSearchService = {
     const selectedTakeOutFilters = pickTrueKeys(takeOutFilters);
     const selectedMenuFilters = pickTrueKeys(menuFilters);
 
-    // [CHANGED] 검색 단계에서는 선호지역을 자동 주입하지 않음(전국 기본).
-    //           초기가 아닐 때는 사용자가 명시한 지역만 사용.
+    // 검색 단계에서는 선호지역을 자동 주입하지 않음(전국 기본).
+    // 초기가 아닐 때는 사용자가 명시한 지역만 사용.
     const explicitRegionCond = buildRegionCondition(region1, region2, region3);
 
     const hasSearchQuery = !!query;
@@ -139,7 +139,7 @@ export const cafeSearchService = {
 
       let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
 
-      // [CHANGED] 초기 진입시에만 선호지역을 적용
+      // 초기 진입시에만 선호지역을 적용
       const preferredArea = await getUserPreferredAreaCond(userId);
       if (hasAnyKeys(preferredArea)) {
         rows = rows.filter((c) => {
@@ -187,7 +187,7 @@ export const cafeSearchService = {
       whereConditions.AND.push({ takeOutFilters: { path: [f], equals: true } })
     );
 
-    // 전국 단위 기본을 위해 조건이 비어 있어도 그대로 진행 (RDB는 전체 조회 + 페이징) // [CHANGED: 기존 'preference로 대체' 제거]
+    // 전국 단위 기본을 위해 조건이 비어 있어도 그대로 진행 (RDB는 전체 조회 + 페이징)
     const searchResults = await cafeSearchRepository.findCafeByInfos(
       whereConditions,
       cursor,
@@ -203,7 +203,7 @@ export const cafeSearchService = {
       };
     }
 
-    // 3) RDB 결과 없음 → 임베딩 폴백 (검색어 없어도 필터만으로 시도)  // [CHANGED]
+    // 3) RDB 결과 없음 → 임베딩 폴백 (검색어 없어도 필터만으로 시도)
     // 우선순위: (검색어) → (필터기반 키워드) → (preferenceTopK)
     let fallbackCafeIds = [];
     let usedEmbedding = false;
