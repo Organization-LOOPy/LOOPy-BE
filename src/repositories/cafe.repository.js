@@ -316,6 +316,9 @@ export const cafeBookmarkRepository = {
           cafeId,
         },
       },
+      select: {
+        id: true,
+      },
     });
     return bookmark;
   },

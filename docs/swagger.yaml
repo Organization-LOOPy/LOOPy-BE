@@ -1627,16 +1627,6 @@ paths:
                           id:
                             type: integer
                             example: 11
-                          userId:
-                            type: integer
-                            example: 2
-                          cafeId:
-                            type: integer
-                            example: 2
-                          createdAt:
-                            type: string
-                            format: date-time
-                            example: "2025-08-11T07:59:38.667Z"
                       message:
                         type: string
                         example: "카페 id: 2 의 북마크를 추가했습니다"
