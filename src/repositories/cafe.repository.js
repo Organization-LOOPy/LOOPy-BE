@@ -306,4 +306,17 @@ export const cafeBookmarkRepository = {
     });
     return bookmark;
   },
+
+  async deleteBookmark(cafeId, userId) {
+    const bookmark = await prisma.userBookmark.delete({
+      where: {
+        userId_cafeId: {
+          // Prisma가 생성하는 복합 unique 입력명
+          userId,
+          cafeId,
+        },
+      },
+    });
+    return bookmark;
+  },
 };
