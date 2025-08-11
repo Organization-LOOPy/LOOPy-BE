@@ -78,7 +78,7 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
     throw new InvalidBusinessHoursError('유효하지 않은 businessHourType입니다.');
   }
 
-  const cafe = await prisma.cafe.findUnique({
+  const cafe = await prisma.cafe.findFirst({
     where: { ownerId: userId },
   });
 
@@ -108,9 +108,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
     throw new InvalidMenuDataError(missing);
   }
 
-  const cafe = await prisma.cafe.findUnique({
-    where: { ownerId: userId },
-  });
+  const cafe = await prisma.cafe.findFirst({ where: { ownerId: Number(userId) }});
 
   if (!cafe) throw new CafeNotExistError();
 
@@ -125,7 +123,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
     throw new DuplicateMenuNameError(menuData.name);
   }
 
-  const isRep = menuData.isRepresentative === true;
+  const isRep = String(menuData.isRepresentative).toLowerCase() === 'true';
 
   if (isRep) {
     const repCount = await prisma.cafeMenu.count({
@@ -136,7 +134,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
 
   let photoUrl = null;
   if (file) {
-    photoUrl = await uploadToS3(file);
+    photoUrl = await uploadToS3(file, 'cafes/menus');
   }
 
   const created = await prisma.cafeMenu.create({
