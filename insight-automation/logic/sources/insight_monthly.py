@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from calendar import monthrange
 from dotenv import load_dotenv
 from typing import Dict, Any, List
-
+from utils.athena import fetch_monthly_metrics
 from logic.schemas import MenuTrendItem, CafeFeatureItem
 
 load_dotenv()
@@ -42,17 +42,8 @@ def _sample_indicators() -> Dict[str, Any]:
 
 
 def get_monthly_indicators(cafe_id: int, ref_dt: datetime | None = None) -> Dict[str, Any]:
-    """
-    지난달(완료월) 지표를 반환. Athena 연동 전까지 샘플 사용.
-    실제 도입 시:
-      from utils.athena import fetch_monthly_metrics
-      return fetch_monthly_metrics(cafe_id, ref_dt)
-    """
-    start, end = _prev_month_range(ref_dt)
-    indicators = _sample_indicators()
-    indicators["month"] = f"{start.year}-{start.month:02d}"
-    return indicators
-
+    """지난달(완료월) 지표를 Athena에서 조회."""
+    return fetch_monthly_metrics(cafe_id, ref_dt)
 
 def synthesize_monthly_insight(indicators: Dict[str, Any],
                                menus: List[MenuTrendItem],
