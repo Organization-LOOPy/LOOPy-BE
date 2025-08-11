@@ -83,10 +83,14 @@ export const getMyStampBooks = async (req, res, next) => {
 
     const payload = { totalCount: items.length, sortBy: sortBy ?? 'shortestDeadline', items };
 
-    return res.success?.(payload)
-      ?? res.status(200).json({ status: 'SUCCESS', code: 200, message: '스탬프북 목록 조회 성공', data: payload });
+    return res.status(200).json({
+      status: 'SUCCESS',
+      code: 200,
+      message: '스탬프북 목록 조회 성공',
+      data: payload
+    });
   } catch (err) {
-    (logger?.error ?? console.error)(`스탬프북 리스트 조회 실패: ${err.message}`);
+    console.error(`스탬프북 리스트 조회 실패: ${err.message}`);
     next(err);
   }
 };
@@ -370,7 +374,6 @@ export const getExpiringStampBooks = async (req, res, next) => {
 };
 
 // 스탬프 히스토리 조회 (환전 완료된 스탬프북)
-// 스탬프 히스토리(카페별 그룹)
 export const getConvertedStampbooks = async (req, res, next) => {
   try {
     const userId = req.user.id;
