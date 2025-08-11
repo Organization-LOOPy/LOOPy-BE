@@ -100,7 +100,7 @@ export async function preferenceTopK(userId, opts = {}) {
     next(err);
   }
 }
-//---------------------------------카ㅏㅏ페ㅔㅔ임베딩----------------------
+//---------------------------------카페임베딩---------------------
 function buildCafeText(cafe, menus) {
   const lines = [];
   lines.push(toLine("name", cafe.name));
@@ -158,9 +158,8 @@ ${raw}`,
   return text.slice(0, 600);
 }
 
-export const cafeEmbedding = async (cafe, next) => {
+export const cafeEmbedding = async (cafe) => {
   try {
-    if (!cafe?.id) throw new Error("cafeEmbedding: invalid cafe object");
     const menus = await cafeRepository.findMenu(cafe.id);
 
     const summary = await summarizeCafe(cafe, menus);
@@ -191,11 +190,10 @@ export const cafeEmbedding = async (cafe, next) => {
     return { ok: true, upsertRes, summary, dim: vector.length };
   } catch (err) {
     logger.error("카페정보 임베딩중 오류 발생:", err);
-    next(err);
   }
 };
 
-//----------------------------손님고객님의 취이향 임베딩 ----------------------------------------
+//----------------------------사용자 임베딩 ----------------------------------------
 function buildPreferenceText(p) {
   const lines = [];
   lines.push("TYPE: USER_PREFERENCE_V1");
@@ -245,24 +243,18 @@ ${raw}`,
 }
 
 export const userPreferenceEmbedding = async (
-  userId,
   preferredStore,
   preferredTakeout,
-  preferredMenu,
-  extraFilters,
-  preferredArea, // 문자열 "서울 강남구 역삼동"
-  next
+  preferredMenu
 ) => {
   try {
     const pref = {
       preferredStore,
       preferredTakeout,
       preferredMenu,
-      extraFilters,
     };
 
     const summary = await summarizePreference(pref);
-    const regions = parseAreaToRegions(preferredArea);
 
     const existing = await qdrant
       .retrieve?.({
@@ -297,7 +289,6 @@ export const userPreferenceEmbedding = async (
           payload: {
             userId: String(userId),
             summary,
-            ...regions, // region1DepthName, region2DepthName, region3DepthName
           },
         },
       ],
