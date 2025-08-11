@@ -1,19 +1,16 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
+import { signActionToken } from './utils/actionToken.js';
 
-
-// import { signActionToken } from '../utils/actionToken.js'; // { userId, cafeId, purpose, ttlSec } → JWT 발급
-
-// ── phone 유틸 ─────────────────────────────────────────────
-const normalizePhone = (v='') => v.replace(/\D/g, ''); // 숫자만
+const normalizePhone = (v='') => v.replace(/\D/g, '');
 const formatPhoneDisplay = (digits) => {
   if (digits.length === 11) return `${digits.slice(0,3)}-${digits.slice(3,7)}-${digits.slice(7)}`;
   if (digits.length === 10) return `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`;
-  return digits; // fallback
+  return digits;
 };
 
-// 전화번호로 고객 정보 조회 (스탬프 적립 전용)
+// 전화번호로 고객 조회
 export const getUserByPhone = async (req, res, next) => {
   const cafeId = req.user.cafeId;
   const rawPhone = req.query.phone;
@@ -24,16 +21,12 @@ export const getUserByPhone = async (req, res, next) => {
     const phone = normalizePhone(rawPhone);
 
     const user = await prisma.user.findUnique({
-      where: { phone },
+      where: { phone }, 
       select: {
         id: true,
         nickname: true,
         phone: true,
-        stamps: { select: { id: true } },
-        pointTransactions: {
-          where: { type: 'EARNED' },
-          select: { amount: true }
-        },
+        _count: { select: { stamps: true } },
         stampBooks: {
           where: {
             cafeId,
@@ -55,11 +48,18 @@ export const getUserByPhone = async (req, res, next) => {
 
     if (!user) return res.fail('해당 전화번호의 고객을 찾을 수 없습니다.', 404);
 
-    const totalStampCount = user.stamps.length;
-    const totalPoint = user.pointTransactions.reduce((acc, cur) => acc + cur.amount, 0);
+    const pointAgg = await prisma.pointTransaction.aggregate({
+      where: { userId: user.id, type: 'EARNED' },
+      _sum: { amount: true }
+    });
+
+    const totalStampCount = user._count.stamps;
+    const totalPoint = pointAgg._sum.amount ?? 0;
 
     const sb = user.stampBooks[0] || null;
+
     const progressRate = sb ? Math.floor((sb.currentCount / sb.goalCount) * 100) : null;
+
     const daysLeft = sb
       ? Math.max(
           0,
@@ -67,7 +67,6 @@ export const getUserByPhone = async (req, res, next) => {
         )
       : null;
 
-    // ★ 스탬프 적립 전용 1회용 토큰 (2분 유효)
     const actionToken = signActionToken({
       userId: user.id,
       cafeId,
@@ -93,7 +92,7 @@ export const getUserByPhone = async (req, res, next) => {
           : null
       },
       point: { total: totalPoint },
-      actionToken // 다음 단계: POST /owners/stamps 호출 시 사용
+      actionToken
     });
   } catch (err) {
     next(err);
@@ -101,17 +100,20 @@ export const getUserByPhone = async (req, res, next) => {
 };
 
 
+
 export const addStampToUser = async (req, res, next) => {
-    const userId = parseInt(req.params.userId, 10);
-    const cafeId = req.user.cafeId;
-  
-    try {
-      const user = await prisma.user.findUnique({ where: { id: userId } });
-      if (!user) {
-        return res.fail('존재하지 않는 사용자입니다.', 404);
-      }
-  
-      let stampBook = await prisma.stampBook.findFirst({
+  const userId = parseInt(req.params.userId, 10);
+  const cafeId = req.user.cafeId;
+
+  try {
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) return res.fail('존재하지 않는 사용자입니다.', 404);
+
+    let result;
+
+    await prisma.$transaction(async (tx) => {
+      // 최신 진행중 스탬프북
+      let stampBook = await tx.stampBook.findFirst({
         where: {
           userId,
           cafeId,
@@ -121,13 +123,13 @@ export const addStampToUser = async (req, res, next) => {
         },
         orderBy: { createdAt: 'desc' },
       });
-  
+
+      // 없으면 생성(14일 만료 정책)
       if (!stampBook) {
         const now = new Date();
-        const expiresAt = new Date(now);
-        expiresAt.setDate(now.getDate() + 14);
-  
-        stampBook = await prisma.stampBook.create({
+        const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        stampBook = await tx.stampBook.create({
           data: {
             userId,
             cafeId,
@@ -139,15 +141,14 @@ export const addStampToUser = async (req, res, next) => {
           },
         });
       }
-  
-      const updatedStampBook = await prisma.stampBook.update({
-        where: { id: stampBook.id },
-        data: {
-          currentCount: { increment: 1 },
-        },
-      });
-  
-      await prisma.stamp.create({
+
+      // 목표 초과 방지
+      if (stampBook.currentCount >= stampBook.goalCount) {
+        throw new BadRequestError('이미 목표를 달성한 스탬프북입니다.');
+      }
+
+      // 스탬프 1개 생성
+      await tx.stamp.create({
         data: {
           userId,
           cafeId,
@@ -155,16 +156,38 @@ export const addStampToUser = async (req, res, next) => {
           method: 'MANUAL',
         },
       });
-  
-      return res.success('스탬프 적립 완료', {
-        stampBookId: updatedStampBook.id,
-        currentCount: updatedStampBook.currentCount,
-        goalCount: updatedStampBook.goalCount,
+
+      const newCount = stampBook.currentCount + 1;
+      const isCompleted = newCount >= stampBook.goalCount;
+
+      const updated = await tx.stampBook.update({
+        where: { id: stampBook.id },
+        data: {
+          currentCount: newCount,
+          lastVisitedAt: new Date(),
+          ...(isCompleted ? { isCompleted: true, completedAt: new Date(), status: 'completed' } : {}),
+        },
+        select: { id: true, currentCount: true, goalCount: true, isCompleted: true },
       });
-    } catch (err) {
-      next(err);
+
+      result = updated;
+    });
+
+    // 트랜잭션 성공 → 액션 토큰 1회성 소비
+    if (req.actionToken?.jti) {
+      await markJtiUsed(req.actionToken.jti);
     }
-  }; 
+
+    return res.success('스탬프 적립 완료', {
+      stampBookId: result.id,
+      currentCount: result.currentCount,
+      goalCount: result.goalCount,
+      isCompleted: result.isCompleted,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
   
 // QR 스캔으로 고객 정보 확인
 export const verifyQRToken = async (req, res, next) => {

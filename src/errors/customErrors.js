@@ -459,6 +459,15 @@ export class NotificationNotFoundError extends CustomError {
   }
 }
 
+export class ForbiddenError extends Error {
+  constructor(message = '권한이 없습니다.') {
+    super(message);
+    this.name = 'ForbiddenError';
+    this.status = 403;
+    this.statusCode = 403;
+  }
+}
+
 // 사장용 api 커스텀 에러
 
 // 카페 관리
