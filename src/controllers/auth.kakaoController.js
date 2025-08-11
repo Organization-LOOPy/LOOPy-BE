@@ -15,7 +15,7 @@ export const handleKakaoRedirect = async (req, res, next) => {
 
 export const handleKakaoLinkCallback = async (req, res, next) => {
   try {
-    const result = await handleKakaoLinkCallbackService(req.query, req.user?.id);
+    const result = await handleKakaoLinkCallbackService(req.query.code, req.user?.id);
     return res.redirect(result.redirectUrl);
   } catch (err) {
     next(err);
