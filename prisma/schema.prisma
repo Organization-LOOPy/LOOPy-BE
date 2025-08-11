@@ -197,9 +197,9 @@ model StampBook {
   currentCount Int       @default(0) @map("current_count")
   goalCount    Int       @map("goal_count")
 
-  rewardDetail String    @map("reward_detail") @db.VarChar(255)
-  selectedRewardType  RewardType?
-  selectedRewardMeta  Json?
+  rewardDetail String    @map("reward_detail") @db.VarChar(255) 
+  selectedRewardType  RewardType? @map("selected_reward_type")
+  selectedRewardMeta  Json? @map("selected_reward_meta")
 
   startedAt    DateTime  @map("started_at")
   lastVisitedAt DateTime? @map("last_visited_at")
