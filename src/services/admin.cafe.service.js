@@ -41,7 +41,7 @@ export const createMyCafeBasicInfo = async (userId, basicInfo) => {
   }
 
   const existing = await prisma.cafe.findFirst({
-    where: { ownerId: toInt(userId) },
+    where: { ownerId: userId },
   });
 
   if (existing) throw new CafeAlreadyExistError(userId);
@@ -49,7 +49,7 @@ export const createMyCafeBasicInfo = async (userId, basicInfo) => {
   return await prisma.cafe.create({
     data: {
       ...basicInfo,
-      ownerId: toInt(userId),
+      ownerId: userId,
     },
   });
 };
@@ -94,7 +94,7 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
   }
 
   const cafe = await prisma.cafe.findFirst({
-    where: { ownerId: toInt(userId) },
+    where: { ownerId: userId },
   });
 
   if (!cafe) {
@@ -273,7 +273,7 @@ export const getCafeBusinessInfo = async (userId) => {
 export const updateMyCafe = async (userId, cafeId, updateData) => {
   const cafe = await prisma.cafe.findUnique({ where: { id: cafeId } });
   if (!cafe) throw new CafePhotoNotFoundError();
-  if (cafe.ownerId != toInt(userId)) throw new UnauthCafeAccessError();
+  if (cafe.ownerId != userId) throw new UnauthCafeAccessError();
 
   return await prisma.cafe.update({
     where: { id: cafeId },
