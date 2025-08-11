@@ -8,6 +8,10 @@ import {
 export const uploadStampImages = async (req, res, next) => {
   try {
     const userId = req.user.id;
+
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ message: '업로드할 파일이 없습니다.' });
+    }
     const imageUrls = await uploadStampImagesService(userId, req.files);
 
     res.status(201).json({

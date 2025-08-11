@@ -10,35 +10,20 @@ import {
 
 // 스탬프 사진 등록
 export const uploadStampImagesService = async (userId, files) => {
-  const cafe = await prisma.cafe.findFirst({
-    where: { ownerId: userId },
-  });
-
+  const cafe = await prisma.cafe.findFirst({ where: { ownerId: Number(userId) } });
   if (!cafe) throw new CafeNotFoundError();
 
-  const existing = await prisma.stampImage.count({ where: { cafeId: cafe.id } });
-  if (existing + files.length > 2) {
-    throw new StampImageLimitExceededError();
-  }
+  if (!files || files.length === 0) throw new NoStampImageError();
 
-  if (!files || files.length === 0) {
-  throw new NoStampImageError();
-}
+  const existing = await prisma.stampImage.count({ where: { cafeId: cafe.id } });
+  if (existing + files.length > 2) throw new StampImageLimitExceededError();
 
   const uploadedUrls = await Promise.all(
     files.map(async (file) => {
-      const imageUrl = await uploadToS3({
-        ...file,
-        originalname: `stamps/${Date.now()}_${file.originalname}`,
-      });
-
+      const imageUrl = await uploadToS3(file, 'cafes/stamps');
       await prisma.stampImage.create({
-        data: {
-          cafeId: cafe.id,
-          imageUrl,
-        },
+        data: { cafeId: cafe.id, imageUrl },
       });
-
       return imageUrl;
     })
   );
