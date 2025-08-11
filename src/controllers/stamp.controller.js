@@ -4,6 +4,7 @@ const prisma = new PrismaClient();
 
 import { StampbookNotFoundError } from "../errors/customErrors.js";
 import { BadRequestError } from '../errors/customErrors.js';
+import { logger } from "../utils/logger.js";
 
 // 전체 스탬프북 조회
 export const getMyStampBooks = async (req, res, next) => {
@@ -90,13 +91,13 @@ export const getMyStampBooks = async (req, res, next) => {
     next(err);
   }
 };
-
-// 스탬프북 상세 조회
 export const getStampBookDetail = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const stampBookId = Number(req.params.stampBookId);
-    if (isNaN(stampBookId)) throw new BadRequestError('유효하지 않은 스탬프북 ID입니다.');
+    if (Number.isNaN(stampBookId)) {
+      throw new BadRequestError('유효하지 않은 스탬프북 ID입니다.');
+    }
 
     const stampBook = await prisma.stampBook.findFirst({
       where: { id: stampBookId, userId },
@@ -104,7 +105,7 @@ export const getStampBookDetail = async (req, res, next) => {
         cafe: {
           select: {
             id: true, name: true, address: true,
-            photos: { orderBy: { displayOrder: 'asc' }, take: 1, select: { photoUrl: true } }, 
+            photos: { orderBy: { displayOrder: 'asc' }, take: 1, select: { photoUrl: true } },
           },
         },
         stamps: {
@@ -124,22 +125,11 @@ export const getStampBookDetail = async (req, res, next) => {
     };
 
     const today0 = startOfDayKST(new Date());
-    const expiry0 = startOfDayKST(stampBook.expiresAt);
-    const diffMs = expiry0 - today0;
-    const daysUntilExpiration = Math.floor(diffMs / 86400000);
-    const isExpired = diffMs < 0;
-    const isExpiringSoon = diffMs >= 0 && daysUntilExpiration <= 3;
-
-    const currentCount = stampBook.currentCount;
-    const stampsCount = stampBook.stamps.length;
-    const progressPercent = Math.min(100, Math.round((currentCount / stampBook.goalCount) * 100));
-
-    const reward = {
-      type: stampBook.selectedRewardType ?? null,  
-      meta: stampBook.selectedRewardMeta ?? null,   
-      detailText: stampBook.rewardDetail ?? '',     
-      selectable: false,                            
-    };
+    const expiry0 = stampBook.expiresAt ? startOfDayKST(stampBook.expiresAt) : null;
+    const diffMs = expiry0 ? (expiry0 - today0) : null;
+    const daysUntilExpiration = diffMs !== null ? Math.floor(diffMs / 86400000) : null;
+    const isExpired = diffMs !== null ? diffMs < 0 : false;
+    const isExpiringSoon = diffMs !== null ? (diffMs >= 0 && daysUntilExpiration <= 3) : false;
 
     const data = {
       id: stampBook.id,
@@ -151,9 +141,9 @@ export const getStampBookDetail = async (req, res, next) => {
       },
       round: stampBook.round,
       goalCount: stampBook.goalCount,
-      currentCount,
-      stampsCount,
-      progressPercent,
+      currentCount: stampBook.currentCount,
+      stampsCount: stampBook.stamps.length,
+      progressPercent: Math.min(100, Math.round((stampBook.currentCount / stampBook.goalCount) * 100)),
       status: stampBook.status,
       isCompleted: stampBook.isCompleted,
       rewardDetail: stampBook.rewardDetail,
@@ -171,8 +161,15 @@ export const getStampBookDetail = async (req, res, next) => {
       stamps: stampBook.stamps,
       isExpiringSoon, isExpired, daysUntilExpiration,
     };
+
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "스탬프북 상세 조회 성공",
+      data,
+    });
   } catch (err) {
-    next(err);
+    return next(err);
   }
 };
 

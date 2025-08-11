@@ -1,20 +1,34 @@
 import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
-// 전화번호로 고객 정보 조회
+
+
+// import { signActionToken } from '../utils/actionToken.js'; // { userId, cafeId, purpose, ttlSec } → JWT 발급
+
+// ── phone 유틸 ─────────────────────────────────────────────
+const normalizePhone = (v='') => v.replace(/\D/g, ''); // 숫자만
+const formatPhoneDisplay = (digits) => {
+  if (digits.length === 11) return `${digits.slice(0,3)}-${digits.slice(3,7)}-${digits.slice(7)}`;
+  if (digits.length === 10) return `${digits.slice(0,3)}-${digits.slice(3,6)}-${digits.slice(6)}`;
+  return digits; // fallback
+};
+
+// 전화번호로 고객 정보 조회 (스탬프 적립 전용)
 export const getUserByPhone = async (req, res, next) => {
-  const phone = req.query.phone;
+  const cafeId = req.user.cafeId;
+  const rawPhone = req.query.phone;
 
   try {
-    if (!phone) {
-      return res.fail('전화번호 입력 누락', 400);
-    }
+    if (!rawPhone) return res.fail('전화번호 입력 누락', 400);
+
+    const phone = normalizePhone(rawPhone);
 
     const user = await prisma.user.findUnique({
       where: { phone },
       select: {
         id: true,
         nickname: true,
+        phone: true,
         stamps: { select: { id: true } },
         pointTransactions: {
           where: { type: 'EARNED' },
@@ -22,45 +36,70 @@ export const getUserByPhone = async (req, res, next) => {
         },
         stampBooks: {
           where: {
+            cafeId,
             convertedAt: null,
             expiredAt: null,
             isCompleted: false
           },
           orderBy: { createdAt: 'desc' },
-          take: 1
+          take: 1,
+          select: {
+            id: true,
+            currentCount: true,
+            goalCount: true,
+            expiresAt: true
+          }
         }
       }
     });
 
-    if (!user) {
-      return res.fail('해당 전화번호의 고객을 찾을 수 없습니다.', 404);
-    }
+    if (!user) return res.fail('해당 전화번호의 고객을 찾을 수 없습니다.', 404);
 
     const totalStampCount = user.stamps.length;
     const totalPoint = user.pointTransactions.reduce((acc, cur) => acc + cur.amount, 0);
-    const stampBook = user.stampBooks[0];
+
+    const sb = user.stampBooks[0] || null;
+    const progressRate = sb ? Math.floor((sb.currentCount / sb.goalCount) * 100) : null;
+    const daysLeft = sb
+      ? Math.max(
+          0,
+          Math.ceil((new Date(sb.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+        )
+      : null;
+
+    // ★ 스탬프 적립 전용 1회용 토큰 (2분 유효)
+    const actionToken = signActionToken({
+      userId: user.id,
+      cafeId,
+      purpose: 'ADD_STAMP',
+      ttlSec: 120
+    });
 
     return res.success('고객 정보 조회 성공', {
       userId: user.id,
       nickname: user.nickname,
+      phone: formatPhoneDisplay(normalizePhone(user.phone || phone)),
       stamp: {
         totalCount: totalStampCount,
-        currentStampBook: stampBook
+        currentStampBook: sb
           ? {
-              stampBookId: stampBook.id,
-              currentCount: stampBook.currentCount,
-              goalCount: stampBook.goalCount
+              stampBookId: sb.id,
+              currentCount: sb.currentCount,
+              goalCount: sb.goalCount,
+              progressRate,
+              expiresAt: sb.expiresAt,
+              daysLeft
             }
           : null
       },
-      point: {
-        total: totalPoint
-      }
+      point: { total: totalPoint },
+      actionToken // 다음 단계: POST /owners/stamps 호출 시 사용
     });
   } catch (err) {
     next(err);
   }
 };
+
 
 export const addStampToUser = async (req, res, next) => {
     const userId = parseInt(req.params.userId, 10);
