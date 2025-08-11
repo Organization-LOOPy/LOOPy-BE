@@ -459,12 +459,14 @@ export const mapSearchService = {
 
     // 줌 레벨별 최대 결과 수 설정
     const maxResultsConfig = {
-      1: 30, // 가장 확대된 상태
+      1: 30,
       2: 40,
       3: 50,
       4: 70,
       5: 85,
-      6: 100, // 가장 축소된 상태
+      6: 100,
+      7: 110,
+      8: 120,
     };
 
     const maxResults = maxResultsConfig[zoomLevel] || 100;
