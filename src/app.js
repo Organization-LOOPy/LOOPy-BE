@@ -19,6 +19,7 @@ import usercouponRoutes from "./routes/user.coupon.routes.js";
 
 import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
+import ownerRouter from './routes/admin.user.routes.js';
 
 import adminCafeRouter from "./routes/admin.cafe.routes.js";
 import adminStampRouter from "./routes/admin.stamp.routes.js";
@@ -48,12 +49,12 @@ const corsOptions = {
 const register = new client.Registry();
 client.collectDefaultMetrics({ register });
 
+app.use(responseHandler);
 app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use(passport.initialize());
 
-app.use(responseHandler); // 응답 포맷 통일 미들웨어
 app.get("/", (req, res) =>
   res.send("루피 백엔드 작동 중!, cicd파이프라인 확인")
 );
@@ -70,6 +71,7 @@ app.get('/metrics', async (req, res) => {
     res.status(500).end(err);
   }
 });
+
 
 
 // 고객용
@@ -94,6 +96,7 @@ app.use("/api/v1/owner/stamps", adminStampRouter);
 app.use("/api/v1/owner/cafes", couponRouter);
 app.use("/api/v1/owner/dashboard", DashboardRouter);
 app.use('/api/v1/owner/cafe', adminChallengeRouter);
+app.use('/api/v1/owner', ownerRouter);
 
 // 페이지GET
 app.use("/api/v1/pages", customerPageRouter);
