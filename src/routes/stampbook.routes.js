@@ -21,7 +21,6 @@ router.use(authenticateJWT);
  
 // 스탬프북 쿠폰 발급 라우트
 router.post("/stampbooks/:cafeId/coupon", issueRewardCoupon);
-
 router.get("/users/me/stampbooks", getMyStampBooks);
 router.get("/users/me/stampbooks/expiring", getExpiringStampBooks);
 router.get("/users/me/stampbooks/converted", getConvertedStampbooks);
