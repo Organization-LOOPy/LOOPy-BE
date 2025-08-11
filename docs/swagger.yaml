@@ -2592,9 +2592,8 @@ paths:
   /api/v1/users/me/stampbooks:
     get:
       summary: 전체 스탬프북 조회
-      description: 로그인한 사용자의 전체 스탬프북을 정렬 기준에 따라 조회
-      tags:
-        - Stamp
+      description: 로그인한 사용자의 진행 중 스탬프북을 정렬 기준에 따라 조회합니다.
+      tags: [Stamp]
       security:
         - bearerAuth: []
       parameters:
@@ -2610,7 +2609,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StampBookListResponse'
+                $ref: '#/components/schemas/StampBookListSuccessResponse'
 
   /api/v1/users/me/stampbooks/{stampBookId}:
     get:
@@ -3813,12 +3812,11 @@ paths:
                       keywords: ["1인석", "조용한"]
 
 
-  /api/v1/owner/cafes/menus:
-    post:
+    /api/v1/owner/cafes/menus:
+      post:
+      tags: [Admin Cafe]
       summary: 카페 메뉴 등록
       description: 사장님이 카페의 메뉴를 등록합니다. 이미지 파일은 S3에 업로드됩니다.
-      tags:
-        - Admin Cafe
       security:
         - bearerAuth: []
       requestBody:
@@ -3840,9 +3838,13 @@ paths:
                 isRepresentative:
                   type: boolean
                   example: true
+                  description: 문자열 "true"/"false"도 허용됩니다.
                 menuImage:
                   type: string
                   format: binary
+              required:
+                - name
+                - price
       responses:
         '201':
           description: 카페 메뉴가 등록되었습니다.
@@ -3880,7 +3882,7 @@ paths:
                         example: true
                       photoUrl:
                         type: string
-                        example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/menus/1690884398_아메리카노.jpg
+                        example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/menus/xxxxxxxx-xxxx.jpg
                       createdAt:
                         type: string
                         format: date-time
@@ -3888,16 +3890,21 @@ paths:
                         type: string
                         format: date-time
         '400':
-          description: 유효하지 않은 입력 값
+          description: 유효하지 않은 입력 값(필수값 누락 등)
         '409':
           description: 메뉴 이름 중복 또는 대표 메뉴 초과
+        '401':
+          description: 인증 실패
+        '415':
+          description: 지원하지 않는 파일 형식
 
   /api/v1/owner/cafes/photos:
     post:
       tags: [Admin Cafe]
       summary: 카페 사진 등록
       description: |
-        클라이언트는 사진 파일을 전송합니다. 서버가 해당 파일을 S3에 업로드하고, URL을 저장합니다.
+        로그인된 사장님의 카페 사진을 업로드합니다.
+        서버는 파일을 S3에 업로드하고, URL을 DB에 저장합니다.
       security:
         - bearerAuth: []
       requestBody:
@@ -3912,12 +3919,82 @@ paths:
                   items:
                     type: string
                     format: binary
+              required:
+                - photos
             encoding:
               photos:
                 style: form
+                explode: true
       responses:
-        201:
+        '201':
           description: 사진 등록 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 카페 사진이 등록되었습니다.
+                  cafePhotos:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 101
+                        photoUrl:
+                          type: string
+                          example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/photos/xxxxxxxx-xxxx.jpg
+                        displayOrder:
+                          type: integer
+                          example: 0
+        '400':
+          description: 사진 파일이 없습니다.
+        '401':
+          description: 인증 실패
+        '415':
+          description: 지원하지 않는 파일 형식
+          
+    get:
+      tags: [Admin Cafe]
+      summary: 내가 등록한 카페의 사진 조회
+      description: 로그인된 사장님의 카페에 등록된 사진 목록을 조회합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 사진 조회 성공
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                      example: 101
+                    cafeId:
+                      type: integer
+                      example: 4
+                    photoUrl:
+                      type: string
+                      example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/photos/xxxxxxxx-xxxx.jpg
+                    displayOrder:
+                      type: integer
+                      example: 0
+                    createdAt:
+                      type: string
+                      format: date-time
+                      example: 2025-08-11T05:00:00.000Z
+                    updatedAt:
+                      type: string
+                      format: date-time
+                      example: 2025-08-11T05:00:00.000Z
+        '401':
+          description: 인증 실패
 
   /api/v1/owner/cafes/complete:
     patch:
@@ -3928,16 +4005,6 @@ paths:
       responses:
         200:
           description: 등록 완료
-
-  /api/v1/owner/cafes/photos:
-    get:
-      tags: [Admin Cafe]
-      summary: 내가 등록한 카페의 사진 조회
-      security:
-        - bearerAuth: []
-      responses:
-        200:
-          description: 사진 조회 성공
 
   /api/v1/owner/cafes/photos/{photoId}:
     delete:
@@ -4313,19 +4380,13 @@ paths:
 
   /api/v1/owner/cafes/photos/first:
     get:
-      summary: 카페의 첫 번째 등록 사진 조회
-      description: 특정 카페에 등록된 사진 중 createdAt 기준으로 가장 먼저 등록된 사진 1장을 조회합니다.
-      tags:
-        - CafePhoto
-      parameters:
-        - in: path
-          name: cafeId
-          required: true
-          schema:
-            type: integer
-          description: 조회할 카페의 ID
+      tags: [Admin Cafe]
+      summary: 내 카페의 첫 번째 등록 사진 조회
+      description: 로그인한 사장님의 카페에서 createdAt 기준으로 가장 먼저 등록된 사진 1장을 조회합니다.
+      security:
+        - bearerAuth: []
       responses:
-        200:
+        '200':
           description: 첫 번째 사진 조회 성공
           content:
             application/json:
@@ -4337,80 +4398,30 @@ paths:
                     properties:
                       id:
                         type: integer
-                      cafeId:
-                        type: integer
-                      photoUrl:
-                        type: string
-                      displayOrder:
-                        type: integer
-                      createdAt:
-                        type: string
-                        format: date-time
-        404:
-          description: 등록된 사진이 없는 경우
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-        400:
-          description: 잘못된 요청 (예: cafeId가 숫자가 아님)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/v1/owner/stamps/stamp-images:
-    post:
-      summary: 스탬프 사진 등록
-      description: 사장님이 스탬프 이미지를 업로드합니다. 기본 스탬프 외 추가 업로드는 최대 2개까지 가능합니다.
-      tags: [Admin Cafe]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                stampImage:
-                  type: string
-                  format: binary
-                  description: 업로드할 이미지 파일 (jpg, png 등)
-      responses:
-        '201':
-          description: 스탬프 이미지 업로드 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 스탬프 이미지가 업로드되었습니다.
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 3
+                        example: 10
                       cafeId:
                         type: integer
                         example: 4
-                      imageUrl:
+                      photoUrl:
                         type: string
-                        example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1690819200000_stamp.jpg
+                        example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/photos/xxxxxxxx-xxxx.jpg
+                      displayOrder:
+                        type: integer
+                        example: 0
                       createdAt:
                         type: string
                         format: date-time
-                        example: 2025-07-31T14:10:00.000Z
+        '401':
+          description: 인증 실패
+        '404':
+          description: 등록된 사진이 없는 경우
 
   /api/v1/owner/stamps/stamp-images:
     post:
       tags: [Admin Cafe]
       summary: 스탬프 이미지 업로드
-      description: 
-        사장님이 스탬프 이미지를 업로드합니다. 기본 이미지 1개 외에 최대 2개까지 등록 가능합니다.
+      description: |
+        사장님이 스탬프 이미지를 업로드합니다. 카페별 최대 2개까지 등록 가능합니다.
       security:
         - bearerAuth: []
       requestBody:
@@ -4426,6 +4437,12 @@ paths:
                     type: string
                     format: binary
                   maxItems: 2
+              required:
+                - images
+            encoding:
+              images:
+                style: form
+                explode: true
       responses:
         '201':
           description: 이미지 업로드 성공
@@ -4439,13 +4456,100 @@ paths:
                     example: 스탬프 이미지 업로드 성공
                   data:
                     type: array
+                    description: 업로드된 스탬프 이미지 목록
                     items:
-                      type: string
-                      example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1691223650_1.png
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 3
+                        imageUrl:
+                          type: string
+                          example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/xxxxxxxx-xxxx.png
         '400':
-          description: 유효하지 않은 요청 또는 이미지 2개 초과
+          description: 유효하지 않은 요청(파일 없음, 2개 초과 등)
         '401':
-          description: 인증되지 않은 사용자
+          description: 인증 실패
+        '415':
+          description: 지원하지 않는 파일 형식
+    
+    get:
+      tags: [Admin Cafe]
+      summary: 스탬프 이미지 전체 조회
+      description: 로그인된 사장님의 카페에 등록된 스탬프 이미지 목록을 최신순으로 반환합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지 조회 성공
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 12
+                        imageUrl:
+                          type: string
+                          example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/xxxxxxxx-xxxx.png
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: 2025-08-11T05:00:00.000Z
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: 2025-08-11T05:00:00.000Z
+        '401':
+          description: 인증 실패
+        '404':
+          description: 카페를 찾을 수 없음
+
+  /api/v1/admin/stamps/stamp-images/{imageId}:
+    delete:
+      tags: [Admin Cafe]
+      summary: 스탬프 이미지 삭제
+      description: 로그인된 사장님의 카페에 등록된 스탬프 이미지 1장을 삭제합니다. (S3에서 삭제 후 DB 레코드 삭제)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: imageId
+          required: true
+          schema:
+            type: integer
+          description: 삭제할 스탬프 이미지의 ID
+      responses:
+        '200':
+          description: 스탬프 이미지 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지 삭제 성공
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: 잘못된 요청 (imageId 유효하지 않음)
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음 (해당 카페의 소유자가 아님)
+        '404':
+          description: 스탬프 이미지가 존재하지 않음
 
   /api/v1/owner/stamps/stamp-policy:
     post:
@@ -6491,60 +6595,23 @@ components:
       items:
         $ref: '#/components/schemas/MyChallengeListItem'
 
-    StampBookListItem:
-      type: object
-      properties:
-        id:
-          type: integer
-        cafe:
-          type: object
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            address:
-              type: string
-            image:
-              type: string
-              example: https://cdn.loopy.com/cafes/3.jpg
-        currentCount:
-          type: integer
-        goalCount:
-          type: integer
-        status:
-          type: string
-        expiredAt:
-          type: string
-          format: date-time
-
-
     StampBookListSuccessResponse:
       type: object
       properties:
-        status:
-          type: string
-          example: SUCCESS
-        code:
-          type: integer
-          example: 200
-        message:
-          type: string
-          example: 스탬프북 목록 조회 성공
+        status: { type: string, example: SUCCESS }
+        code: { type: integer, example: 200 }
+        message: { type: string, example: 스탬프북 목록 조회 성공 }
         data:
           $ref: '#/components/schemas/StampBookListPayload'
 
     StampBookListPayload:
       type: object
       properties:
-        totalCount:
-          type: integer
-          example: 6
+        totalCount: { type: integer, example: 6 }
         sortBy:
           type: string
-          description: 정렬 기준
-          enum: [shortestDeadline, mostStamped]
-          example: shortestDeadline
+          description: 실제 적용된 정렬 기준
+          example: createdAtDesc
         items:
           type: array
           items:
@@ -6553,26 +6620,20 @@ components:
     StampBookListItem:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
+        id: { type: integer, example: 1 }
         cafe:
           $ref: '#/components/schemas/CafeSummary'
-        currentCount:
-          type: integer
-          example: 4
-        goalCount:
-          type: integer
-          example: 10
+        currentCount: { type: integer, example: 4 }
+        goalCount: { type: integer, example: 10 }
         status:
           type: string
-          description: 스탬프북 상태(모델 enum과 일치)
+          description: 진행 중 리스트는 ACTIVE만 반환
           enum: [ACTIVE, EXPIRED, COMPLETED, CONVERTED]
           example: ACTIVE
         expiresAt:
           type: string
           format: date-time
-          example: "2025-08-19T02:23:34.000Z"
+          example: '2025-08-19T02:23:34.000Z'
         remainCount:
           type: integer
           description: goalCount - currentCount (최소 0)
@@ -6584,7 +6645,7 @@ components:
           example: 0.4
         progressPercent:
           type: integer
-          description: progressRatio * 100 (소수점 반올림, 최대 100)
+          description: round(progressRatio * 100), 최대 100
           example: 40
         isExpired:
           type: boolean

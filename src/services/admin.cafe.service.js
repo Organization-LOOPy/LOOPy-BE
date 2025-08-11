@@ -41,7 +41,7 @@ export const createMyCafeBasicInfo = async (userId, basicInfo) => {
   }
 
   const existing = await prisma.cafe.findFirst({
-    where: { ownerId: userId },
+    where: { ownerId: toInt(userId) },
   });
 
   if (existing) throw new CafeAlreadyExistError(userId);
@@ -49,7 +49,7 @@ export const createMyCafeBasicInfo = async (userId, basicInfo) => {
   return await prisma.cafe.create({
     data: {
       ...basicInfo,
-      ownerId: userId,
+      ownerId: toInt(userId),
     },
   });
 };
@@ -93,8 +93,8 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
     );
   }
 
-  const cafe = await prisma.cafe.findUnique({
-    where: { ownerId: userId },
+  const cafe = await prisma.cafe.findFirst({
+    where: { ownerId: toInt(userId) },
   });
 
   if (!cafe) {
@@ -123,9 +123,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
     throw new InvalidMenuDataError(missing);
   }
 
-  const cafe = await prisma.cafe.findUnique({
-    where: { ownerId: userId },
-  });
+  const cafe = await prisma.cafe.findFirst({ where: { ownerId: Number(userId) }});
 
   if (!cafe) throw new CafeNotExistError();
 
@@ -140,7 +138,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
     throw new DuplicateMenuNameError(menuData.name);
   }
 
-  const isRep = menuData.isRepresentative === true;
+  const isRep = String(menuData.isRepresentative).toLowerCase() === 'true';
 
   if (isRep) {
     const repCount = await prisma.cafeMenu.count({
@@ -151,7 +149,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
 
   let photoUrl = null;
   if (file) {
-    photoUrl = await uploadToS3(file);
+    photoUrl = await uploadToS3(file, 'cafes/menus');
   }
 
   const created = await prisma.cafeMenu.create({
@@ -275,7 +273,7 @@ export const getCafeBusinessInfo = async (userId) => {
 export const updateMyCafe = async (userId, cafeId, updateData) => {
   const cafe = await prisma.cafe.findUnique({ where: { id: cafeId } });
   if (!cafe) throw new CafePhotoNotFoundError();
-  if (cafe.ownerId != userId) throw new UnauthCafeAccessError();
+  if (cafe.ownerId != toInt(userId)) throw new UnauthCafeAccessError();
 
   return await prisma.cafe.update({
     where: { id: cafeId },

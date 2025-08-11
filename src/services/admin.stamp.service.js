@@ -1,49 +1,50 @@
 import prisma from '../../prisma/client.js';
-import { uploadToS3 } from '../utils/s3.js';
+import { uploadToS3, deleteFromS3  } from '../utils/s3.js';
 import { 
   CafeNotFoundError, 
   InvalidStampPolicyError,
   StampImageLimitExceededError, 
   NoStampImageError,
   StampPolicyNotFoundError,
+  UnauthCafeAccessError
 } from '../errors/customErrors.js';
 
 // 스탬프 사진 등록
 export const uploadStampImagesService = async (userId, files) => {
-  const cafe = await prisma.cafe.findFirst({
-    where: { ownerId: userId },
-  });
-
-  if (!cafe) throw new CafeNotFoundError();
-
-  const existing = await prisma.stampImage.count({ where: { cafeId: cafe.id } });
-  if (existing + files.length > 2) {
-    throw new StampImageLimitExceededError();
+  if (!files || files.length === 0) {
+    throw new NoStampImageError();
   }
 
-  if (!files || files.length === 0) {
-  throw new NoStampImageError();
-}
+  return await prisma.$transaction(async (tx) => {
+    const cafe = await tx.cafe.findFirst({
+      where: { ownerId: Number(userId) },
+      select: { id: true },
+    });
+    if (!cafe) throw new CafeNotFoundError();
 
-  const uploadedUrls = await Promise.all(
-    files.map(async (file) => {
-      const imageUrl = await uploadToS3({
-        ...file,
-        originalname: `stamps/${Date.now()}_${file.originalname}`,
+    const existingCount = await tx.stampImage.count({
+      where: { cafeId: cafe.id },
+    });
+
+    const capacity = 2 - existingCount;
+    if (capacity <= 0) {
+      throw new StampImageLimitExceededError();
+    }
+    if (files.length > capacity) {
+      throw new StampImageLimitExceededError();
+    }
+
+    const results = [];
+    for (const file of files) {
+      const imageUrl = await uploadToS3(file, 'cafes/stamps');
+      const saved = await tx.stampImage.create({
+        data: { cafeId: cafe.id, imageUrl },
+        select: { id: true, imageUrl: true },
       });
-
-      await prisma.stampImage.create({
-        data: {
-          cafeId: cafe.id,
-          imageUrl,
-        },
-      });
-
-      return imageUrl;
-    })
-  );
-
-  return uploadedUrls;
+      results.push(saved);
+    }
+    return results;
+  });
 };
 
 // 스탬프 정책 등록 
@@ -183,4 +184,48 @@ export const getMyStampPolicy = async (userId) => {
   if (!policy) throw new StampPolicyNotFoundError();
 
   return policy;
+};
+
+// 스탬프 이미지 삭제
+export const deleteStampImageService = async (userId, imageId) => {
+  const cafe = await prisma.cafe.findFirst({
+    where: { ownerId: Number(userId) },
+    select: { id: true, ownerId: true },
+  });
+  if (!cafe) throw new CafeNotFoundError();
+
+  const stampImage = await prisma.stampImage.findUnique({
+    where: { id: Number(imageId) },
+    include: { cafe: { select: { ownerId: true } } },
+  });
+
+  if (!stampImage) throw new NoStampImageError();
+  if (!stampImage.cafe || stampImage.cafe.ownerId !== Number(userId)) {
+    throw new UnauthCafeAccessError(userId, stampImage.cafeId, imageId);
+  }
+
+  await deleteFromS3(stampImage.imageUrl);
+
+  await prisma.stampImage.delete({
+    where: { id: stampImage.id },
+  });
+
+  return true;
+};
+
+// 스탬프 이미지 조회
+export const getMyStampImagesService = async (userId) => {
+  const cafe = await prisma.cafe.findFirst({
+    where: { ownerId: Number(userId) },
+    select: { id: true },
+  });
+  if (!cafe) throw new CafeNotFoundError();
+
+  const images = await prisma.stampImage.findMany({
+    where: { cafeId: cafe.id },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true, imageUrl: true, createdAt: true, updatedAt: true },
+  });
+
+  return images; 
 };

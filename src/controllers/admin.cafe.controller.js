@@ -12,6 +12,7 @@ import {
   getCafeMenus,
   getFirstCafePhotoByOwner,
 } from "../services/admin.cafe.service.js";
+import { uploadToS3 } from '../utils/s3.js'; 
 
 import { CafeNotExistError } from "../errors/customErrors.js";
 import prisma from "../../prisma/client.js";
@@ -92,24 +93,22 @@ export const postCafeMenu = async (req, res, next) => {
 
 export const postCafePhotos = async (req, res, next) => {
   try {
-    const { cafeId } = req.params;
     const userId = req.user.id;
-
-    const cafe = await prisma.cafe.findFirst({
-      where: { ownerId: userId },
-    });
-
+    const cafe = await prisma.cafe.findFirst({ where: { ownerId: userId } });
     if (!cafe) throw new CafeNotExistError();
 
-    const uploadedUrls = [];
-
-    for (const [index, file] of req.files.entries()) {
-      const s3Url = await uploadToS3(file, "cafes");
-      uploadedUrls.push({ url: s3Url, displayOrder: index });
+    const files = req.files ?? [];
+    if (files.length === 0) {
+      return res.status(400).json({ message: '사진 파일이 없습니다.' });
     }
 
-    const createdPhotos = await addCafePhotos(cafe.id, uploadedUrls);
+    const uploadedUrls = await Promise.all(
+      files.map((file, index) =>
+        uploadToS3(file, 'cafes/photos').then((url) => ({ url, displayOrder: index }))
+      )
+    );
 
+    const createdPhotos = await addCafePhotos(cafe.id, uploadedUrls);
     res.status(201).json({
       message: "카페 사진이 등록되었습니다.",
       cafePhotos: createdPhotos.map((photo) => ({
@@ -199,8 +198,11 @@ export const getMyCafePhoto = async (req, res, next) => {
 
 export const deleteMyCafePhoto = async (req, res, next) => {
   try {
-    const userId = req.user.id;
-    const photoId = parseInt(req.params.photoId);
+    const userId = Number(req.user.id);
+    const photoId = Number(req.params.photoId);
+    if (!Number.isInteger(photoId)) {
+      return res.status(400).json({ message: '유효하지 않은 photoId' });
+    }
 
     const result = await deleteCafePhoto(userId, photoId);
 
