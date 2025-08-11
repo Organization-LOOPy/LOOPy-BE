@@ -1798,7 +1798,6 @@ paths:
             required: false
             schema:
               type: string
-              example: "wifi,parking"
               enum: 
                 - single_seat
                 - group_seat
@@ -1816,7 +1815,6 @@ paths:
             required: false
             schema:
               type: string
-              example: "vegan,decaf"
               enum:
                 - vegan
                 - decaf
@@ -1830,7 +1828,6 @@ paths:
             required: false
             schema:
               type: string
-              example: "package_discount,tumbler_discount"
               enum:
                 - package_discount
                 - tumbler_discount
