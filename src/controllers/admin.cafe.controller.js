@@ -109,7 +109,7 @@ export const postCafePhotos = async (req, res, next) => {
     );
 
     const createdPhotos = await addCafePhotos(cafe.id, uploadedUrls);
-    res.status(201).json({
+    res.status(200).json({
       message: "카페 사진이 등록되었습니다.",
       cafePhotos: createdPhotos.map((photo) => ({
         id: photo.id,
@@ -124,18 +124,14 @@ export const postCafePhotos = async (req, res, next) => {
 
 export const completeCafeRegistration = async (req, res, next) => {
   try {
-    const { cafeId } = req.params;
-    const userId = req.user.id;
-
-    const cafe = await prisma.cafe.findFirst({
+    const userId = Number(req.user.id);
+    const cafe = await prisma.cafe.findUnique({
       where: { ownerId: userId },
+      select: { id: true, status: true },
     });
-
     if (!cafe) throw new CafeNotExistError();
 
     const updatedCafe = await finishCafeRegistration(cafe.id);
-
-    await cafeEmbedding(updatedCafe);
 
     res.status(200).json({
       message: "카페 등록이 완료되었습니다.",
@@ -144,9 +140,10 @@ export const completeCafeRegistration = async (req, res, next) => {
       },
     });
   } catch (error) {
-    next(error);
+      next(error);
   }
 };
+
 
 export const getMyCafeBasicInfo = async (req, res, next) => {
   try {
