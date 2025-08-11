@@ -201,12 +201,25 @@ export const cafeBookmarkService = {
       userId
     );
     if (isBookmared) {
-      throw new BookmarkAlreadyExistsError();
-    }
-    logger.debug(`북마크 여부 검증 완료: 북마크 하지 않은 카페 ${cafeId}`);
-    const bookmark = await cafeBookmarkRepository.addBookmark(cafeId, userId);
+      logger.debug("이미 북마크한 카페입니다");
+      const bookmark = await cafeBookmarkRepository.deleteBookmark(
+        cafeId,
+        userId
+      );
+      logger.debug(`카페 ID: ${cafeId}의 북마크 ${bookmark.id}삭제 완료`);
+      return {
+        bookmark,
+        message: `카페 id: ${cafeId} 의 북마크를 제거했습니다`,
+      };
+    } else {
+      logger.debug(`북마크 여부 검증 완료: 북마크 하지 않은 카페 ${cafeId}`);
+      const bookmark = await cafeBookmarkRepository.addBookmark(cafeId, userId);
 
-    logger.debug(`카페 ID: ${cafeId}의 북마크 ${bookmark.id}추가 완료`);
-    return bookmark;
+      logger.debug(`카페 ID: ${cafeId}의 북마크 ${bookmark.id}추가 완료`);
+      return {
+        bookmark,
+        message: `카페 id: ${cafeId} 의 북마크를 추가했습니다`,
+      };
+    }
   },
 };
