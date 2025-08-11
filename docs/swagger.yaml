@@ -2592,9 +2592,8 @@ paths:
   /api/v1/users/me/stampbooks:
     get:
       summary: 전체 스탬프북 조회
-      description: 로그인한 사용자의 전체 스탬프북을 정렬 기준에 따라 조회
-      tags:
-        - Stamp
+      description: 로그인한 사용자의 진행 중 스탬프북을 정렬 기준에 따라 조회합니다.
+      tags: [Stamp]
       security:
         - bearerAuth: []
       parameters:
@@ -2610,7 +2609,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/StampBookListResponse'
+                $ref: '#/components/schemas/StampBookListSuccessResponse'
 
   /api/v1/users/me/stampbooks/{stampBookId}:
     get:
@@ -6596,60 +6595,23 @@ components:
       items:
         $ref: '#/components/schemas/MyChallengeListItem'
 
-    StampBookListItem:
-      type: object
-      properties:
-        id:
-          type: integer
-        cafe:
-          type: object
-          properties:
-            id:
-              type: integer
-            name:
-              type: string
-            address:
-              type: string
-            image:
-              type: string
-              example: https://cdn.loopy.com/cafes/3.jpg
-        currentCount:
-          type: integer
-        goalCount:
-          type: integer
-        status:
-          type: string
-        expiredAt:
-          type: string
-          format: date-time
-
-
     StampBookListSuccessResponse:
       type: object
       properties:
-        status:
-          type: string
-          example: SUCCESS
-        code:
-          type: integer
-          example: 200
-        message:
-          type: string
-          example: 스탬프북 목록 조회 성공
+        status: { type: string, example: SUCCESS }
+        code: { type: integer, example: 200 }
+        message: { type: string, example: 스탬프북 목록 조회 성공 }
         data:
           $ref: '#/components/schemas/StampBookListPayload'
 
     StampBookListPayload:
       type: object
       properties:
-        totalCount:
-          type: integer
-          example: 6
+        totalCount: { type: integer, example: 6 }
         sortBy:
           type: string
-          description: 정렬 기준
-          enum: [shortestDeadline, mostStamped]
-          example: shortestDeadline
+          description: 실제 적용된 정렬 기준
+          example: createdAtDesc
         items:
           type: array
           items:
@@ -6658,26 +6620,20 @@ components:
     StampBookListItem:
       type: object
       properties:
-        id:
-          type: integer
-          example: 1
+        id: { type: integer, example: 1 }
         cafe:
           $ref: '#/components/schemas/CafeSummary'
-        currentCount:
-          type: integer
-          example: 4
-        goalCount:
-          type: integer
-          example: 10
+        currentCount: { type: integer, example: 4 }
+        goalCount: { type: integer, example: 10 }
         status:
           type: string
-          description: 스탬프북 상태(모델 enum과 일치)
+          description: 진행 중 리스트는 ACTIVE만 반환
           enum: [ACTIVE, EXPIRED, COMPLETED, CONVERTED]
           example: ACTIVE
         expiresAt:
           type: string
           format: date-time
-          example: "2025-08-19T02:23:34.000Z"
+          example: '2025-08-19T02:23:34.000Z'
         remainCount:
           type: integer
           description: goalCount - currentCount (최소 0)
@@ -6689,7 +6645,7 @@ components:
           example: 0.4
         progressPercent:
           type: integer
-          description: progressRatio * 100 (소수점 반올림, 최대 100)
+          description: round(progressRatio * 100), 최대 100
           example: 40
         isExpired:
           type: boolean
