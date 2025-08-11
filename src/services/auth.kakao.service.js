@@ -14,7 +14,7 @@ const buildRedirectUrl = (token, nickname) =>
   `${process.env.FRONT_LOGIN_SUCCESS_URI}?token=${token}&nickname=${encodeURIComponent(nickname.slice(0, 50))}`;
 
 const createJwt = (userId, roles, currentRole) =>
-  jwt.sign({ userId: userId.toString(), roles, currentRole }, process.env.JWT_SECRET, { expiresIn: '7d' });
+  jwt.sign({ id: Number(userId), roles, currentRole }, process.env.JWT_SECRET, { expiresIn: '7d' });
 
 // 카카오 소셜 로그인
 export const handleKakaoRedirectService = async (code, tokenFromQuery) => {
@@ -61,7 +61,7 @@ export const handleKakaoRedirectService = async (code, tokenFromQuery) => {
   if (tokenFromQuery) {
     try {
       const decoded = jwt.verify(tokenFromQuery, process.env.JWT_SECRET);
-      loggedInUserId = decoded.userId;
+      loggedInUserId = decoded.id ?? decoded.userId;
     } catch (err) {
       console.warn('JWT 디코딩 실패:', err.message);
     }

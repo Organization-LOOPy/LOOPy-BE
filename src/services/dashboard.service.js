@@ -1,13 +1,10 @@
 import prisma from '../../prisma/client.js';
 import {
   startOfToday,
-  startOfWeek,
-  endOfWeek,
   format,
   eachDayOfInterval
 } from 'date-fns';
 import { CafeNotFoundError } from '../errors/customErrors.js';
-
 
 export const getStampStatsByCafe = async (userId) => {
   const cafe = await prisma.cafe.findFirst({
@@ -16,43 +13,40 @@ export const getStampStatsByCafe = async (userId) => {
   if (!cafe) throw new CafeNotFoundError();
 
   const cafeId = cafe.id;
+
   const todayStart = startOfToday();
-  const weekStart = startOfWeek(new Date(), { weekStartsOn: 1 }); 
-  const weekEnd = endOfWeek(new Date(), { weekStartsOn: 1 });   
 
+  const sixDaysAgoStart = subDays(todayStart, 6);
+  const tomorrowStart = addDays(todayStart, 1);
 
-  const daysOfWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+  const daysInRange = eachDayOfInterval({
+    start: sixDaysAgoStart,
+    end: todayStart,
+  });
+
   const [
     todayCount,
-    weekCount,
+    last7DaysCount,
     totalCount,
-    rewardGivenCount
+    rewardGivenCount,
   ] = await Promise.all([
     prisma.stamp.count({
       where: {
         stampBook: { cafeId },
-        stampedAt: { gte: todayStart },
+        stampedAt: { gte: todayStart, lt: tomorrowStart },
       },
     }),
     prisma.stamp.count({
       where: {
         stampBook: { cafeId },
-        stampedAt: {
-          gte: weekStart,
-          lte: weekEnd,
-        },
+        stampedAt: { gte: sixDaysAgoStart, lt: tomorrowStart },
       },
     }),
     prisma.stamp.count({
-      where: {
-        stampBook: { cafeId },
-      },
+      where: { stampBook: { cafeId } },
     }),
     prisma.stampBook.count({
-      where: {
-        cafeId,
-        isCompleted: true,
-      },
+      where: { cafeId, isCompleted: true },
     }),
   ]);
 
@@ -63,32 +57,22 @@ export const getStampStatsByCafe = async (userId) => {
   });
   const uniqueUserCount = uniqueUserIds.length;
 
-  // 요일별 스탬프 수 (그래프용)
   const dailyStampCounts = await Promise.all(
-    daysOfWeek.map(async (date) => {
-      const nextDate = new Date(date);
-      nextDate.setDate(date.getDate() + 1);
-
+    daysInRange.map(async (date) => {
+      const nextDate = addDays(date, 1);
       const count = await prisma.stamp.count({
         where: {
           stampBook: { cafeId },
-          stampedAt: {
-            gte: date,
-            lt: nextDate,
-          },
+          stampedAt: { gte: date, lt: nextDate },
         },
       });
-
-      return {
-        date: format(date, 'yyyy-MM-dd'),
-        count,
-      };
+      return { date: format(date, 'yyyy-MM-dd'), count };
     })
   );
 
   return {
-    "오늘 스탬프 적립 수": todayCount,
-    thisWeekStampCount: weekCount,
+    '오늘 스탬프 적립 수': todayCount,
+    thisWeekStampCount: last7DaysCount,
     totalStampCount: totalCount,
     uniqueUserCount,
     rewardGivenCount,
