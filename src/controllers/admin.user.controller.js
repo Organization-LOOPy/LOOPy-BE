@@ -10,7 +10,6 @@ export const getUserByPhone = async (req, res, next) => {
       return res.fail('전화번호 입력 누락', 400);
     }
 
-    // 유저 조회
     const user = await prisma.user.findUnique({
       where: { phone },
       select: {
@@ -37,13 +36,8 @@ export const getUserByPhone = async (req, res, next) => {
       return res.fail('해당 전화번호의 고객을 찾을 수 없습니다.', 404);
     }
 
-    // 도장 총합 계산
     const totalStampCount = user.stamps.length;
-
-    // 포인트 총합 계산
     const totalPoint = user.pointTransactions.reduce((acc, cur) => acc + cur.amount, 0);
-
-    // 현재 스탬프북 정보
     const stampBook = user.stampBooks[0];
 
     return res.success('고객 정보 조회 성공', {
@@ -68,19 +62,16 @@ export const getUserByPhone = async (req, res, next) => {
   }
 };
 
-// 도장 1개 적립
 export const addStampToUser = async (req, res, next) => {
     const userId = parseInt(req.params.userId, 10);
-    const cafeId = req.user.cafeId; // 로그인한 사장님 소속 카페 ID
+    const cafeId = req.user.cafeId;
   
     try {
-      // 1. 유저 존재 확인
       const user = await prisma.user.findUnique({ where: { id: userId } });
       if (!user) {
         return res.fail('존재하지 않는 사용자입니다.', 404);
       }
   
-      // 2. 적립 가능한 최신 스탬프북 찾기
       let stampBook = await prisma.stampBook.findFirst({
         where: {
           userId,
@@ -92,18 +83,17 @@ export const addStampToUser = async (req, res, next) => {
         orderBy: { createdAt: 'desc' },
       });
   
-      // 3. 없으면 새로 생성
       if (!stampBook) {
         const now = new Date();
         const expiresAt = new Date(now);
-        expiresAt.setDate(now.getDate() + 14); // 기본 유효기간 14일
+        expiresAt.setDate(now.getDate() + 14);
   
         stampBook = await prisma.stampBook.create({
           data: {
             userId,
             cafeId,
             currentCount: 0,
-            goalCount: 10, // 기본 목표 수
+            goalCount: 10,
             isCompleted: false,
             isConverted: false,
             expiresAt,
@@ -111,7 +101,6 @@ export const addStampToUser = async (req, res, next) => {
         });
       }
   
-      // 4. 도장 수 증가
       const updatedStampBook = await prisma.stampBook.update({
         where: { id: stampBook.id },
         data: {
@@ -119,7 +108,6 @@ export const addStampToUser = async (req, res, next) => {
         },
       });
   
-      // 5. 스탬프 레코드 생성
       await prisma.stamp.create({
         data: {
           userId,
@@ -149,7 +137,6 @@ export const verifyQRToken = async (req, res, next) => {
         return res.fail('QR 토큰이 필요합니다.', 400);
       }
   
-      // 1. 유저 기본 정보 + 스탬프 + 포인트 + 쿠폰 조회
       const user = await prisma.user.findUnique({
         where: { qrToken },
         select: {
@@ -184,7 +171,6 @@ export const verifyQRToken = async (req, res, next) => {
         return res.fail('해당 QR의 고객 정보를 찾을 수 없습니다.', 404);
       }
   
-      // 2. 참여 중인 챌린지 조회
       const activeChallenges = await prisma.challengeParticipant.findMany({
         where: {
           userId: user.id,
@@ -195,12 +181,10 @@ export const verifyQRToken = async (req, res, next) => {
         },
       });
   
-      // 3. 도장/포인트 계산
       const totalStampCount = user.stamps.length;
       const totalPoint = user.pointTransactions.reduce((acc, cur) => acc + cur.amount, 0);
       const currentStampBook = user.stampBooks[0];
-  
-      // 4. 응답 포맷 구성
+
       const availableCoupons = user.userCoupons.map((uc) => ({
         userCouponId: uc.id,
         name: uc.couponTemplate.name,
@@ -239,7 +223,6 @@ export const verifyQRToken = async (req, res, next) => {
   };  
 
   // 포인트 사용
-
   export const useUserPoint = async (req, res, next) => {
     const userId = parseInt(req.params.userId, 10);
     const { amount } = req.body;
