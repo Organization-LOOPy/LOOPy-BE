@@ -2020,10 +2020,6 @@ paths:
               storeFilter: {}
               takeOutFilter: {}
               menuFilter: {}
-              addressInfo:
-                region_1depth_name: "서울특별시"
-                region_2depth_name: "강남구"
-                region_3depth_name: "역삼동"
       security:
         - bearerAuth: []
       responses:
@@ -2132,7 +2128,7 @@ paths:
                         - id: 1
                           name: "스타벅스 강남점"
                           address: "서울특별시 강남구 테헤란로 123"
-                          keywords: ["커피", "스타벅스", "강남"]
+                          keywords: ["커피", "스타벅스"]
                           latitude: 37.5665
                           longitude: 126.978
                           region1DepthName: "서울특별시"
@@ -2149,7 +2145,7 @@ paths:
                         - id: 9
                           name: "컴포즈커피 역삼점"
                           address: "서울특별시 강남구 역삼로 789"
-                          keywords: ["컴포즈커피", "저렴한커피", "역삼", "카페"]
+                          keywords: ["컴포즈커피", "저렴한커피"]
                           latitude: 37.4995
                           longitude: 127.0365
                           region1DepthName: "서울특별시"
@@ -2166,7 +2162,7 @@ paths:
                         - id: 11
                           name: "메가커피 선릉점"
                           address: "서울특별시 강남구 선릉로 321"
-                          keywords: ["메가커피", "저렴한커피", "선릉", "테이크아웃"]
+                          keywords: ["메가커피", "저렴한커피"]
                           latitude: 37.5044
                           longitude: 127.0489
                           region1DepthName: "서울특별시"
@@ -2192,7 +2188,7 @@ paths:
                         - id: 1
                           name: "스타벅스 강남점"
                           address: "서울특별시 강남구 테헤란로 123"
-                          keywords: ["커피", "스타벅스", "강남"]
+                          keywords: ["커피", "스타벅스"]
                           latitude: 37.5665
                           longitude: 126.978
                           region1DepthName: "서울특별시"

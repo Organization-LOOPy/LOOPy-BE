@@ -10,17 +10,15 @@ import {
   savePhoneNumberAfterVerificationService,
   saveUserAgreementsService,
   deleteMyAccountService,
-} from '../services/user.service.js';
-import { 
-  QRNotFoundError,
-  NotFoundPhoneError 
-} from '../errors/customErrors.js' 
-import { verifyPhoneNumber } from '../services/firebase.service.js';
+} from "../services/user.service.js";
+import { QRNotFoundError, NotFoundPhoneError } from "../errors/customErrors.js";
+import { verifyPhoneNumber } from "../services/firebase.service.js";
+import { userPreferenceEmbedding } from "../services/nlp.search.js";
 
 export const deactivateUser = async (req, res, next) => {
   try {
     const user = await deactivateUserService(req.user.id);
-    return res.success({ message: '계정이 휴면 상태로 전환되었습니다.', user });
+    return res.success({ message: "계정이 휴면 상태로 전환되었습니다.", user });
   } catch (err) {
     next(err);
   }
@@ -29,7 +27,7 @@ export const deactivateUser = async (req, res, next) => {
 export const reactivateUser = async (req, res, next) => {
   try {
     const user = await reactivateUserService(req.user.id);
-    return res.success({ message: '계정이 다시 활성화되었습니다.', user });
+    return res.success({ message: "계정이 다시 활성화되었습니다.", user });
   } catch (err) {
     next(err);
   }
@@ -42,8 +40,8 @@ export const deleteMyAccount = async (req, res, next) => {
     const result = await deleteMyAccountService(userId);
 
     return res.status(200).json({
-      resultType: 'SUCCESS',
-      message: '회원 탈퇴가 완료되었습니다.',
+      resultType: "SUCCESS",
+      message: "회원 탈퇴가 완료되었습니다.",
       data: result,
     });
   } catch (error) {
@@ -64,7 +62,7 @@ export const updateNickname = async (req, res, next) => {
   try {
     const user = await updateNicknameService(req.user.id, req.body.nickname);
     return res.success({
-      message: '닉네임이 성공적으로 변경되었습니다.',
+      message: "닉네임이 성공적으로 변경되었습니다.",
       user,
     });
   } catch (err) {
@@ -74,10 +72,18 @@ export const updateNickname = async (req, res, next) => {
 
 export const updateUserPreferences = async (req, res, next) => {
   try {
-    const result = await updateUserPreferencesService(req.user.id, req.body.preferredKeywords);
+    const result = await updateUserPreferencesService(
+      req.user.id,
+      req.body.preferredKeywords
+    );
+    await userPreferenceEmbedding(
+      result.preferredStore,
+      result.preferredTakeout,
+      result.preferredMenu
+    );
 
     return res.success({
-      message: '선호 키워드가 저장되었습니다.',
+      message: "선호 키워드가 저장되었습니다.",
       storeFilters: result.preferredStore,
       takeOutFilters: result.preferredTakeout,
       menuFilters: result.preferredMenu,
@@ -89,9 +95,12 @@ export const updateUserPreferences = async (req, res, next) => {
 
 export const updatePreferredArea = async (req, res, next) => {
   try {
-    const result = await updatePreferredAreaService(req.user.id, req.body.preferredArea);
+    const result = await updatePreferredAreaService(
+      req.user.id,
+      req.body.preferredArea
+    );
     return res.success({
-      message: '자주 가는 동네가 저장되었습니다.',
+      message: "자주 가는 동네가 저장되었습니다.",
       preferredArea: result,
     });
   } catch (err) {
@@ -101,9 +110,12 @@ export const updatePreferredArea = async (req, res, next) => {
 
 export const updateKakaoAlert = async (req, res, next) => {
   try {
-    const user = await updateKakaoAlertService(req.user.id, req.body.allowKakaoAlert);
+    const user = await updateKakaoAlertService(
+      req.user.id,
+      req.body.allowKakaoAlert
+    );
     return res.success({
-      message: '카카오 알림 수신 설정이 변경되었습니다.',
+      message: "카카오 알림 수신 설정이 변경되었습니다.",
       user,
     });
   } catch (err) {
@@ -114,7 +126,7 @@ export const updateKakaoAlert = async (req, res, next) => {
 export const updateFcmToken = async (req, res, next) => {
   try {
     await updateFcmTokenService(req.user.id, req.body.fcmToken);
-    return res.success({ message: 'fcmToken이 저장되었습니다.' });
+    return res.success({ message: "fcmToken이 저장되었습니다." });
   } catch (err) {
     next(err);
   }
@@ -125,12 +137,15 @@ export const savePhoneNumberAfterVerification = async (req, res, next) => {
     const { idToken, userId } = req.body;
 
     if (!idToken || !userId) {
-      throw new BadRequestError('idToken 또는 userId가 필요합니다.');
+      throw new BadRequestError("idToken 또는 userId가 필요합니다.");
     }
 
     const phoneNumber = await verifyPhoneNumber(idToken);
 
-    const result = await savePhoneNumberAfterVerificationService(userId, phoneNumber);
+    const result = await savePhoneNumberAfterVerificationService(
+      userId,
+      phoneNumber
+    );
 
     return res.success(result);
   } catch (err) {
@@ -147,7 +162,7 @@ export const notifyPhoneVerification = async (req, res, next) => {
     }
 
     return res.success({
-      message: '전화번호 인증 확인됨',
+      message: "전화번호 인증 확인됨",
       phoneNumber,
     });
   } catch (err) {
@@ -179,7 +194,7 @@ export const getUserQrCode = async (req, res, next) => {
     }
 
     res.status(200).json({
-      resultType: 'SUCCESS',
+      resultType: "SUCCESS",
       success: {
         userId: user.id,
         qrCodeImage: user.qrCode,

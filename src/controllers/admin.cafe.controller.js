@@ -12,7 +12,7 @@ import {
   getCafeMenus,
   getFirstCafePhotoByOwner,
 } from "../services/admin.cafe.service.js";
-import { uploadToS3 } from '../utils/s3.js'; 
+import { uploadToS3 } from "../utils/s3.js";
 
 import { CafeNotExistError } from "../errors/customErrors.js";
 import prisma from "../../prisma/client.js";
@@ -99,12 +99,15 @@ export const postCafePhotos = async (req, res, next) => {
 
     const files = req.files ?? [];
     if (files.length === 0) {
-      return res.status(400).json({ message: '사진 파일이 없습니다.' });
+      return res.status(400).json({ message: "사진 파일이 없습니다." });
     }
 
     const uploadedUrls = await Promise.all(
       files.map((file, index) =>
-        uploadToS3(file, 'cafes/photos').then((url) => ({ url, displayOrder: index }))
+        uploadToS3(file, "cafes/photos").then((url) => ({
+          url,
+          displayOrder: index,
+        }))
       )
     );
 
@@ -132,6 +135,7 @@ export const completeCafeRegistration = async (req, res, next) => {
     if (!cafe) throw new CafeNotExistError();
 
     const updatedCafe = await finishCafeRegistration(cafe.id);
+    await cafeEmbedding(updatedCafe);
 
     res.status(200).json({
       message: "카페 등록이 완료되었습니다.",
@@ -140,10 +144,9 @@ export const completeCafeRegistration = async (req, res, next) => {
       },
     });
   } catch (error) {
-      next(error);
+    next(error);
   }
 };
-
 
 export const getMyCafeBasicInfo = async (req, res, next) => {
   try {
@@ -198,7 +201,7 @@ export const deleteMyCafePhoto = async (req, res, next) => {
     const userId = Number(req.user.id);
     const photoId = Number(req.params.photoId);
     if (!Number.isInteger(photoId)) {
-      return res.status(400).json({ message: '유효하지 않은 photoId' });
+      return res.status(400).json({ message: "유효하지 않은 photoId" });
     }
 
     const result = await deleteCafePhoto(userId, photoId);
