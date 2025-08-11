@@ -1,5 +1,4 @@
 import { logger } from "../utils/logger.js";
-import axios from "axios";
 import { cafeRepository } from "../repositories/cafe.repository.js";
 import {
   cafeSearchRepository,
@@ -7,12 +6,96 @@ import {
 } from "../repositories/search.repository.js";
 import { getDistanceInMeters } from "../utils/geo.js";
 import { parseFiltersFromQuery } from "../utils/parserFilterFromJson.js";
+import { nlpSearch, preferenceTopK } from "./nlp.search.js";
+import prisma from "../../prisma/client.js";
+
+/** "서울 강남구 역삼동" → {region1:"서울", region2:"강남구", region3:"역삼동"} */
+function parsePreferredArea(area) {
+  if (!area || typeof area !== "string") return {};
+  const parts = area.trim().split(/\s+/).filter(Boolean);
+  return {
+    region1DepthName: parts[0] || undefined,
+    region2DepthName: parts[1] || undefined,
+    region3DepthName: parts[2] || undefined,
+  };
+}
+
+// 검색 쿼리 전처리
+function normalizeQuery(s) {
+  return (s ?? "").trim().replace(/"/g, "").normalize("NFC");
+}
+function pickTrueKeys(obj) {
+  return Object.entries(obj ?? {})
+    .filter(([, v]) => !!v)
+    .map(([k]) => k);
+}
+function hasAnyKeys(o) {
+  return !!o && Object.keys(o).length > 0;
+}
+// 지역 필터링 전처리
+function buildRegionCondition(region1, region2, region3) {
+  const cond = {};
+  if (region1) cond.region1DepthName = region1.trim();
+  if (region2) cond.region2DepthName = region2.trim();
+  if (region3) cond.region3DepthName = region3.trim();
+  return cond;
+}
+
+// 필터를 임베딩 질의로 변환(간단 키워드 뭉치)  // [ADDED]
+function buildQueryFromFilters(storeFilters, takeOutFilters, menuFilters) {
+  const s = pickTrueKeys(storeFilters);
+  const t = pickTrueKeys(takeOutFilters);
+  const m = pickTrueKeys(menuFilters);
+  const tokens = [...s, ...t, ...m];
+  return tokens.join(" ");
+}
+
+// 거리 순으로 정렬 (사용자 좌표는 항상 (x, y) 그대로 전달)
+function applyDistanceAndSort(rows, x, y) {
+  const withDistance = rows.map((cafe) => {
+    const distance = getDistanceInMeters(
+      parseFloat(cafe.latitude),
+      parseFloat(cafe.longitude),
+      parseFloat(y), // [FIX] 사용자 y(위도)
+      parseFloat(x) // [FIX] 사용자 x(경도)
+    );
+    const isBookmarked =
+      Array.isArray(cafe.bookmarkedBy) && cafe.bookmarkedBy.length > 0;
+    return { ...cafe, distance, isBookmarked };
+  });
+
+  withDistance.sort((a, b) => {
+    if (a.isBookmarked && !b.isBookmarked) return -1;
+    if (!a.isBookmarked && b.isBookmarked) return 1;
+    return a.distance - b.distance;
+  });
+  return withDistance;
+}
+
+// 사용자의 취향 지역
+async function getUserPreferredAreaCond(userId) {
+  if (!userId) return {};
+  try {
+    const pref = await prisma.userPreference.findUnique({
+      where: { userId },
+      select: { preferredArea: true },
+    });
+    const areaText = pref?.preferredArea;
+    return parsePreferredArea(areaText);
+  } catch (e) {
+    logger.warn("getUserPreferredAreaCond failed:", e?.message);
+    return {};
+  }
+}
 
 export const cafeSearchService = {
-  // 1. 검색어가 없는 경우 => 무조건 지역 필터 적용
-  // 2. 검색어가 있으면 => 검색어 대로만 검색
-  // 3. 검색어 & 지역 => 지역내 검색어 필터링
-  // 백준 풀기 조온나 싫다 ㅅㅂ...
+  /**
+   * 요구사항(개정):
+   * 1) 처음 리스팅: preference 임베딩 Top-K 추천 (지역은 user_preference에 명시된 지역 사용)
+   * 2) 검색 시: 지역 미지정이면 전국 단위, 지정 시 해당 지역만
+   * 3) 검색 결과 없음 → Top-15 유사 카페(임베딩) 폴백 (검색어 없고 필터만 있어도 폴백)
+   * 4) 항상 사용자 (x, y) 포함, 거리 기준 정렬
+   */
   async findCafeList(
     cursor,
     x,
@@ -28,192 +111,164 @@ export const cafeSearchService = {
   ) {
     const refinedX = parseFloat(x);
     const refinedY = parseFloat(y);
-    const query = (searchQuery ?? "").trim().replace(/"/g, "").normalize("NFC");
-    console.log("🔍 search query =", query);
+    const query = normalizeQuery(searchQuery);
 
-    const selectedStoreFilters = Object.entries(storeFilters ?? {})
-      .filter(([_, v]) => v)
-      .map(([k]) => k);
+    const selectedStoreFilters = pickTrueKeys(storeFilters);
+    const selectedTakeOutFilters = pickTrueKeys(takeOutFilters);
+    const selectedMenuFilters = pickTrueKeys(menuFilters);
 
-    const selectedTakeOutFilters = Object.entries(takeOutFilters ?? {})
-      .filter(([_, v]) => v)
-      .map(([k]) => k);
+    // [CHANGED] 검색 단계에서는 선호지역을 자동 주입하지 않음(전국 기본).
+    //           초기가 아닐 때는 사용자가 명시한 지역만 사용.
+    const explicitRegionCond = buildRegionCondition(region1, region2, region3);
 
-    const selectedMenuFilters = Object.entries(menuFilters ?? {})
-      .filter(([_, v]) => v)
-      .map(([k]) => k);
+    const hasSearchQuery = !!query;
+    const hasAnyFilter =
+      selectedStoreFilters.length > 0 ||
+      selectedMenuFilters.length > 0 ||
+      selectedTakeOutFilters.length > 0;
+    const hasRegionFilter = hasAnyKeys(explicitRegionCond);
 
-    const refinedRegion1 = region1?.trim() || null;
-    const refinedRegion2 = region2?.trim() || null;
-    const refinedRegion3 = region3?.trim() || null;
+    // 1) 처음 리스팅: 검색어 X, 필터 X  → user_preference 기반 Top-15 (+ 선호지역 필터)
+    if (!hasSearchQuery && !hasAnyFilter) {
+      const pref = await preferenceTopK(userId, { topK: 15 });
+      const cafeIds = pref?.cafeIds ?? [];
 
-    const whereConditions = {
-      AND: [],
-    };
+      if (cafeIds.length === 0) {
+        return { fromNLP: true, data: [], nextCursor: null, hasMore: false };
+      }
 
-    // 지역 조건 객체 구성
-    const regionCondition = {};
-    if (refinedRegion1) regionCondition.region1DepthName = refinedRegion1;
-    if (refinedRegion2) regionCondition.region2DepthName = refinedRegion2;
-    if (refinedRegion3) regionCondition.region3DepthName = refinedRegion3;
+      let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
 
-    const hasSearchQuery = query && query.length > 0;
-    const hasRegionFilter = Object.keys(regionCondition).length > 0;
-
-    // ✅ 수정: region 조건이 실제 있을 때만 넣기
-    if (hasRegionFilter) {
-      whereConditions.AND.push(regionCondition);
-    }
-
-    // 검색어 조건
-    if (hasSearchQuery) {
-      whereConditions.AND.push({
-        name: { contains: query },
-      });
-    }
-
-    // 스토어 필터
-    if (selectedStoreFilters.length > 0) {
-      selectedStoreFilters.forEach((filter) => {
-        whereConditions.AND.push({
-          storeFilters: {
-            path: [filter],
-            equals: true,
-          },
+      // [CHANGED] 초기 진입시에만 선호지역을 적용
+      const preferredArea = await getUserPreferredAreaCond(userId);
+      if (hasAnyKeys(preferredArea)) {
+        rows = rows.filter((c) => {
+          if (
+            preferredArea.region1DepthName &&
+            c.region1DepthName !== preferredArea.region1DepthName
+          )
+            return false;
+          if (
+            preferredArea.region2DepthName &&
+            c.region2DepthName !== preferredArea.region2DepthName
+          )
+            return false;
+          if (
+            preferredArea.region3DepthName &&
+            c.region3DepthName !== preferredArea.region3DepthName
+          )
+            return false;
+          return true;
         });
-      });
-    }
+      }
 
-    // 메뉴 필터
-    if (selectedMenuFilters.length > 0) {
-      selectedMenuFilters.forEach((filter) => {
-        whereConditions.AND.push({
-          menuFilters: {
-            path: [filter],
-            equals: true,
-          },
-        });
-      });
-    }
-
-    // 테이크아웃 필터
-    if (selectedTakeOutFilters.length > 0) {
-      selectedTakeOutFilters.forEach((filter) => {
-        whereConditions.AND.push({
-          takeOutFilters: {
-            path: [filter],
-            equals: true,
-          },
-        });
-      });
-    }
-
-    if (whereConditions.AND.length === 0) {
       return {
-        fromNLP: false,
-        data: [],
+        fromNLP: true,
+        data: applyDistanceAndSort(rows, refinedX, refinedY),
         nextCursor: null,
         hasMore: false,
       };
     }
 
-    const finalWhereConditions = whereConditions;
+    // 2) 검색(RDB) 조건 구성: 지역은 사용자가 지정한 경우에만
+    const whereConditions = { AND: [] };
+    if (hasRegionFilter) whereConditions.AND.push(explicitRegionCond);
 
+    if (hasSearchQuery) {
+      whereConditions.AND.push({ name: { contains: query } });
+    }
+    selectedStoreFilters.forEach((f) =>
+      whereConditions.AND.push({ storeFilters: { path: [f], equals: true } })
+    );
+    selectedMenuFilters.forEach((f) =>
+      whereConditions.AND.push({ menuFilters: { path: [f], equals: true } })
+    );
+    selectedTakeOutFilters.forEach((f) =>
+      whereConditions.AND.push({ takeOutFilters: { path: [f], equals: true } })
+    );
+
+    // 전국 단위 기본을 위해 조건이 비어 있어도 그대로 진행 (RDB는 전체 조회 + 페이징) // [CHANGED: 기존 'preference로 대체' 제거]
     const searchResults = await cafeSearchRepository.findCafeByInfos(
-      finalWhereConditions,
+      whereConditions,
       cursor,
       userId
     );
 
-    if (searchResults.cafes && searchResults.cafes.length > 0) {
-      const cafesWithDistance = searchResults.cafes.map((cafe) => {
-        const distance = getDistanceInMeters(
-          cafe.latitude,
-          cafe.longitude,
-          refinedX,
-          refinedY
-        );
-
-        const isBookmarked = cafe.bookmarkedBy && cafe.bookmarkedBy.length > 0;
-
-        return {
-          ...cafe,
-          distance,
-          isBookmarked,
-        };
-      });
-
-      const sortedCafes = cafesWithDistance.sort((a, b) => {
-        if (a.isBookmarked && !b.isBookmarked) return -1;
-        if (!a.isBookmarked && b.isBookmarked) return 1;
-        return a.distance - b.distance;
-      });
-
+    if (searchResults?.cafes?.length > 0) {
       return {
         fromNLP: false,
-        data: sortedCafes,
+        data: applyDistanceAndSort(searchResults.cafes, refinedX, refinedY),
         nextCursor: searchResults.nextCursor,
         hasMore: searchResults.hasMore,
       };
     }
 
-    try {
-      const nlpRes = await axios.post(
-        "http://localhost:8000/embedding/search",
-        {
-          query: query,
+    // 3) RDB 결과 없음 → 임베딩 폴백 (검색어 없어도 필터만으로 시도)  // [CHANGED]
+    // 우선순위: (검색어) → (필터기반 키워드) → (preferenceTopK)
+    let fallbackCafeIds = [];
+    let usedEmbedding = false;
+
+    const filterQuery = buildQueryFromFilters(
+      storeFilters ?? {},
+      takeOutFilters ?? {},
+      menuFilters ?? {}
+    );
+    const embeddingQuery = hasSearchQuery ? query : filterQuery;
+
+    if (embeddingQuery) {
+      try {
+        const nlpRes = await nlpSearch(embeddingQuery);
+        if (Array.isArray(nlpRes?.cafeIds) && nlpRes.cafeIds.length > 0) {
+          fallbackCafeIds = nlpRes.cafeIds.slice(0, 15);
+          usedEmbedding = true;
         }
-      );
-
-      const cafeIds = nlpRes.data?.cafeIds ?? [];
-
-      if (cafeIds.length === 0) {
-        return {
-          fromNLP: true,
-          data: [],
-          nextCursor: null,
-          hasMore: false,
-        };
+      } catch (e) {
+        logger.warn("nlpSearch fallback failed:", e?.message);
       }
-
-      const nlpCafeResults = await cafeSearchRepository.findCafeByIds(
-        cafeIds,
-        userId
-      );
-
-      const cafesWithDistance = nlpCafeResults.map((cafe) => {
-        const distance = getDistanceInMeters(
-          cafe.latitude,
-          cafe.longitude,
-          refinedX,
-          refinedY
-        );
-
-        const isBookmarked = cafe.bookmarkedBy && cafe.bookmarkedBy.length > 0;
-
-        return {
-          ...cafe,
-          distance,
-          isBookmarked,
-        };
-      });
-
-      const sortedCafes = cafesWithDistance.sort((a, b) => {
-        if (a.isBookmarked && !b.isBookmarked) return -1;
-        if (!a.isBookmarked && b.isBookmarked) return 1;
-        return a.distance - b.distance;
-      });
-
-      return {
-        fromNLP: true,
-        data: sortedCafes,
-        nextCursor: null,
-        hasMore: false,
-      };
-    } catch (err) {
-      logger.error(`nlp서버 카페 검색 중 오류 발생: ${err.message}`);
-      next(err);
     }
+
+    // 임베딩에서도 못 찾으면 preferenceTopK로 보강
+    if (!usedEmbedding) {
+      const pref = await preferenceTopK(userId, { topK: 15 });
+      fallbackCafeIds = pref?.cafeIds ?? [];
+      if (fallbackCafeIds.length === 0) {
+        return { fromNLP: true, data: [], nextCursor: null, hasMore: false };
+      }
+    }
+
+    let rows = await cafeSearchRepository.findCafeByIds(
+      fallbackCafeIds,
+      userId
+    );
+
+    // 지역이 지정된 경우에는 최종 결과에도 지역 필터 적용(전국 기본 원칙과 충돌 없음)
+    if (hasRegionFilter) {
+      rows = rows.filter((c) => {
+        if (
+          explicitRegionCond.region1DepthName &&
+          c.region1DepthName !== explicitRegionCond.region1DepthName
+        )
+          return false;
+        if (
+          explicitRegionCond.region2DepthName &&
+          c.region2DepthName !== explicitRegionCond.region2DepthName
+        )
+          return false;
+        if (
+          explicitRegionCond.region3DepthName &&
+          c.region3DepthName !== explicitRegionCond.region3DepthName
+        )
+          return false;
+        return true;
+      });
+    }
+
+    return {
+      fromNLP: true,
+      data: applyDistanceAndSort(rows, refinedX, refinedY),
+      nextCursor: null,
+      hasMore: false,
+    };
   },
 
   async getCafeDetails(cafe, x, y) {
@@ -221,7 +276,7 @@ export const cafeSearchService = {
     const cafeDetails = {
       id: cafe.id.toString(),
       name: cafe.name,
-      adress: cafe.adress,
+      address: cafe.address,
       keywords: cafe.keywords,
       photos: photos.map((photo) => ({
         id: photo.id.toString(),
@@ -235,8 +290,8 @@ export const cafeSearchService = {
     cafeDetails.distance = getDistanceInMeters(
       parseFloat(cafe.latitude),
       parseFloat(cafe.longitude),
-      yNum,
-      xNum
+      yNum, // 사용자 위도
+      xNum // 사용자 경도
     );
 
     return cafeDetails;

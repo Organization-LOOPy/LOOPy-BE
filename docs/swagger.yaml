@@ -996,7 +996,7 @@ paths:
                     id: 1
                     name: "스타벅스 강남점"
                     address: "서울특별시 강남구 테헤란로 123"
-                    businessHourType: "SAME_ALL_DAYS"
+                    businessHourType: "ALL_DAYS"
                     businessHours: 
                       "open": "10:00"
                       "close": "20:00"
@@ -1117,6 +1117,7 @@ paths:
                     stampImages:
                       - id: 1
                         imageUrl: "https://example.com/images/stamp1.png"
+                  stampPolicyMessage: "스탬프북 없는 경우에만: 아메리카노 무료 쿠폰을 받을 수 있어요"
                   bookmark:
                     isBookmarked: true
         '401':
@@ -1650,7 +1651,7 @@ paths:
       description: 카페 ID로 특정 카페의 상세 정보를 조회합니다
       operationId: getCafeInfo
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: cafeId
           in: path
@@ -1765,7 +1766,7 @@ paths:
       description: 좌표와 줌 레벨을 기반으로 주변 카페를 검색하고 다양한 필터를 적용합니다
       operationId: searchCafesOnMap
       security:
-        - BearerAuth: []
+        - bearerAuth: []
       parameters:
         - name: x
           in: query
@@ -2686,44 +2687,89 @@ paths:
                     type: boolean
 
   /api/v1/users/me/stampbooks/{stampBookId}/convert:
-    post:
-      summary: 스탬프 → 포인트 환전
-      description: 완료된 스탬프북을 포인트로 환전합니다. <br> 완료되지 않았거나 이미 환전된 스탬프북일 경우 에러가 발생합니다.
-      tags:
-        - Stamp
-      security:
-        - bearerAuth: []
-      parameters:
-        - in: path
-          name: stampBookId
-          required: true
-          schema:
-            type: integer
-      responses:
-        '200':
-          description: 환전 성공
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/StampConversionSuccessResponse'
-        '400':
-          description: 잘못된 요청 (예: 완료되지 않은 스탬프북, 환전 불가능 상태)
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '403':
-          description: 접근 권한 없음
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: 스탬프북을 찾을 수 없음
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
+  post:
+    summary: 스탬프 → 포인트 환전 (전량 환전)
+    description: |
+      해당 스탬프북의 **모든 스탬프를 포인트로 환전**합니다.  
+      - 스탬프북 **완료 여부는 상관없음**  
+      - **이미 환전(종료)된** 스탬프북은 실패  
+      - **보유 스탬프가 0개**면 실패  
+      - 환전 성공 시 스탬프는 **전부 삭제**되며 `lastConvertedAt`이 기록됩니다.
+    tags:
+      - Stamp
+    security:
+      - bearerAuth: []
+    parameters:
+      - in: path
+        name: stampBookId
+        required: true
+        schema:
+          type: integer
+    responses:
+      '200':
+        description: 환전 성공
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StampConversionSuccessResponse'
+            example:
+              status: SUCCESS
+              code: 200
+              message: "카페 위니의 5개의 스탬프가 10포인트로 환전되었습니다."
+              data:
+                stampBookId: 12
+                cafeId: 3
+                cafeName: 카페 위니
+                stampCount: 5
+                pointPerStamp: 2
+                pointAmount: 10
+                remainingStampCount: 0
+                convertedAt: "2025-07-31T09:10:30.000Z"
+      '400':
+        description: 잘못된 요청 (예: 스탬프 0개, 이미 환전된 상태, 유효하지 않은 ID 등)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            examples:
+              NO_STAMPS:
+                summary: 환전 가능한 스탬프 없음
+                value:
+                  status: FAIL
+                  code: 400
+                  message: 환전 가능한 스탬프가 없습니다.
+              ALREADY_CONVERTED:
+                summary: 이미 환전(종료)된 스탬프북
+                value:
+                  status: FAIL
+                  code: 400
+                  message: 이미 환전(종료)된 스탬프북입니다.
+              INVALID_ID:
+                summary: 유효하지 않은 스탬프북 ID
+                value:
+                  status: FAIL
+                  code: 400
+                  message: 유효하지 않은 스탬프북 ID입니다.
+      '403':
+        description: 접근 권한 없음 (본인 소유 아님)
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              status: FAIL
+              code: 403
+              message: 본인의 스탬프북만 환전할 수 있습니다.
+      '404':
+        description: 스탬프북을 찾을 수 없음
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ErrorResponse'
+            example:
+              status: FAIL
+              code: 404
+              message: 존재하지 않는 스탬프북입니다.
 
   /api/v1/users/me/stampbooks/{stampBookId}/extend:
     patch:
@@ -3113,7 +3159,7 @@ paths:
             default: usable
           description: 조회할 쿠폰 상태 (usable: 사용 가능, past: 사용됨 또는 만료됨)
       responses:
-        200:
+        '200':
           description: 쿠폰 목록 조회 성공
           content:
             application/json:
@@ -3145,31 +3191,34 @@ paths:
                           format: date-time
                           nullable: true
                           example: null
+                        cafeId:
+                          type: integer
+                          example: 5
+                        cafeName:
+                          type: string
+                          nullable: true
+                          example: 루피카페
+                        cafeImage:
+                          type: string
+                          nullable: true
+                          example: https://cdn.loopy.com/cafes/5/main.jpg
+                        usageCondition:
+                          type: string
+                          nullable: true
+                          example: 1만원 이상 구매 시
                         couponTemplate:
                           type: object
                           properties:
-                            name:
+                            name: { type: string, example: 아메리카노 1000원 할인 }
+                            discountType:
                               type: string
-                              example: 아메리카노 1000원 할인
-                            usageCondition:
-                              type: string
-                              nullable: true
-                              example: 1만원 이상 구매 시
-                            cafe:
-                              type: object
-                              properties:
-                                id:
-                                  type: integer
-                                  example: 5
-                                photos:
-                                  type: array
-                                  items:
-                                    type: object
-                                    properties:
-                                      photoUrl:
-                                        type: string
-                                        example: https://cdn.loopy.com/cafes/5/photo1.jpg
-        400:
+                              enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
+                              example: DISCOUNT
+                            discountValue: { type: integer, nullable: true, example: 1000 }
+                            applicableMenuId: { type: integer, nullable: true, example: 17 }
+                            startDate: { type: string, format: date-time, nullable: true, example: 2025-08-10T00:00:00.000Z }
+                            endDate: { type: string, format: date-time, nullable: true, example: 2025-08-31T23:59:59.000Z }
+        '400':
           description: 잘못된 쿠폰 상태 요청
           content:
             application/json:
@@ -6502,73 +6551,91 @@ components:
           example: 200
         message:
           type: string
-          example: 스탬프북 리스트 조회 성공
+          example: 스탬프북 목록 조회 성공
         data:
-          $ref: '#/components/schemas/StampBookListResponse'
+          $ref: '#/components/schemas/StampBookListPayload'
 
-    StampBookListResponse:
-    type: object
-    properties:
-      resultType:
-        type: string
-        example: SUCCESS
-      error:
-        type: "null"
-        example: null
-      success:
-        type: array
+    StampBookListPayload:
+      type: object
+      properties:
+        totalCount:
+          type: integer
+          example: 6
+        sortBy:
+          type: string
+          description: 정렬 기준
+          enum: [shortestDeadline, mostStamped]
+          example: shortestDeadline
         items:
-          type: object
-          properties:
-            id:
-              type: integer
-              example: 1
-            cafe:
-              type: object
-              properties:
-                id:
-                  type: integer
-                  example: 1
-                name:
-                  type: string
-                  example: "이대점"
-                address:
-                  type: string
-                  example: "서울 서대문구 어딘가 2"
-                image:
-                  type: string
-                  nullable: true
-                  example: "https://cdn.example.com/cafes/1-thumb.jpg"
-            currentCount:
-              type: integer
-              example: 3
-            goalCount:
-              type: integer
-              example: 5
-            status:
-              type: string
-              enum: [active, expired, completed, converted]
-              example: "active"
-            expiresAt:
-              type: string
-              format: date-time
-              example: "2025-08-19T02:23:34.000Z"
-            remainCount:
-              type: integer
-              example: 2
-            progressRatio:
-              type: number
-              format: float
-              example: 0.6
-            isExpired:
-              type: boolean
-              example: false
-            isExpiringSoon:
-              type: boolean
-              example: true
-            daysUntilExpiration:
-              type: integer
-              example: 3
+          type: array
+          items:
+            $ref: '#/components/schemas/StampBookListItem'
+
+    StampBookListItem:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        cafe:
+          $ref: '#/components/schemas/CafeSummary'
+        currentCount:
+          type: integer
+          example: 4
+        goalCount:
+          type: integer
+          example: 10
+        status:
+          type: string
+          description: 스탬프북 상태(모델 enum과 일치)
+          enum: [ACTIVE, EXPIRED, COMPLETED, CONVERTED]
+          example: ACTIVE
+        expiresAt:
+          type: string
+          format: date-time
+          example: "2025-08-19T02:23:34.000Z"
+        remainCount:
+          type: integer
+          description: goalCount - currentCount (최소 0)
+          example: 6
+        progressRatio:
+          type: number
+          format: float
+          description: currentCount / goalCount
+          example: 0.4
+        progressPercent:
+          type: integer
+          description: progressRatio * 100 (소수점 반올림, 최대 100)
+          example: 40
+        isExpired:
+          type: boolean
+          example: false
+        isExpiringSoon:
+          type: boolean
+          description: KST 00:00 기준 D-day ≤ 3 (오늘 포함)
+          example: true
+        daysUntilExpiration:
+          type: integer
+          description: KST 00:00 기준 만료일까지 남은 일수 (오늘 0, 음수면 만료)
+          example: 3
+
+    CafeSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        name:
+          type: string
+          example: "카페 위니 이대점"
+        address:
+          type: string
+          example: "서울 서대문구 어딘가 2"
+        image:
+          type: string
+          nullable: true
+          example: "https://cdn.example.com/cafes/1-thumb.jpg"
+
 
     Stamp:
       type: object
@@ -6608,61 +6675,136 @@ components:
       properties:
         id:
           type: integer
+          example: 12
+          description: 스탬프북 고유 ID
         cafe:
           type: object
+          description: 스탬프북이 속한 카페 정보
           properties:
             id:
               type: integer
+              example: 5
             name:
               type: string
+              example: "카페 위니"
             address:
               type: string
+              example: "서울 서대문구 이화여대길 12"
+            image:
+              type: string
+              nullable: true
+              example: "https://cdn.example.com/cafes/5-thumb.jpg"
+        round:
+          type: integer
+          description: 몇 번째 스탬프북인지 (회차)
+          example: 2
         goalCount:
           type: integer
+          description: 스탬프 목표 개수
+          example: 10
         currentCount:
           type: integer
+          description: 현재 적립된 스탬프 개수
+          example: 6
+        stampsCount:
+          type: integer
+          description: stamps 배열 길이(참고용)
+          example: 6
+        progressPercent:
+          type: integer
+          description: 진행률(0~100, 반올림)
+          example: 60
         status:
           type: string
+          enum: [ACTIVE, EXPIRED, COMPLETED, CONVERTED]
+          example: ACTIVE
         isCompleted:
           type: boolean
+          example: false
         rewardDetail:
           type: string
+          description: 스탬프 목표 달성 시 제공되는 보상 문구
+          example: "스탬프 10개 모으면 아메리카노 한 잔 무료"
+        selectedRewardType:
+          type: string
+          nullable: true
+          enum: [DISCOUNT, SIZE_UP, FREE_DRINK]
+          example: FREE_DRINK
+        selectedRewardMeta:
+          type: object
+          nullable: true
+          description: 리워드 파라미터(JSON)
+          example: null
         startedAt:
           type: string
           format: date-time
+          example: "2025-07-01T00:00:00.000Z"
         lastVisitedAt:
           type: string
           format: date-time
           nullable: true
+          example: "2025-08-09T14:20:00.000Z"
         expiresAt:
           type: string
           format: date-time
+          example: "2025-08-15T00:00:00.000Z"
         extendedAt:
           type: string
           format: date-time
           nullable: true
+          example: "2025-08-20T00:00:00.000Z"
         expiredAt:
           type: string
           format: date-time
           nullable: true
+          example: null
         completedAt:
           type: string
           format: date-time
           nullable: true
+          example: null
         convertedAt:
           type: string
           format: date-time
           nullable: true
+          example: null
         createdAt:
           type: string
           format: date-time
+          example: "2025-07-01T00:00:00.000Z"
         updatedAt:
           type: string
           format: date-time
+          example: "2025-08-10T00:00:00.000Z"
         stamps:
           type: array
+          description: 스탬프 적립 내역
           items:
-            $ref: '#/components/schemas/Stamp'
+            type: object
+            properties:
+              id:
+                type: integer
+                example: 101
+              stampedAt:
+                type: string
+                format: date-time
+                example: "2025-08-09T14:20:00.000Z"
+              stampImageUrl:
+                type: string
+                example: "https://cdn.example.com/stamps/stamp1.png"
+              source:
+                type: string
+                example: "QR"
+              note:
+                type: string
+                nullable: true
+                example: null
+              latitude:
+                type: number
+                example: 37.561234
+              longitude:
+                type: number
+                example: 126.946123
         isExpiringSoon:
           type: boolean
           example: true
@@ -6671,7 +6813,8 @@ components:
           example: false
         daysUntilExpiration:
           type: integer
-          example: 2
+          example: 4
+
 
     StampBookExpiring:
       type: object
@@ -6735,12 +6878,27 @@ components:
     StampConversionResult:
       type: object
       properties:
+        stampBookId:
+          type: integer
+          example: 12
+        cafeId:
+          type: integer
+          example: 3
+        cafeName:
+          type: string
+          example: 카페 위니
         stampCount:
           type: integer
           example: 5
+        pointPerStamp:
+          type: integer
+          example: 2
         pointAmount:
           type: integer
-          example: 500
+          example: 10
+        remainingStampCount:
+          type: integer
+          example: 0
         convertedAt:
           type: string
           format: date-time
@@ -6757,7 +6915,7 @@ components:
           example: 200
         message:
           type: string
-          example: 5개의 스탬프가 10포인트로 환전되었습니다.
+          example: "카페 위니의 5개의 스탬프가 10포인트로 환전되었습니다."
         data:
           $ref: '#/components/schemas/StampConversionResult'
 

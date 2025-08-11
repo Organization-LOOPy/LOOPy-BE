@@ -88,11 +88,10 @@ export const cafeRepository = {
           },
         },
 
-        StampPolicy: {
+        stampPolicies: {
           select: {
             id: true,
             rewardType: true,
-            reward_description: true,
             discountAmount: true,
             menu: {
               select: {
@@ -104,6 +103,8 @@ export const cafeRepository = {
         },
       },
     });
+
+    console.log(cafe);
 
     return cafe;
   },
@@ -120,6 +121,31 @@ export const cafeRepository = {
     });
 
     return photos;
+  },
+
+  async findMenu(cafeId) {
+    const menu = await prisma.CafeMenu.findMany({
+      where: { cafeId },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        isRepresentative: true,
+        description: true,
+        photoUrl: true,
+        isSoldOut: true,
+      },
+      orderBy: {
+        isRepresentative: "desc", //대표메뉴 맨 위로
+      },
+    });
+
+    if (!menu || menu.length === 0) {
+      logger.error(`카페 ID: ${cafeId}에 대한 메뉴가 없습니다.`);
+      throw new MenuNotFoundError(cafeId);
+    }
+
+    return menu;
   },
 };
 
