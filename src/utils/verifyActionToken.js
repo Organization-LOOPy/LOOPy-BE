@@ -1,17 +1,25 @@
-import { verifyActionTokenJwt,} from "../utils/actionToken.js";
+import { verifyActionTokenJwt } from "../utils/actionToken.js";
 
-export const verifyActionToken = (purpose) => async (req, res, next) => {
-  const token = req.headers['x-action-token'];
-  if (!token) return res.fail('액션 토큰 누락', 401);
-  try {
-    const p = verifyActionTokenJwt(token);
-    if (p.purpose !== purpose) return res.fail('목적 불일치', 403);
-    if (p.cafeId !== req.user.cafeId) return res.fail('카페 불일치', 403);
-    if (await isJtiUsed(p.jti)) return res.fail('이미 사용된 토큰', 409);
-    req.actionToken = p;
-    await markJtiUsed(p.jti);
-    next();
-  } catch (e) {
-    return res.fail('유효하지 않은/만료된 토큰', 401);
-  }
+// 원하는 스코프를 인자로 받음
+export const verifyActionToken = (expected, { required = true, strictCafe = true } = {}) => {
+  return (req, res, next) => {
+    const token = req.get('x-action-token');
+    if (!token) {
+      if (required) return res.fail('액션 토큰 누락', 401);
+      return next();
+    }
+    try {
+      const p = verifyActionTokenJwt(token);
+      const actual = p.scope ?? p.purpose;   // ← 둘 다 지원
+      if (actual !== expected) return res.fail('목적 불일치', 403);
+      if (strictCafe && p.cafeId != null && req.user?.cafeId != null &&
+          Number(p.cafeId) !== Number(req.user.cafeId)) {
+        return res.fail('카페 불일치', 403);
+      }
+      req.actionToken = p;
+      next();
+    } catch {
+      return res.fail('유효하지 않은/만료된 토큰', 401);
+    }
+  };
 };

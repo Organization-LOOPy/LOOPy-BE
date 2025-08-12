@@ -8,20 +8,44 @@ import {
   verifyChallengeForUser,
 } from "../controllers/admin.user.controller.js";
 
-import { responseHandler } from '../middlewares/responseHandler.js';
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
+import { requireCafeContext } from "../middlewares/requireCafeContext.js";
 import { verifyActionToken } from "../utils/verifyActionToken.js";
+import { attachCafeId } from "../middlewares/attachCafeId.js";
 
 const router = express.Router();
 
-router.use(authenticateJWT);
-router.use(responseHandler);
+router.use(authenticateJWT(['OWNER'])); 
+router.use(attachCafeId());      
+router.use(requireCafeContext());            
 
 router.get("/users/search", getUserByPhone);
-router.post("/users/:userId/stamps", verifyActionToken("ADD_STAMP"), addStampToUser);
+
+router.post(
+  "/users/:userId/stamps",
+  verifyActionToken("ADD_STAMP", { required: false, strictCafe: false }),
+  addStampToUser
+);
+
 router.post("/qrs/verify", verifyQRToken);
-router.patch("/users/:userId/points", useUserPoint);
-router.patch("/users/:userId/coupons/:couponId", useUserCoupon);
-router.post("/users/:userId/challenges/:challengeId/verify", verifyChallengeForUser);
+
+router.patch(
+  "/users/:userId/points",
+  verifyActionToken("USE_POINT", { required: false, strictCafe: false }),
+  useUserPoint
+);
+
+router.patch(
+  "/users/:userId/coupons/:couponId",
+  verifyActionToken("USE_COUPON", { required: false, strictCafe: false }),
+  useUserCoupon
+);
+
+router.post(
+  "/users/:userId/challenges/:challengeId/verify",
+  verifyActionToken("VERIFY_CHALLENGE", { required: false, strictCafe: false }),
+  verifyChallengeForUser
+);
 
 export default router;
+
