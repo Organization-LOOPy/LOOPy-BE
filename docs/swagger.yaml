@@ -1774,7 +1774,7 @@ paths:
             schema:
               type: number
               format: double
-              example: 127.0276
+              example: 126.9374
           - name: y
             in: query
             description: Y 좌표 (위도)
@@ -1782,7 +1782,7 @@ paths:
             schema:
               type: number
               format: double
-              example: 37.5579
+              example: 37.5581
           - name: zoom
             in: query
             description: 지도 줌 레벨
