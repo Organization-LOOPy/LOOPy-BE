@@ -70,8 +70,6 @@ export async function preferenceTopK(userId, opts = {}) {
       with_vector: true,
     });
 
-    console.log("Retrieve result:", JSON.stringify(prefPoint, null, 2));
-
     const point = Array.isArray(prefPoint) ? prefPoint[0] : null;
 
     if (!point) {
