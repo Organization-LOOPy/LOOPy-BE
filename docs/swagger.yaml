@@ -2685,69 +2685,69 @@ paths:
   #                   type: boolean
 
   /api/v1/users/me/stampbooks/{stampBookId}/convert:
-  post:
-    summary: 스탬프 → 포인트 환전
-    description: |
-      해당 스탬프북의 **모든 스탬프를 포인트로 환전**합니다.
-      환전 성공 시 스탬프북은 `converted` 상태가 되며 `currentCount`가 0으로 초기화됩니다.
-    tags: [Stamp]
-    security:
-      - bearerAuth: []
-    parameters:
-      - in: path
-        name: stampBookId
-        required: true
-        schema: { type: integer }
-    responses:
-      '200':
-        description: 환전 성공
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/StampConversionSuccessResponse'
-            example:
-              status: SUCCESS
-              code: 200
-              message: "카페 위니의 5개의 스탬프가 10포인트로 환전되었습니다."
-              data:
-                stampBookId: 12
-                cafeId: 3
-                cafeName: 카페 위니
-                stampCount: 5
-                pointPerStamp: 2
-                pointAmount: 10
-                remainingStampCount: 0
-                convertedAt: "2025-07-31T09:10:30.000Z"
-      '400':
-        description: 잘못된 요청 (예: 스탬프 0개, 이미 환전된 상태, 유효하지 않은 ID 등)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-            examples:
-              NO_STAMPS:
-                summary: 환전 가능한 스탬프 없음
-                value: { status: FAIL, code: 400, message: 환전 가능한 스탬프가 없습니다. }
-              ALREADY_CONVERTED:
-                summary: 이미 환전(종료)된 스탬프북
-                value: { status: FAIL, code: 400, message: 이미 환전(종료)된 스탬프북입니다. }
-              INVALID_ID:
-                summary: 유효하지 않은 스탬프북 ID
-                value: { status: FAIL, code: 400, message: 유효하지 않은 스탬프북 ID입니다. }
-      '403':
-        description: 접근 권한 없음 (본인 소유 아님)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-            example: { status: FAIL, code: 403, message: 본인의 스탬프북만 환전할 수 있습니다. }
-      '404':
-        description: 스탬프북을 찾을 수 없음
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
-            example: { status: FAIL, code: 404, message: 존재하지 않는 스탬프buk입니다. }
+    post:
+      summary: 스탬프 → 포인트 환전
+      description: |
+        해당 스탬프북의 **모든 스탬프를 포인트로 환전**합니다.
+        환전 성공 시 스탬프북은 `converted` 상태가 되며 `currentCount`가 0으로 초기화됩니다.
+      tags: [Stamp]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: stampBookId
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: 환전 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StampConversionSuccessResponse'
+              example:
+                status: SUCCESS
+                code: 200
+                message: "카페 위니의 5개의 스탬프가 10포인트로 환전되었습니다."
+                data:
+                  stampBookId: 12
+                  cafeId: 3
+                  cafeName: 카페 위니
+                  stampCount: 5
+                  pointPerStamp: 2
+                  pointAmount: 10
+                  remainingStampCount: 0
+                  convertedAt: "2025-07-31T09:10:30.000Z"
+        '400':
+          description: 잘못된 요청 (예: 스탬프 0개, 이미 환전된 상태, 유효하지 않은 ID 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                NO_STAMPS:
+                  summary: 환전 가능한 스탬프 없음
+                  value: { status: FAIL, code: 400, message: 환전 가능한 스탬프가 없습니다. }
+                ALREADY_CONVERTED:
+                  summary: 이미 환전(종료)된 스탬프북
+                  value: { status: FAIL, code: 400, message: 이미 환전(종료)된 스탬프북입니다. }
+                INVALID_ID:
+                  summary: 유효하지 않은 스탬프북 ID
+                  value: { status: FAIL, code: 400, message: 유효하지 않은 스탬프북 ID입니다. }
+        '403':
+          description: 접근 권한 없음 (본인 소유 아님)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { status: FAIL, code: 403, message: 본인의 스탬프북만 환전할 수 있습니다. }
+        '404':
+          description: 스탬프북을 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example: { status: FAIL, code: 404, message: 존재하지 않는 스탬프buk입니다. }
 
   /api/v1/users/me/stampbooks/{stampBookId}/extend:
     patch:
