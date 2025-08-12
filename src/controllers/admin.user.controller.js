@@ -1,10 +1,11 @@
-import { PrismaClient } from '@prisma/client';
-import { PointTransactionType } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient, PointTransactionType } = pkg;
+
 const prisma = new PrismaClient();
 
-import { signActionToken } from '../utils/actionToken.js';
-import { markJtiUsed } from '../utils/actionToken.js';
+import { signActionToken, markJtiUsed } from '../utils/actionToken.js';
 
+// 전화번호 고객 조회
 const normalizePhone = (v = '') => v.replace(/\D/g, '');
 const formatPhoneDisplay = (digits) => {
   if (digits.length === 11) return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
@@ -12,7 +13,6 @@ const formatPhoneDisplay = (digits) => {
   return digits;
 };
 
-// 전화번호 고객 조회
 export const getUserByPhone = async (req, res, next) => {
   const cafeId = req.user.cafeId;
 
@@ -146,7 +146,6 @@ export const addStampToUser = async (req, res, next) => {
     let updatedBook;
 
     await prisma.$transaction(async (tx) => {
-      // 1) 최신 진행 중 스탬프북
       let book = await tx.stampBook.findFirst({
         where: {
           userId,
@@ -159,7 +158,6 @@ export const addStampToUser = async (req, res, next) => {
         orderBy: { createdAt: 'desc' },
       });
 
-      // 2) 없으면 생성 (14일 만료)
       if (!book) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
@@ -172,32 +170,29 @@ export const addStampToUser = async (req, res, next) => {
             goalCount: 10,
             isCompleted: false,
             isConverted: false,
-            startedAt: now,          // ★ 필수
-            status: 'active',        // ★ 필수 (enum StampBookStatus)
+            startedAt: now,         
+            status: 'active',       
             expiresAt,
           },
         });
       }
 
-      // 3) 목표 초과 방지
       if (book.currentCount >= book.goalCount) {
         throw Object.assign(new Error("GOAL_EXCEEDED"), { code: "GOAL_EXCEEDED" });
       }
 
       const now = new Date();
 
-      // 4) 스탬프 1개 생성 (스키마에 맞춰 필수값만)
       await tx.stamp.create({
         data: {
           stampBookId: book.id,
-          stampedAt: now,       // ★ 필수
-          source: 'owner',      // 자유 문자열 (예: 'owner' | 'qr' | 'pos')
-          method: 'MANUAL',     // VarChar(20) — 현재 문자열로 OK
-          // note, latitude, longitude, stampImageUrl 등은 선택
+          stampedAt: now,       
+          source: 'owner',      
+          method: 'MANUAL',     
         },
       });
 
-      // 5) 카운트 +1
+
       updatedBook = await tx.stampBook.update({
         where: { id: book.id },
         data: {
@@ -207,14 +202,13 @@ export const addStampToUser = async (req, res, next) => {
         select: { id: true, currentCount: true, goalCount: true, isCompleted: true, status: true },
       });
 
-      // 6) 목표 달성 시 완료 플래그/타임만
       if (!updatedBook.isCompleted && updatedBook.currentCount >= updatedBook.goalCount) {
         updatedBook = await tx.stampBook.update({
           where: { id: book.id },
           data: {
             isCompleted: true,
             completedAt: now,
-            status: 'completed',  // enum에 'completed' 있으니 여기서 갱신 OK
+            status: 'completed',  
           },
           select: { id: true, currentCount: true, goalCount: true, isCompleted: true, status: true },
         });
@@ -222,7 +216,7 @@ export const addStampToUser = async (req, res, next) => {
     });
 
     if (req.actionToken?.jti) {
-      await markJtiUsed(req.actionToken.jti); // 성공 후 1회만 소모
+      await markJtiUsed(req.actionToken.jti); 
     }
 
     return res.success({
@@ -239,21 +233,21 @@ export const addStampToUser = async (req, res, next) => {
   }
 };
 
-  
-// QR로 고객 식별
+// QR로 고객 식별 (이제는 userId 기반 조회)
 export const verifyQRToken = async (req, res, next) => {
   try {
-    const qrToken = req.body?.qrToken;
+    const userId = req.body?.userId; // ← 프론트에서 QR → userId 변환 후 전달
     const cafeId = req.user?.cafeId;
-    if (!qrToken) {
-      return res.error({ errorCode: 'BAD_REQUEST', reason: 'QR 토큰이 필요합니다.', data: null }, 400);
+
+    if (!userId) {
+      return res.error({ errorCode: 'BAD_REQUEST', reason: 'userId가 필요합니다.', data: null }, 400);
     }
     if (!cafeId) {
       return res.error({ errorCode: 'CAFE_REQUIRED', reason: '사장님 토큰에 카페 정보가 없습니다.', data: null }, 403);
     }
 
     const user = await prisma.user.findUnique({
-      where: { qrToken },
+      where: { id: userId },
       select: {
         id: true,
         nickname: true,
@@ -266,19 +260,18 @@ export const verifyQRToken = async (req, res, next) => {
           where: {
             usedAt: null,
             expiredAt: { gte: new Date() },
-            // ← 관계 필터는 is: 로 감싸야 함
             couponTemplate: { is: { cafeId } },
           },
           include: { couponTemplate: true },
         },
       },
     });
+
     if (!user) {
-      return res.error({ errorCode: 'USER_NOT_FOUND', reason: '해당 QR의 고객 정보를 찾을 수 없습니다.', data: null }, 404);
+      return res.error({ errorCode: 'USER_NOT_FOUND', reason: '해당 고객 정보를 찾을 수 없습니다.', data: null }, 404);
     }
 
     const now = new Date();
-
     const [totalStampCount, earnedAgg, spentAgg, activeChallenges] = await Promise.all([
       prisma.stamp.count({ where: { userId: user.id } }),
       prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'EARNED' }, _sum: { amount: true } }),
@@ -287,12 +280,11 @@ export const verifyQRToken = async (req, res, next) => {
         where: {
           userId: user.id,
           completedAt: null,
-          // ← include 내부 where 대신 관계 where 사용
           challenge: {
             is: {
               isActive: true,
               startDate: { lte: now },
-              endDate:   { gte: now },
+              endDate: { gte: now },
               availableCafes: { some: { cafeId } },
             },
           },
@@ -311,13 +303,11 @@ export const verifyQRToken = async (req, res, next) => {
       expiredAt: uc.expiredAt,
     }));
 
-    const ongoingChallenges = activeChallenges
-      .filter((cp) => cp.challenge)
-      .map((cp) => ({
-        challengeId: cp.challenge.id,
-        title: cp.challenge.title,
-        expiredAt: cp.challenge.endDate,
-      }));
+    const ongoingChallenges = activeChallenges.map((cp) => ({
+      challengeId: cp.challenge.id,
+      title: cp.challenge.title,
+      expiredAt: cp.challenge.endDate,
+    }));
 
     return res.success({
       userId: user.id,

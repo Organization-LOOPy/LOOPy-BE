@@ -79,12 +79,12 @@ export const updateUserPreferences = async (req, res, next) => {
     console.log(result);
     const userId = req.user.id;
     console.log(userId);
-    await userPreferenceEmbedding(
-      result.preferredStore,
-      result.preferredTakeout,
-      result.preferredMenu,
-      userId
-    );
+    await userPreferenceEmbedding({
+      preferredStore: result.preferredStore,
+      preferredTakeout: result.preferredTakeout,
+      preferredMenu: result.preferredMenu,
+      userId: req.user.id,
+    });
     return res.success({
       message: "선호 키워드가 저장되었습니다.",
       storeFilters: result.preferredStore,

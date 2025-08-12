@@ -2923,64 +2923,74 @@ paths:
                   $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/users/me/notification:
-  get:
-    tags:
-      - Notifications
-    summary: 알림 목록 조회
-    description: 로그인한 사용자의 모든 알림을 최신순으로 조회합니다.
-    security:
-      - bearerAuth: []
-    responses:
-      '200':
-        description: 알림 목록 조회 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: 알림 목록 조회 성공
-                data:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      notificationId:
-                        type: integer
-                        example: 42
-                      title:
-                        type: string
-                        example: 스탬프 적립 조건이 변경됐어요!
-                      content:
-                        type: string
-                        example: 8월 1일부터 스탬프는 5,000원 이상 결제 시 적립됩니다.
-                      type:
-                        type: string
-                        enum: [cafe, stamp, review]
-                      isRead:
-                        type: boolean
-                        example: false
-                      createdAt:
-                        type: string
-                        format: date-time
-                        example: 2025-07-31T13:12:00.000Z
-                      cafe:
-                        type: object
-                        nullable: true
-                        properties:
-                          id:
-                            type: integer
-                            example: 3
-                          name:
-                            type: string
-                            example: 루피커피
-      '401':
-        description: 인증 실패 (JWT 누락 또는 만료)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Notifications
+      summary: 알림 목록 조회
+      description: 로그인한 사용자의 모든 알림을 최신순으로 조회합니다. `content` 필드는 문자열 또는 객체(JSON) 형식일 수 있습니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 알림 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 알림 목록 조회 성공
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        notificationId:
+                          type: integer
+                          example: 42
+                        cafeId:
+                          type: integer
+                          nullable: true
+                          example: 3
+                        cafeName:
+                          type: string
+                          nullable: true
+                          example: 루피커피
+                        title:
+                          type: string
+                          example: 스탬프 적립 조건이 변경됐어요!
+                        content:
+                          oneOf:
+                            - type: string
+                              example: 8월 1일부터 스탬프는 5,000원 이상 결제 시 적립됩니다.
+                            - type: object
+                              example:
+                                conditionType: AMOUNT
+                                minAmount: 5000
+                                stampPerAmount: 1
+                                drinkCount: null
+                                stampPerCount: null
+                                rewardType: DISCOUNT
+                                discountAmount: 1500
+                                menuId: null
+                        type:
+                          type: string
+                          enum: [cafe, stamp, review]
+                        isRead:
+                          type: boolean
+                          example: false
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: 2025-07-31T13:12:00.000Z
+        '401':
+          description: 인증 실패 (JWT 누락 또는 만료)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 
   /api/v1/notification/{notificationId}:
     get:
@@ -4072,56 +4082,10 @@ paths:
 
   /api/v1/owner/stamps/stamp-images:
     post:
-      summary: 스탬프 사진 등록
-      description: 사장님이 스탬프 이미지를 업로드합니다. 기본 스탬프 외 추가 업로드는 최대 2개까지 가능합니다.
-      tags: [Admin Cafe]
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                stampImage:
-                  type: string
-                  format: binary
-                  description: 업로드할 이미지 파일 (jpg, png 등)
-      responses:
-        '201':
-          description: 스탬프 이미지 업로드 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 스탬프 이미지가 업로드되었습니다.
-                  data:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                        example: 3
-                      cafeId:
-                        type: integer
-                        example: 4
-                      imageUrl:
-                        type: string
-                        example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1690819200000_stamp.jpg
-                      createdAt:
-                        type: string
-                        format: date-time
-                        example: 2025-07-31T14:10:00.000Z
-
-  /api/v1/owner/stamps/stamp-images:
-    post:
       tags: [Admin Cafe]
       summary: 스탬프 이미지 업로드
-      description: 
-        사장님이 스탬프 이미지를 업로드합니다. 기본 이미지 1개 외에 최대 2개까지 등록 가능합니다.
+      description: |
+        사장님이 스탬프 이미지를 업로드합니다. 카페별 최대 2개까지 등록 가능합니다.
       security:
         - bearerAuth: []
       requestBody:
@@ -4137,6 +4101,12 @@ paths:
                     type: string
                     format: binary
                   maxItems: 2
+              required:
+                - images
+            encoding:
+              images:
+                style: form
+                explode: true
       responses:
         '201':
           description: 이미지 업로드 성공
@@ -4150,13 +4120,100 @@ paths:
                     example: 스탬프 이미지 업로드 성공
                   data:
                     type: array
+                    description: 업로드된 스탬프 이미지 목록
                     items:
-                      type: string
-                      example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/stamps/1691223650_1.png
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 3
+                        imageUrl:
+                          type: string
+                          example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/xxxxxxxx-xxxx.png
         '400':
-          description: 유효하지 않은 요청 또는 이미지 2개 초과
+          description: 유효하지 않은 요청(파일 없음, 2개 초과 등)
         '401':
-          description: 인증되지 않은 사용자
+          description: 인증 실패
+        '415':
+          description: 지원하지 않는 파일 형식
+
+    get:
+      tags: [Admin Cafe]
+      summary: 스탬프 이미지 전체 조회
+      description: 로그인된 사장님의 카페에 등록된 스탬프 이미지 목록을 최신순으로 반환합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지 조회 성공
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 12
+                        imageUrl:
+                          type: string
+                          example: https://your-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/xxxxxxxx-xxxx.png
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: 2025-08-11T05:00:00.000Z
+                        updatedAt:
+                          type: string
+                          format: date-time
+                          example: 2025-08-11T05:00:00.000Z
+        '401':
+          description: 인증 실패
+        '404':
+          description: 카페를 찾을 수 없음
+
+  /api/v1/admin/stamps/stamp-images/{imageId}:
+    delete:
+      tags: [Admin Cafe]
+      summary: 스탬프 이미지 삭제
+      description: 로그인된 사장님의 카페에 등록된 스탬프 이미지 1장을 삭제합니다. (S3에서 삭제 후 DB 레코드 삭제)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: imageId
+          required: true
+          schema:
+            type: integer
+          description: 삭제할 스탬프 이미지의 ID
+      responses:
+        '200':
+          description: 스탬프 이미지 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 스탬프 이미지 삭제 성공
+                  success:
+                    type: boolean
+                    example: true
+        '400':
+          description: 잘못된 요청 (imageId 유효하지 않음)
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음 (해당 카페의 소유자가 아님)
+        '404':
+          description: 스탬프 이미지가 존재하지 않음
 
   /api/v1/owner/stamps/stamp-policy:
     post:
@@ -5069,6 +5126,97 @@ paths:
                 example:
                   reason: 해당 전화번호의 고객을 찾을 수 없습니다.
 
+  /admin/cafes/{cafeId}/notification:
+    post:
+      tags:
+        - Admin Notification
+      summary: 사장님이 카페 고객에게 알림 메시지 전송
+      description: |
+        지정한 카페의 **알림 허용 설정된 고객**에게 사장님 메시지를 전송합니다.
+        - 메시지는 최대 500자까지 입력 가능
+        - JWT 인증 필요
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          description: 카페 ID
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  maxLength: 500
+                  example: "오늘부터 아메리카노 1+1 이벤트 진행합니다! 🎉"
+              required:
+                - message
+      responses:
+        '200':
+          description: 알림 메시지 전송 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: object
+                    nullable: true
+                    example: null
+                  success:
+                    type: string
+                    example: "알림 메시지가 전송되었습니다."
+        '400':
+          description: 잘못된 요청 (message 누락 또는 500자 초과)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: object
+                    example:
+                      errorCode: UNKNOWN
+                      reason: "알림 메시지를 입력해주세요."
+                      data: null
+                  success:
+                    type: string
+                    nullable: true
+                    example: null
+        '404':
+          description: 카페를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: object
+                    example:
+                      errorCode: UNKNOWN
+                      reason: "해당 카페를 찾을 수 없습니다."
+                      data: null
+                  success:
+                    type: string
+                    nullable: true
+                    example: null
+
   /api/v1/owner/users/{userId}/stamps:
     post:
       summary: 특정 사용자에게 스탬프 1개 적립
@@ -5236,6 +5384,88 @@ paths:
                     type: string
                     nullable: true
                     example: null
+
+  /api/v1/owner/qrs/verify:
+    post:
+      tags: [Owner]
+      summary: QR로 고객 식별 (userId 기반)
+      description: 프론트가 QR을 해석해 전달한 userId로, 사장님 카페 컨텍스트에서 고객의 스탬프/포인트/보유 쿠폰/참여 중 챌린지를 조회합니다. 컨트롤러/경로명은 verifyQRToken을 유지합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyQRTokenRequest'
+            example:
+              userId: 123
+      responses:
+        '200':
+          description: 고객 정보 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyQRTokenSuccessResponse'
+              example:
+                resultType: SUCCESS
+                error: null
+                success:
+                  userId: 123
+                  nickname: "루피25"
+                  stamp:
+                    totalCount: 28
+                    currentStampBook:
+                      stampBookId: 45
+                      currentCount: 7
+                      goalCount: 10
+                  point:
+                    total: 326
+                  availableCoupons:
+                    - userCouponId: 901
+                      name: "아메리카노 200원 할인쿠폰"
+                      description: "아메리카노 200원 할인"
+                      expiredAt: "2025-09-15T00:00:00.000Z"
+                  ongoingChallenges:
+                    - challengeId: 33
+                      title: "친구와 함께하는 카공 챌린지"
+                      expiredAt: "2025-09-15T00:00:00.000Z"
+        '400':
+          description: 잘못된 요청 (userId 누락 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                resultType: ERROR
+                error:
+                  code: BAD_REQUEST
+                  message: "userId가 필요합니다."
+                success: null
+        '403':
+          description: 사장님 토큰에 카페 정보 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                resultType: ERROR
+                error:
+                  code: CAFE_REQUIRED
+                  message: "사장님 토큰에 카페 정보가 없습니다."
+                success: null
+        '404':
+          description: 고객 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                resultType: ERROR
+                error:
+                  code: USER_NOT_FOUND
+                  message: "해당 고객 정보를 찾을 수 없습니다."
+                success: null
 
 
 
@@ -6989,6 +7219,83 @@ components:
         data:
           nullable: true
           example: null
+
+    VerifyQRTokenRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: integer
+          description: 프론트에서 QR 해석 후 전달하는 고객 ID
+          example: 123
+
+    VerifyQRTokenSuccessResponse:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: SUCCESS
+        error:
+          type: "null"
+          example: null
+        success:
+          type: object
+          properties:
+            userId:
+              type: integer
+            nickname:
+              type: string
+            stamp:
+              type: object
+              properties:
+                totalCount:
+                  type: integer
+                  description: 사용자 전체 스탬프 수
+                currentStampBook:
+                  oneOf:
+                    - $ref: '#/components/schemas/CurrentStampBook'
+                    - type: "null"
+                  description: 현재 카페에서 진행 중인 스탬프북 (없으면 null)
+            point:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: EARNED - SPENT
+            availableCoupons:
+              type: array
+              items:
+                $ref: '#/components/schemas/AvailableCoupon'
+            ongoingChallenges:
+              type: array
+              items:
+                $ref: '#/components/schemas/OngoingChallenge'
+
+    CurrentStampBook:
+      type: object
+      properties:
+        stampBookId: { type: integer }
+        currentCount: { type: integer }
+        goalCount: { type: integer }
+
+    AvailableCoupon:
+      type: object
+      properties:
+        userCouponId: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        expiredAt:
+          type: string
+          format: date-time
+
+    OngoingChallenge:
+      type: object
+      properties:
+        challengeId: { type: integer }
+        title: { type: string }
+        expiredAt:
+          type: string
+          format: date-time
 
 
 

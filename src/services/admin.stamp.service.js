@@ -14,6 +14,7 @@ export const uploadStampImagesService = async (userId, files) => {
   if (!files || files.length === 0) {
     throw new NoStampImageError();
   }
+  const MAX_TOTAL_IMAGES = 4;
 
   return await prisma.$transaction(async (tx) => {
     const cafe = await tx.cafe.findFirst({
@@ -26,12 +27,13 @@ export const uploadStampImagesService = async (userId, files) => {
       where: { cafeId: cafe.id },
     });
 
-    const capacity = 2 - existingCount;
+    const capacity = MAX_TOTAL_IMAGES - existingCount;
+
     if (capacity <= 0) {
-      throw new StampImageLimitExceededError();
+      throw new StampImageLimitExceededError(); 
     }
     if (files.length > capacity) {
-      throw new StampImageLimitExceededError();
+      throw new StampImageLimitExceededError(); 
     }
 
     const results = [];
@@ -46,6 +48,7 @@ export const uploadStampImagesService = async (userId, files) => {
     return results;
   });
 };
+
 
 // 스탬프 정책 등록 
 export const createStampPolicy = async (userId, policyData) => {
@@ -138,9 +141,9 @@ export const updateStampPolicy = async (userId, policyData) => {
   });
 
   // 스탬프 정책 변경 시 고객에게 알림 전송
-  const bookmarkedUsers = await prisma.userBookmark.findMany({
-    where: { cafeId: cafe.id },
-    select: { userId: true },
+  const recipients = await prisma.user.findMany({
+    where: { allowKakaoAlert: true },
+    select: { id: true },
   });
 
   const content = JSON.stringify({
@@ -154,9 +157,9 @@ export const updateStampPolicy = async (userId, policyData) => {
     menuId: updated.menuId,
   }, null, 2);
 
-  if (bookmarkedUsers.length > 0) {
-    const notifications = bookmarkedUsers.map(({ userId }) => ({
-      userId,
+  if (recipients.length > 0) {
+    const notifications = recipients.map(({ id }) => ({
+      userId: id,
       cafeId: cafe.id,
       type: 'stamp',
       title: '스탬프 정책이 변경되었습니다.',
