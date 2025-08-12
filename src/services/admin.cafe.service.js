@@ -344,6 +344,7 @@ export const deleteCafePhoto = async (userId, photoId) => {
 };
 
 export const getCafeMenus = async (userId) => {
+
   const cafe = await prisma.cafe.findFirst({
     where: { ownerId: userId },
     select: { id: true },

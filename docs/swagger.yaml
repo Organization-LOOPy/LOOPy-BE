@@ -4042,13 +4042,6 @@ paths:
       description: 특정 카페에 등록된 사진 중 createdAt 기준으로 가장 먼저 등록된 사진 1장을 조회합니다.
       tags:
         - CafePhoto
-      parameters:
-        - in: path
-          name: cafeId
-          required: true
-          schema:
-            type: integer
-          description: 조회할 카페의 ID
       responses:
         200:
           description: 첫 번째 사진 조회 성공
