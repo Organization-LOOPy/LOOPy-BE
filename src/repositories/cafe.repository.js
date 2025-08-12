@@ -147,6 +147,12 @@ export const cafeRepository = {
 
     return menu;
   },
+  async findById(cafeId) {
+    const cafe = await prisma.cafe.findUnique({
+      where: { id: cafeId },
+    });
+    return cafe;
+  },
 };
 
 export const cafeNotificationRepository = {

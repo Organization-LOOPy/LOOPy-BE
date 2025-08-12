@@ -88,9 +88,33 @@ async function getUserPreferredAreaCond(userId) {
   }
 }
 
+function applyExplicitFiltersToRows(
+  rows,
+  selectedStoreFilters,
+  selectedMenuFilters,
+  selectedTakeOutFilters
+) {
+  if (
+    selectedStoreFilters.length === 0 &&
+    selectedMenuFilters.length === 0 &&
+    selectedTakeOutFilters.length === 0
+  )
+    return rows;
+
+  const hasAll = (obj, keys) =>
+    keys.every((k) => obj?.[k] === true || obj?.[k]?.equals === true);
+
+  return rows.filter((c) => {
+    const okStore = hasAll(c.storeFilters ?? {}, selectedStoreFilters);
+    const okMenu = hasAll(c.menuFilters ?? {}, selectedMenuFilters);
+    const okTake = hasAll(c.takeOutFilters ?? {}, selectedTakeOutFilters);
+    return okStore && okMenu && okTake;
+  });
+}
+
 export const cafeSearchService = {
   /**
-   * 요구사항(개정):
+   * 요구사항:
    * 1) 처음 리스팅: preference 임베딩 Top-K 추천 (지역은 user_preference에 명시된 지역 사용)
    * 2) 검색 시: 지역 미지정이면 전국 단위, 지정 시 해당 지역만
    * 3) 검색 결과 없음 → Top-15 유사 카페(임베딩) 폴백 (검색어 없고 필터만 있어도 폴백)
@@ -109,8 +133,10 @@ export const cafeSearchService = {
     region3,
     userId
   ) {
+    // x, y 필수
     const refinedX = parseFloat(x);
     const refinedY = parseFloat(y);
+
     const query = normalizeQuery(searchQuery);
 
     const selectedStoreFilters = pickTrueKeys(storeFilters);
@@ -118,47 +144,170 @@ export const cafeSearchService = {
     const selectedMenuFilters = pickTrueKeys(menuFilters);
     const explicitRegionCond = buildRegionCondition(region1, region2, region3);
 
+    const hasSearchQuery = !!query;
+    const hasAnyFilter =
+      selectedStoreFilters.length > 0 ||
+      selectedMenuFilters.length > 0 ||
+      selectedTakeOutFilters.length > 0;
+    const hasRegionFilter = hasAnyKeys(explicitRegionCond);
+    const isInitialRequest =
+      !hasSearchQuery && !hasAnyFilter && !hasRegionFilter;
+
+    // 1) 처음 리스팅: preference 임베딩 Top-K 추천 (+ user_preference 지역 적용)
+    if (isInitialRequest) {
+      const pref = await preferenceTopK(userId, { topK: 15 });
+      const cafeIds = pref?.cafeIds ?? [];
+      if (cafeIds.length === 0) {
+        return {
+          fromNLP: true,
+          message: null,
+          data: [],
+          nextCursor: null,
+          hasMore: false,
+        };
+      }
+      let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
+
+      // 사용자 선호 지역이 있다면 적용
+      const preferredArea =
+        typeof getUserPreferredAreaCond === "function"
+          ? await getUserPreferredAreaCond(userId)
+          : {};
+      if (hasAnyKeys(preferredArea)) {
+        rows = rows.filter((c) => {
+          if (
+            preferredArea.region1DepthName &&
+            c.region1DepthName !== preferredArea.region1DepthName
+          )
+            return false;
+          if (
+            preferredArea.region2DepthName &&
+            c.region2DepthName !== preferredArea.region2DepthName
+          )
+            return false;
+          if (
+            preferredArea.region3DepthName &&
+            c.region3DepthName !== preferredArea.region3DepthName
+          )
+            return false;
+          return true;
+        });
+      }
+
+      return {
+        fromNLP: true,
+        message: null,
+        data: applyDistanceAndSort(rows, refinedX, refinedY),
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
+
+    // 2) 검색: 지역 미지정이면 전국, 지정 시 해당 지역만 (RDB 하드 검색 우선)
     const whereConditions = { AND: [] };
-
-    // 지역 조건
-    if (hasAnyKeys(explicitRegionCond)) {
-      whereConditions.AND.push(explicitRegionCond);
-    }
-
-    // 검색어 조건
-    if (query) {
-      whereConditions.AND.push({ name: { contains: query } });
-    }
-
-    // 스토어 필터
+    if (hasRegionFilter) whereConditions.AND.push(explicitRegionCond);
+    if (hasSearchQuery) whereConditions.AND.push({ name: { contains: query } });
     selectedStoreFilters.forEach((f) =>
       whereConditions.AND.push({ storeFilters: { path: [f], equals: true } })
     );
-
-    // 메뉴 필터
     selectedMenuFilters.forEach((f) =>
       whereConditions.AND.push({ menuFilters: { path: [f], equals: true } })
     );
-
-    // 테이크아웃 필터
     selectedTakeOutFilters.forEach((f) =>
       whereConditions.AND.push({ takeOutFilters: { path: [f], equals: true } })
     );
 
-    // 바로 RDB 조회
-    const basic = await cafeSearchRepository.findCafeByInfos(
+    const hardResults = await cafeSearchRepository.findCafeByInfos(
       whereConditions,
       cursor,
       userId
     );
+    const hardRows = hardResults?.cafes ?? [];
 
-    const cafes = basic?.cafes ?? [];
+    if (hardRows.length > 0) {
+      return {
+        fromNLP: false,
+        message: null,
+        data: applyDistanceAndSort(hardRows, refinedX, refinedY),
+        nextCursor: hardResults?.nextCursor ?? null,
+        hasMore: hardResults?.hasMore ?? false,
+      };
+    }
+
+    // 3) RDB 결과 없음 → 임베딩 폴백(Top-15). 검색어 없고 필터만 있어도 폴백.
+    const filterQuery =
+      typeof buildQueryFromFilters === "function"
+        ? buildQueryFromFilters(
+            storeFilters ?? {},
+            takeOutFilters ?? {},
+            menuFilters ?? {}
+          )
+        : "";
+    const embeddingQuery = hasSearchQuery ? query : filterQuery;
+
+    let fallbackRows = [];
+    if (embeddingQuery) {
+      const nlpRes = await nlpSearch(embeddingQuery);
+      const fallbackIds = Array.isArray(nlpRes?.cafeIds)
+        ? nlpRes.cafeIds.slice(0, 15)
+        : [];
+      if (fallbackIds.length > 0) {
+        let rows = await cafeSearchRepository.findCafeByIds(
+          fallbackIds,
+          userId
+        );
+
+        // 2)의 지역 규칙 준수
+        if (hasRegionFilter) {
+          rows = rows.filter((c) => {
+            if (
+              explicitRegionCond.region1DepthName &&
+              c.region1DepthName !== explicitRegionCond.region1DepthName
+            )
+              return false;
+            if (
+              explicitRegionCond.region2DepthName &&
+              c.region2DepthName !== explicitRegionCond.region2DepthName
+            )
+              return false;
+            if (
+              explicitRegionCond.region3DepthName &&
+              c.region3DepthName !== explicitRegionCond.region3DepthName
+            )
+              return false;
+            return true;
+          });
+        }
+
+        // 선택된 필터도 JS 레벨에서 보수 적용(일관성)
+        rows = applyExplicitFiltersToRows(
+          rows,
+          selectedStoreFilters,
+          selectedMenuFilters,
+          selectedTakeOutFilters
+        );
+
+        fallbackRows = rows;
+      }
+    }
+
+    if (fallbackRows.length > 0) {
+      return {
+        fromNLP: true,
+        message: "검색 결과가 없어 유사 카페를 추천합니다.",
+        data: applyDistanceAndSort(fallbackRows, refinedX, refinedY),
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
+
+    // 폴백도 없으면 빈 결과
     return {
-      fromNLP: false,
-      message: null,
-      data: applyDistanceAndSort(cafes, refinedX, refinedY),
-      nextCursor: basic?.nextCursor ?? null,
-      hasMore: basic?.hasMore ?? false,
+      fromNLP: true,
+      message: "검색 결과가 없습니다.",
+      data: [],
+      nextCursor: null,
+      hasMore: false,
     };
   },
 
