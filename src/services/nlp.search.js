@@ -65,11 +65,12 @@ export async function preferenceTopK(userId, opts = {}) {
   try {
     // 사용자 벡터 조회
     const prefPoint = await qdrant.retrieve("user_preferences", {
-      ids: [String(userId)],
+      ids: [userId],
       with_payload: true,
       with_vectors: true,
     });
 
+    console.log(prefPoint);
     const point = Array.isArray(prefPoint) ? prefPoint[0] : null;
     const vector = point?.vector;
 
