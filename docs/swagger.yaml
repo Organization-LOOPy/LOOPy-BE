@@ -5385,6 +5385,88 @@ paths:
                     nullable: true
                     example: null
 
+  /api/v1/owner/qrs/verify:
+    post:
+      tags: [Owner]
+      summary: QR로 고객 식별 (userId 기반)
+      description: 프론트가 QR을 해석해 전달한 userId로, 사장님 카페 컨텍스트에서 고객의 스탬프/포인트/보유 쿠폰/참여 중 챌린지를 조회합니다. 컨트롤러/경로명은 verifyQRToken을 유지합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerifyQRTokenRequest'
+            example:
+              userId: 123
+      responses:
+        '200':
+          description: 고객 정보 조회 성공
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerifyQRTokenSuccessResponse'
+              example:
+                resultType: SUCCESS
+                error: null
+                success:
+                  userId: 123
+                  nickname: "루피25"
+                  stamp:
+                    totalCount: 28
+                    currentStampBook:
+                      stampBookId: 45
+                      currentCount: 7
+                      goalCount: 10
+                  point:
+                    total: 326
+                  availableCoupons:
+                    - userCouponId: 901
+                      name: "아메리카노 200원 할인쿠폰"
+                      description: "아메리카노 200원 할인"
+                      expiredAt: "2025-09-15T00:00:00.000Z"
+                  ongoingChallenges:
+                    - challengeId: 33
+                      title: "친구와 함께하는 카공 챌린지"
+                      expiredAt: "2025-09-15T00:00:00.000Z"
+        '400':
+          description: 잘못된 요청 (userId 누락 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                resultType: ERROR
+                error:
+                  code: BAD_REQUEST
+                  message: "userId가 필요합니다."
+                success: null
+        '403':
+          description: 사장님 토큰에 카페 정보 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                resultType: ERROR
+                error:
+                  code: CAFE_REQUIRED
+                  message: "사장님 토큰에 카페 정보가 없습니다."
+                success: null
+        '404':
+          description: 고객 없음
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                resultType: ERROR
+                error:
+                  code: USER_NOT_FOUND
+                  message: "해당 고객 정보를 찾을 수 없습니다."
+                success: null
+
 
 
 components:
@@ -7137,6 +7219,83 @@ components:
         data:
           nullable: true
           example: null
+
+    VerifyQRTokenRequest:
+      type: object
+      required: [userId]
+      properties:
+        userId:
+          type: integer
+          description: 프론트에서 QR 해석 후 전달하는 고객 ID
+          example: 123
+
+    VerifyQRTokenSuccessResponse:
+      type: object
+      properties:
+        resultType:
+          type: string
+          example: SUCCESS
+        error:
+          type: "null"
+          example: null
+        success:
+          type: object
+          properties:
+            userId:
+              type: integer
+            nickname:
+              type: string
+            stamp:
+              type: object
+              properties:
+                totalCount:
+                  type: integer
+                  description: 사용자 전체 스탬프 수
+                currentStampBook:
+                  oneOf:
+                    - $ref: '#/components/schemas/CurrentStampBook'
+                    - type: "null"
+                  description: 현재 카페에서 진행 중인 스탬프북 (없으면 null)
+            point:
+              type: object
+              properties:
+                total:
+                  type: integer
+                  description: EARNED - SPENT
+            availableCoupons:
+              type: array
+              items:
+                $ref: '#/components/schemas/AvailableCoupon'
+            ongoingChallenges:
+              type: array
+              items:
+                $ref: '#/components/schemas/OngoingChallenge'
+
+    CurrentStampBook:
+      type: object
+      properties:
+        stampBookId: { type: integer }
+        currentCount: { type: integer }
+        goalCount: { type: integer }
+
+    AvailableCoupon:
+      type: object
+      properties:
+        userCouponId: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        expiredAt:
+          type: string
+          format: date-time
+
+    OngoingChallenge:
+      type: object
+      properties:
+        challengeId: { type: integer }
+        title: { type: string }
+        expiredAt:
+          type: string
+          format: date-time
 
 
 
