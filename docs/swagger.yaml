@@ -5467,8 +5467,8 @@ paths:
                   message: "해당 고객 정보를 찾을 수 없습니다."
                 success: null
 
-    /api/v1/owner/users/{userId}/points/use:
-      post:
+  /api/v1/owner/users/{userId}/points/use:
+    post:
         summary: 포인트 전액 사용 (잔액 0 처리)
         description: 해당 사용자의 보유 포인트를 모두 사용 처리합니다. 원장(earned+refunded−spent) 합계를 0으로 만드는 `spent` 트랜잭션 1건을 생성합니다.
         tags: [Owner User]
@@ -5529,7 +5529,7 @@ paths:
     patch:
       summary: 쿠폰 사용 처리
       description: 지정한 사용자 쿠폰을 사용 처리합니다. 조건(본인 소유, 사용 전, 미만료, status=active)을 만족할 때 `usedAt`을 현재 시각으로 설정하고 `status`를 `used`로 변경합니다.
-      tags: [Owner, Coupon]
+      tags: [Owner]
       security:
         - bearerAuth: []
       parameters:
