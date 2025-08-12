@@ -7229,6 +7229,37 @@ components:
           description: 프론트에서 QR 해석 후 전달하는 고객 ID
           example: 123
 
+    UserReviewSummary:
+      type: object
+      properties:
+        reviewId:
+          type: integer
+          example: 5
+        userId:
+          type: integer
+          example: 1
+        cafeId:
+          type: integer
+          example: 3
+        cafeName:
+          type: string
+          example: 루피커피
+        title:
+          type: string
+          example: "(테스트) 분위기 좋고 커피 맛있는 재방문의사 100% 카페 후기"
+        content:
+          type: string
+          example: "(테스트) 카페에 도착하자마자 느껴지는 따뜻하고 아늑한 분위기..."
+        images:
+          type: array
+          items:
+            type: string
+            example: "https://loopy-review.s3.amazonaws.com/reviews/12345_image.png"
+        createdAt:
+          type: string
+          format: date-time
+          example: 2025-08-01T08:47:04.446Z
+          
     VerifyQRTokenSuccessResponse:
       type: object
       properties:
