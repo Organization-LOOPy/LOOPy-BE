@@ -67,17 +67,32 @@ export async function preferenceTopK(userId, opts = {}) {
     const prefPoint = await qdrant.retrieve("user_preferences", {
       ids: [userId],
       with_payload: true,
-      with_vectors: true,
+      with_vector: true,
     });
 
-    console.log(prefPoint);
-    const point = Array.isArray(prefPoint) ? prefPoint[0] : null;
-    const vector = point?.vector;
+    console.log("Retrieve result:", JSON.stringify(prefPoint, null, 2));
 
-    if (!Array.isArray(vector)) {
-      logger.info("preferenceTopK: no user vector");
+    const point = Array.isArray(prefPoint) ? prefPoint[0] : null;
+
+    if (!point) {
+      logger.info(`preferenceTopK: no point found for userId ${userId}`);
       return { cafeIds: [] };
     }
+
+    const vector = point?.vector;
+
+    if (!Array.isArray(vector) || vector.length === 0) {
+      logger.info(
+        `preferenceTopK: no valid vector for userId ${userId}, vector type: ${typeof vector}, length: ${
+          vector?.length
+        }`
+      );
+      return { cafeIds: [] };
+    }
+
+    logger.info(
+      `preferenceTopK: found vector with ${vector.length} dimensions for userId ${userId}`
+    );
 
     const hits = await qdrant.search("cafes", {
       vector,
@@ -85,9 +100,11 @@ export async function preferenceTopK(userId, opts = {}) {
       with_payload: true,
     });
 
+    console.log("Search hits:", hits?.length || 0);
     const cafeIds = (hits ?? []).map((h) => h?.payload?.cafeId).filter(Boolean);
 
     return { cafeIds };
+    ``;
   } catch (err) {
     logger.error("preferenceTopK: 오류", err);
     return { cafeIds: [] };
@@ -257,9 +274,9 @@ export const userPreferenceEmbedding = async ({
 
     const existing = await qdrant
       .retrieve("user_preferences", {
-        ids: [String(userId)],
+        id: userId,
         with_payload: true,
-        with_vectors: false,
+        with_vector: false,
       })
       .catch(() => null);
 
@@ -290,7 +307,9 @@ export const userPreferenceEmbedding = async ({
         },
       ],
     });
-    console.log(upsertRes);
+    console.log("Upsert response:", upsertRes);
+    console.log("Vector length:", vectorRes.length);
+    console.log("Vector sample:", vectorRes.slice(0, 5));
 
     return {
       ok: true,
