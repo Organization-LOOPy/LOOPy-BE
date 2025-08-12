@@ -76,10 +76,12 @@ export const updateUserPreferences = async (req, res, next) => {
       req.user.id,
       req.body.preferredKeywords
     );
+    const userId = req.user.id;
     await userPreferenceEmbedding(
       result.preferredStore,
       result.preferredTakeout,
-      result.preferredMenu
+      result.preferredMenu,
+      userId
     );
 
     return res.success({

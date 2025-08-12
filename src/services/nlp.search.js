@@ -167,15 +167,14 @@ export const cafeEmbedding = async (cafe) => {
       model: "text-embedding-3-small",
       input: summary,
     });
-    const vector = embeddingRes.data[0].embedding;
+    const vectorRes = embeddingRes.data[0].embedding;
 
-    const upsertRes = await qdrant.upsert({
-      collection_name: "cafes",
+    const upsertRes = await qdrant.upsert("cafes", {
       wait: true,
       points: [
         {
           id: cafe.id,
-          vector,
+          vector: vectorRes,
           payload: {
             cafeId: cafe.id,
             region1DepthName: cafe.region1DepthName ?? null,
@@ -187,7 +186,9 @@ export const cafeEmbedding = async (cafe) => {
       ],
     });
 
-    return { ok: true, upsertRes, summary, dim: vector.length };
+    console.log(upsertRes);
+
+    return { ok: true, upsertRes, summary, dim: vectorRes.length };
   } catch (err) {
     logger.error("카페정보 임베딩중 오류 발생:", err);
   }
@@ -245,21 +246,23 @@ ${raw}`,
 export const userPreferenceEmbedding = async (
   preferredStore,
   preferredTakeout,
-  preferredMenu
+  preferredMenu,
+  userId
 ) => {
   try {
     const pref = {
       preferredStore,
       preferredTakeout,
       preferredMenu,
+      userId,
     };
 
     const summary = await summarizePreference(pref);
-
+    console.log(summary);
     const existing = await qdrant
       .retrieve?.({
         collection_name: "user_preferences",
-        ids: [String(userId)],
+        id: userId,
         with_payload: true,
         with_vectors: false,
       })
@@ -277,26 +280,33 @@ export const userPreferenceEmbedding = async (
       model: "text-embedding-3-small",
       input: summary,
     });
-    const vector = embeddingRes.data[0].embedding;
+    const vectorRes = embeddingRes.data[0].embedding;
 
-    const upsertRes = await qdrant.upsert({
-      collection_name: "user_preferences",
+    //모양 안맞음
+    const upsertRes = await qdrant.upsert("user_preferences", {
       wait: true,
       points: [
         {
-          id: String(userId),
-          vector,
+          id: userId,
+          vector: vectorRes,
           payload: {
-            userId: String(userId),
+            userId: userId,
             summary,
           },
         },
       ],
     });
+    console.log(upsertRes);
 
-    return { ok: true, updated: true, upsertRes, summary, dim: vector.length };
+    return {
+      ok: true,
+      updated: true,
+      upsertRes,
+      summary,
+      dim: vectorRes.length,
+    };
   } catch (err) {
     logger.error("사용자 취향 임베딩중 오류 발생:", err);
-    next(err);
+    throw err;
   }
 };
