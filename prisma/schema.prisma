@@ -348,7 +348,7 @@ model CafeMenu {
   isSoldOut        Boolean          @default(false) @map("is_sold_out")
   photoUrl         String?          @map("photo_url") @db.Text
   createdAt        DateTime         @default(now()) @map("created_at")
-  updatedAt        DateTime         @updatedAt @map("updated_at")
+  updatedAt        DateTime?         @updatedAt @map("updated_at")
   isRepresentative Boolean          @default(false) @map("is_representative")
   cafe             Cafe             @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   couponTemplates  CouponTemplate[]
