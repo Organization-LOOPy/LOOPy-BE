@@ -3,7 +3,7 @@ const prisma = new PrismaClient();
 
 // 고객 알림 메시지 전송
 export const sendNotificationToCustomers = async (req, res, next) => {
-  const cafeId = req.params.cafeId;
+  const cafeId = Number(req.params.cafeId);
   const { message } = req.body;
 
   try {
@@ -18,23 +18,28 @@ export const sendNotificationToCustomers = async (req, res, next) => {
 
     // 해당 카페의 사용자 조회
     const users = await prisma.user.findMany({
-      where: {
-        stampBooks: {
-          some: {
-            cafeId,
-          },
-        },
-      },
+      where: { allowKakaoAlert: true },
       select: { id: true },
     });
 
     const userIds = users.map((u) => u.id);
 
+    const cafe = await prisma.cafe.findUnique({
+      where: { id: cafeId },
+      select: { name: true },
+    });
+    
+    if (!cafe) {
+      return res.fail('해당 카페를 찾을 수 없습니다.', 404);
+    }
+
     // 알림 기록 생성
     await prisma.notification.createMany({
-      data: userIds.map((userId) => ({
-        userId,
-        cafeId: parseInt(cafeId, 10),
+      data: userIds.map((id) => ({
+        userId: id,
+        cafeId,
+        type: 'cafe',
+        title: `${cafe.name} 사장님 메시지 알림`,
         content: message,
       })),
     });

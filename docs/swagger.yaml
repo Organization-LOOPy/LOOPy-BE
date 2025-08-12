@@ -2923,64 +2923,74 @@ paths:
                   $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/users/me/notification:
-  get:
-    tags:
-      - Notifications
-    summary: 알림 목록 조회
-    description: 로그인한 사용자의 모든 알림을 최신순으로 조회합니다.
-    security:
-      - bearerAuth: []
-    responses:
-      '200':
-        description: 알림 목록 조회 성공
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                message:
-                  type: string
-                  example: 알림 목록 조회 성공
-                data:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      notificationId:
-                        type: integer
-                        example: 42
-                      title:
-                        type: string
-                        example: 스탬프 적립 조건이 변경됐어요!
-                      content:
-                        type: string
-                        example: 8월 1일부터 스탬프는 5,000원 이상 결제 시 적립됩니다.
-                      type:
-                        type: string
-                        enum: [cafe, stamp, review]
-                      isRead:
-                        type: boolean
-                        example: false
-                      createdAt:
-                        type: string
-                        format: date-time
-                        example: 2025-07-31T13:12:00.000Z
-                      cafe:
-                        type: object
-                        nullable: true
-                        properties:
-                          id:
-                            type: integer
-                            example: 3
-                          name:
-                            type: string
-                            example: 루피커피
-      '401':
-        description: 인증 실패 (JWT 누락 또는 만료)
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ErrorResponse'
+    get:
+      tags:
+        - Notifications
+      summary: 알림 목록 조회
+      description: 로그인한 사용자의 모든 알림을 최신순으로 조회합니다. `content` 필드는 문자열 또는 객체(JSON) 형식일 수 있습니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 알림 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 알림 목록 조회 성공
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        notificationId:
+                          type: integer
+                          example: 42
+                        cafeId:
+                          type: integer
+                          nullable: true
+                          example: 3
+                        cafeName:
+                          type: string
+                          nullable: true
+                          example: 루피커피
+                        title:
+                          type: string
+                          example: 스탬프 적립 조건이 변경됐어요!
+                        content:
+                          oneOf:
+                            - type: string
+                              example: 8월 1일부터 스탬프는 5,000원 이상 결제 시 적립됩니다.
+                            - type: object
+                              example:
+                                conditionType: AMOUNT
+                                minAmount: 5000
+                                stampPerAmount: 1
+                                drinkCount: null
+                                stampPerCount: null
+                                rewardType: DISCOUNT
+                                discountAmount: 1500
+                                menuId: null
+                        type:
+                          type: string
+                          enum: [cafe, stamp, review]
+                        isRead:
+                          type: boolean
+                          example: false
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: 2025-07-31T13:12:00.000Z
+        '401':
+          description: 인증 실패 (JWT 누락 또는 만료)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
 
   /api/v1/notification/{notificationId}:
     get:
@@ -5068,6 +5078,97 @@ paths:
                     type: string
                 example:
                   reason: 해당 전화번호의 고객을 찾을 수 없습니다.
+
+  /admin/cafes/{cafeId}/notification:
+    post:
+      tags:
+        - Admin Notification
+      summary: 사장님이 카페 고객에게 알림 메시지 전송
+      description: |
+        지정한 카페의 **알림 허용 설정된 고객**에게 사장님 메시지를 전송합니다.
+        - 메시지는 최대 500자까지 입력 가능
+        - JWT 인증 필요
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: cafeId
+          in: path
+          required: true
+          description: 카페 ID
+          schema:
+            type: integer
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  maxLength: 500
+                  example: "오늘부터 아메리카노 1+1 이벤트 진행합니다! 🎉"
+              required:
+                - message
+      responses:
+        '200':
+          description: 알림 메시지 전송 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: object
+                    nullable: true
+                    example: null
+                  success:
+                    type: string
+                    example: "알림 메시지가 전송되었습니다."
+        '400':
+          description: 잘못된 요청 (message 누락 또는 500자 초과)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: object
+                    example:
+                      errorCode: UNKNOWN
+                      reason: "알림 메시지를 입력해주세요."
+                      data: null
+                  success:
+                    type: string
+                    nullable: true
+                    example: null
+        '404':
+          description: 카페를 찾을 수 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: object
+                    example:
+                      errorCode: UNKNOWN
+                      reason: "해당 카페를 찾을 수 없습니다."
+                      data: null
+                  success:
+                    type: string
+                    nullable: true
+                    example: null
 
   /api/v1/owner/users/{userId}/stamps:
     post:
