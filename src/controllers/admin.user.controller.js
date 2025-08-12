@@ -75,18 +75,20 @@ export const getUserByPhone = async (req, res, next) => {
       });
     }
 
-    const totalStampCount = await prisma.stampBook.count({
-      where: { userId: user.id }
-    });
+    const totalStampCount = await prisma.stamp.count({
+      where: { stampBook: { userId: user.id } }
+      });
 
-    const pointAgg = await prisma.pointTransaction.aggregate({
-      where: { 
-        userId: user.id, 
-        type: PointTransactionType.earned
-      },
-      _sum: { point: true } 
-    });
-    const totalPoint = pointAgg._sum.point ?? 0;
+      const [earnedAgg, spentAgg, refundedAgg] = await Promise.all([
+        prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'earned' },   _sum: { point: true } }),
+        prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'spent' },    _sum: { point: true } }),
+        prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'refunded' }, _sum: { point: true } }),
+        ]);
+
+      const totalPoint =
+          (earnedAgg._sum.point ?? 0) +
+          (refundedAgg._sum.point ?? 0) -
+          (spentAgg._sum.point ?? 0);
 
     const progressRate = sb ? Math.floor((sb.currentCount / sb.goalCount) * 100) : null;
     const daysLeft = sb
@@ -129,7 +131,7 @@ export const getUserByPhone = async (req, res, next) => {
 export const addStampToUser = async (req, res, next) => {
   try {
     const userId = Number(req.params.userId);
-    const cafeId = req.user?.cafeId;
+    const cafeId = Number(req.user?.cafeId); // 숫자로 보정
 
     if (!Number.isInteger(userId)) {
       return res.error({ errorCode: "BAD_REQUEST", reason: "유효하지 않은 사용자 ID입니다.", data: null }, 400);
@@ -146,6 +148,7 @@ export const addStampToUser = async (req, res, next) => {
     let updatedBook;
 
     await prisma.$transaction(async (tx) => {
+      // 1) 진행 중 스탬프북 조회
       let book = await tx.stampBook.findFirst({
         where: {
           userId,
@@ -158,9 +161,16 @@ export const addStampToUser = async (req, res, next) => {
         orderBy: { createdAt: 'desc' },
       });
 
+      // 2) 없으면 생성 (round = max+1)
       if (!book) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        const max = await tx.stampBook.aggregate({
+          where: { userId, cafeId },
+          _max: { round: true },
+        });
+        const nextRound = (max._max.round ?? 0) + 1;
 
         book = await tx.stampBook.create({
           data: {
@@ -170,45 +180,51 @@ export const addStampToUser = async (req, res, next) => {
             goalCount: 10,
             isCompleted: false,
             isConverted: false,
-            startedAt: now,         
-            status: 'active',       
+            startedAt: now,
+            status: 'active',
             expiresAt,
+            round: nextRound,
           },
         });
       }
 
-      if (book.currentCount >= book.goalCount) {
+      const now = new Date();
+
+      // 3) 동시성 안전: 목표 미만일 때만 1 증가 (조건부 업데이트)
+      const inc = await tx.stampBook.updateMany({
+        where: { id: book.id, isCompleted: false, status: 'active', currentCount: { lt: book.goalCount } },
+        data: { currentCount: { increment: 1 }, lastVisitedAt: now },
+      });
+
+      if (inc.count === 0) {
+        // 다른 트랜잭션이 먼저 완료시켰거나 목표 도달
         throw Object.assign(new Error("GOAL_EXCEEDED"), { code: "GOAL_EXCEEDED" });
       }
 
-      const now = new Date();
-
+      // 4) 증가 성공 후 스탬프 레코드 생성 (숫자와 실제 스탬프 개수 동기화)
       await tx.stamp.create({
         data: {
           stampBookId: book.id,
-          stampedAt: now,       
-          source: 'owner',      
-          method: 'MANUAL',     
+          stampedAt: now,
+          source: 'owner',
+          method: 'MANUAL',
         },
       });
 
-
-      updatedBook = await tx.stampBook.update({
+      // 5) 현재 상태 재조회
+      updatedBook = await tx.stampBook.findUnique({
         where: { id: book.id },
-        data: {
-          currentCount: { increment: 1 },
-          lastVisitedAt: now,
-        },
         select: { id: true, currentCount: true, goalCount: true, isCompleted: true, status: true },
       });
 
+      // 6) 목표 도달 시 완료 처리
       if (!updatedBook.isCompleted && updatedBook.currentCount >= updatedBook.goalCount) {
         updatedBook = await tx.stampBook.update({
           where: { id: book.id },
           data: {
             isCompleted: true,
             completedAt: now,
-            status: 'completed',  
+            status: 'completed',
           },
           select: { id: true, currentCount: true, goalCount: true, isCompleted: true, status: true },
         });
@@ -216,7 +232,7 @@ export const addStampToUser = async (req, res, next) => {
     });
 
     if (req.actionToken?.jti) {
-      await markJtiUsed(req.actionToken.jti); 
+      await markJtiUsed(req.actionToken.jti);
     }
 
     return res.success({
@@ -233,10 +249,11 @@ export const addStampToUser = async (req, res, next) => {
   }
 };
 
-// QR로 고객 식별 (이제는 userId 기반 조회)
+
+// 고객 QR 인증
 export const verifyQRToken = async (req, res, next) => {
   try {
-    const userId = req.body?.userId; // ← 프론트에서 QR → userId 변환 후 전달
+    const userId = req.body?.userId;
     const cafeId = req.user?.cafeId;
 
     if (!userId) {
@@ -272,10 +289,12 @@ export const verifyQRToken = async (req, res, next) => {
     }
 
     const now = new Date();
-    const [totalStampCount, earnedAgg, spentAgg, activeChallenges] = await Promise.all([
-      prisma.stamp.count({ where: { userId: user.id } }),
-      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'EARNED' }, _sum: { amount: true } }),
-      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'SPENT' }, _sum: { amount: true } }),
+
+    const [totalStampCount, earnedAgg, spentAgg, refundedAgg, activeChallenges] = await Promise.all([
+      prisma.stamp.count({ where: { stampBook: { userId: user.id } } }), // ← 관계 필터
+      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'earned' },   _sum: { point: true } }),
+      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'spent' },    _sum: { point: true } }),
+      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'refunded' }, _sum: { point: true } }),
       prisma.challengeParticipant.findMany({
         where: {
           userId: user.id,
@@ -293,13 +312,17 @@ export const verifyQRToken = async (req, res, next) => {
       }),
     ]);
 
-    const totalPoint = (earnedAgg._sum.amount ?? 0) - (spentAgg._sum.amount ?? 0);
+    const totalPoint =
+      (earnedAgg._sum.point ?? 0) +
+      (refundedAgg._sum.point ?? 0) -
+      (spentAgg._sum.point ?? 0);
+
     const currentStampBook = user.stampBooks[0] ?? null;
 
     const availableCoupons = user.userCoupons.map((uc) => ({
       userCouponId: uc.id,
       name: uc.couponTemplate.name,
-      description: uc.couponTemplate.description,
+      usageCondition: uc.couponTemplate.usageCondition, // ← description 대신
       expiredAt: uc.expiredAt,
     }));
 
@@ -322,7 +345,7 @@ export const verifyQRToken = async (req, res, next) => {
             },
           }
         : { totalCount: totalStampCount, currentStampBook: null },
-      point: { total: totalPoint },
+      point: { total: totalPoint }, // ← 총액 정상 계산
       availableCoupons,
       ongoingChallenges,
     });
@@ -331,115 +354,153 @@ export const verifyQRToken = async (req, res, next) => {
   }
 };
 
+// 포인트 전액 사용 (잔액=0)
+export const useUserPoint = async (req, res, next) => {
+  const userId = Number(req.params.userId);
 
+  try {
+    const data = await prisma.$transaction(async (tx) => {
+      const locked = await tx.$executeRaw`
+        SELECT id FROM users WHERE id = ${userId} FOR UPDATE
+      `;
 
-  // 포인트 사용
-  export const useUserPoint = async (req, res, next) => {
-    const userId = parseInt(req.params.userId, 10);
-    const { amount } = req.body;
-    const cafeId = req.user.cafeId;
-  
-    try {
-      if (!amount || amount <= 0) {
-        return res.error('사용할 포인트 금액이 올바르지 않습니다.', 400);
-      }
-  
-      await prisma.pointTransaction.create({
+      const [earned, spent, refunded] = await Promise.all([
+        tx.pointTransaction.aggregate({
+          where: { userId, type: 'earned' },
+          _sum: { point: true },
+        }),
+        tx.pointTransaction.aggregate({
+          where: { userId, type: 'spent' },
+          _sum: { point: true },
+        }),
+        tx.pointTransaction.aggregate({
+          where: { userId, type: 'refunded' },
+          _sum: { point: true },
+        }),
+      ]);
+
+      const sum = (v) => v?._sum?.point ?? 0;
+      const balance = sum(earned) + sum(refunded) - sum(spent);
+
+      if (balance <= 0) throw new Error('NO_BALANCE');
+
+      await tx.pointTransaction.create({
         data: {
           userId,
-          cafeId,
-          amount,
-          type: 'USED',
-          description: '사장님 포인트 사용 처리',
+          point: balance,
+          type: 'spent',
+          description: '전액 사용',
         },
       });
-  
-      return res.success('포인트 사용 완료', { usedAmount: amount });
-    } catch (err) {
-      next(err);
+
+      return {
+        before: balance,
+        usedAmount: balance,
+        remaining: 0,
+      };
+    });
+
+    return res.success('포인트 전액 사용 완료', data);
+  } catch (err) {
+    if (err.message === 'NO_BALANCE') {
+      return res.error('사용 가능한 포인트가 없습니다.', 400);
     }
-  }; 
+    next(err);
+  }
+};
 
 // 쿠폰 사용 처리
 export const useUserCoupon = async (req, res, next) => {
-    const userId = parseInt(req.params.userId, 10);
-    const couponId = parseInt(req.params.couponId, 10);
-  
-    try {
-      const userCoupon = await prisma.userCoupon.findFirst({
-        where: {
-          id: couponId,
-          userId,
-          usedAt: null,
-          expiredAt: {
-            gte: new Date(),
-          },
-        },
-      });
-  
-      if (!userCoupon) {
-        return res.error('사용 가능한 쿠폰이 없습니다.', 404);
-      }
-  
-      const updatedCoupon = await prisma.userCoupon.update({
-        where: { id: couponId },
-        data: {
-          usedAt: new Date(),
-        },
-      });
-  
-      return res.success('쿠폰 사용 처리 완료', {
-        userCouponId: updatedCoupon.id,
-        usedAt: updatedCoupon.usedAt,
-      });
-    } catch (err) {
-      next(err);
-    }
-  };
+  const userId = Number(req.params.userId);
+  const couponId = Number(req.params.couponId);
 
-  // 챌린지 인증 처리
-  export const verifyChallengeForUser = async (req, res, next) => {
-    const userId = parseInt(req.params.userId, 10);
-    const challengeId = parseInt(req.params.challengeId, 10);
-    const cafeId = req.user.cafeId;
-  
-    try {
-      const participation = await prisma.challengeParticipant.findUnique({
-        where: {
-          userId_challengeId: {
-            userId,
-            challengeId,
-          },
-        },
-      });
-  
-      if (!participation) {
-        return res.error('챌린지 참여 이력이 없습니다.', 404);
-      }
-  
-      if (participation.completedAt) {
-        return res.error('이미 완료된 챌린지입니다.', 400);
-      }
-  
-      if (participation.joinedCafeId !== cafeId) {
-        return res.error('해당 카페에서 인증할 수 없는 챌린지입니다.', 403);
-      }
-  
-      // 챌린지 완료 처리
-      await prisma.challengeParticipant.update({
-        where: {
-          userId_challengeId: {
-            userId,
-            challengeId,
-          },
-        },
-        data: {
-          completedAt: new Date(),
-        },
-      });
-  
-      return res.success('챌린지 인증 완료');
-    } catch (err) {
-      next(err);
+  try {
+    const updated = await prisma.userCoupon.updateMany({
+      where: {
+        id: couponId,
+        userId,
+        usedAt: null,
+        expiredAt: { gte: new Date() },
+        status: 'active',
+      },
+      data: {
+        usedAt: new Date(),
+        status: 'used', // 명시적으로 상태 변경
+      },
+    });
+
+    if (updated.count === 0) {
+      return res.error('사용 가능한 쿠폰이 없습니다.', 400);
     }
-  };
+
+    return res.success('쿠폰 사용 처리 완료', {
+      userCouponId: couponId,
+      usedAt: new Date(),
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+// 챌린지 인증(이 챌린지에서만 3회 완료 시 보상)
+export const verifyChallengeForUser = async (req, res, next) => {
+  const userId = Number(req.params.userId);
+  const challengeId = Number(req.params.challengeId);
+  const cafeId = req.user?.cafeId;
+
+  try {
+    if (!cafeId) return res.error('사장님 토큰에 카페 정보가 없습니다.', 403);
+    const now = new Date();
+
+    const participant = await prisma.challengeParticipant.findUnique({
+      where: { userId_challengeId: { userId, challengeId } },
+      select: { completedAt: true, joinedCafeId: true },
+    });
+
+    if (!participant) return res.error('챌린지 참여 이력이 없습니다.', 404);
+    if (participant.completedAt) return res.error('이미 완료된 챌린지입니다.', 400);
+    if (participant.joinedCafeId !== cafeId) return res.error('해당 카페에서 인증할 수 없는 챌린지입니다.', 403);
+
+    const result = await prisma.$transaction(async (tx) => {
+      // 1) 완료 처리
+      const updated = await tx.challengeParticipant.updateMany({
+        where: { userId, challengeId, completedAt: null, joinedCafeId: cafeId },
+        data: { completedAt: now, status: 'completed' },
+      });
+      if (updated.count === 0) throw new Error('ALREADY_COMPLETED_OR_INVALID');
+
+      // 2) 이 챌린지에서 완료한 횟수 집계
+      const completedCount = await tx.challengeParticipant.count({
+        where: { userId, challengeId, completedAt: { not: null } },
+      });
+
+      let milestoneRewarded = 0;
+      if (completedCount === 3) {
+        // 3회째면 보상 지급 (포인트 예시)
+        const rewardPoint = 500;
+        await tx.pointTransaction.create({
+          data: {
+            userId,
+            point: rewardPoint,
+            type: 'earned',
+            description: `챌린지 ${challengeId} 3회 달성 보상`,
+          },
+        });
+        milestoneRewarded = rewardPoint;
+      }
+
+      return {
+        completedAt: now,
+        completedCount,
+        milestoneRewarded,
+      };
+    });
+
+    return res.success('챌린지 인증 완료', result);
+  } catch (err) {
+    if (err.message === 'ALREADY_COMPLETED_OR_INVALID') {
+      return res.error('이미 완료되었거나 인증 조건이 맞지 않습니다.', 400);
+    }
+    next(err);
+  }
+};
