@@ -39,6 +39,6 @@ router.get('/myCafe/operation', getMyCafeBusinessInfo);
 router.patch('/myCafe', updateCafe);
 router.get('/photos', getMyCafePhoto);
 router.delete('/photos/:photoId', deleteMyCafePhoto);
-router.get('myCafe/menus', getMyCafeMenus);
+router.get('/myCafe/menus', getMyCafeMenus);
 router.get('/photos/first', getFirstCafePhotoController);
 export default router;
