@@ -332,14 +332,21 @@ export const cafeSearchService = {
       })),
     };
 
-    const xNum = parseFloat(x);
-    const yNum = parseFloat(y);
-    cafeDetails.distance = getDistanceInMeters(
-      parseFloat(cafe.latitude),
-      parseFloat(cafe.longitude),
-      yNum, // 사용자 위도
-      xNum // 사용자 경도
-    );
+    // x, y가 모두 제공된 경우에만 거리 계산
+    if (x != null && y != null) {
+      const xNum = parseFloat(x);
+      const yNum = parseFloat(y);
+
+      // 유효한 숫자인지 확인
+      if (!isNaN(xNum) && !isNaN(yNum)) {
+        cafeDetails.distance = getDistanceInMeters(
+          parseFloat(cafe.latitude),
+          parseFloat(cafe.longitude),
+          yNum, // 사용자 위도
+          xNum // 사용자 경도
+        );
+      }
+    }
 
     return cafeDetails;
   },
@@ -482,27 +489,17 @@ export const mapSearchService = {
   },
 
   getZoomConfig(zoomLevel) {
-    // 카카오 지도 축척 공식: 3레벨에서 1px = 1m 기준
-    // scale = 1 / Math.pow(2, level - 3)
-    const scale = 1 / Math.pow(2, zoomLevel - 3);
-
-    // 지도 화면 크기를 기준으로 적절한 반경 계산
-    // 일반적인 지도 컨테이너 크기 (가로 800px 기준)
-    const mapWidth = 800; // px
-
-    // 화면 너비의 절반 정도를 검색 반경으로 설정
-    const radiusInPixels = mapWidth * 0.4; // 화면 너비의 40%
-
-    // 픽셀을 미터로 변환
-    const radiusInMeters = Math.round(radiusInPixels / scale);
-
-    // 최소/최대 반경 제한
-    const minRadius = 100; // 최소 100m
-    const maxRadius = 10000; // 최대 10km
-    const finalRadius = Math.max(
-      minRadius,
-      Math.min(maxRadius, radiusInMeters)
-    );
+    // 줌 레벨별 고정 반지름 설정
+    const radiusConfig = {
+      1: 106, // L1 ≈ 106 m
+      2: 213, // L2 ≈ 213 m
+      3: 426, // L3 ≈ 426 m
+      4: 851, // L4 ≈ 851 m
+      5: 1702, // L5 ≈ 1,702 m
+      6: 3404, // L6 ≈ 3,404 m
+      7: 6808, // L7 ≈ 6,808 m
+      8: 13616, // L8 ≈ 13,616 m
+    };
 
     // 줌 레벨별 최대 결과 수 설정
     const maxResultsConfig = {
@@ -516,13 +513,17 @@ export const mapSearchService = {
       8: 120,
     };
 
+    // 기본값 설정 (범위를 벗어난 줌 레벨의 경우)
+    const radius = radiusConfig[zoomLevel] || 1000; // 기본 1km
     const maxResults = maxResultsConfig[zoomLevel] || 100;
+
+    // 카카오 지도 축척 계산 (참조용)
+    const scale = 1 / Math.pow(2, zoomLevel - 3);
 
     return {
       maxResults,
-      radius: finalRadius,
+      radius: radius,
       scale: scale,
-      calculatedRadius: radiusInMeters, // 디버깅용
     };
   },
 };
