@@ -72,7 +72,9 @@ export const updateNickname = async (req, res, next) => {
 
 export const updateUserPreferences = async (req, res, next) => {
   try {
+
     const result = await updateUserPreferencesService(
+    
       req.user.id,
       req.body.preferredKeywords
     );
@@ -83,7 +85,6 @@ export const updateUserPreferences = async (req, res, next) => {
       result.preferredMenu,
       userId
     );
-
     return res.success({
       message: "선호 키워드가 저장되었습니다.",
       storeFilters: result.preferredStore,
@@ -94,6 +95,8 @@ export const updateUserPreferences = async (req, res, next) => {
     next(err);
   }
 };
+
+
 
 export const updatePreferredArea = async (req, res, next) => {
   try {
