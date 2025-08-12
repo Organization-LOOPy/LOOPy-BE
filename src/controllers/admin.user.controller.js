@@ -131,46 +131,47 @@ export const getUserByPhone = async (req, res, next) => {
   }
 };
 
+import { markJtiUsed } from '../utils/actionToken.js'; // 경로 맞게
+
 export const addStampToUser = async (req, res, next) => {
-  const userId = parseInt(req.params.userId, 10);
-  const cafeId = req.user.cafeId;
-
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { id: true }
-    });
+    const userId = Number(req.params.userId);
+    const cafeId = req.user?.cafeId;
 
-    if (!user) {
-      return res.error({
-        errorCode: "USER_NOT_FOUND",
-        reason: "존재하지 않는 사용자입니다.",
-        data: null,
-      });
+    if (!Number.isInteger(userId)) {
+      return res.error({ errorCode: "BAD_REQUEST", reason: "유효하지 않은 사용자 ID입니다.", data: null }, 400);
+    }
+    if (!cafeId) {
+      return res.error({ errorCode: "CAFE_REQUIRED", reason: "사장님 토큰에 카페 정보가 없습니다.", data: null }, 403);
     }
 
-    let result;
-    let goalExceeded = false;
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) {
+      return res.error({ errorCode: "USER_NOT_FOUND", reason: "존재하지 않는 사용자입니다.", data: null }, 404);
+    }
+
+    let updatedBook;
 
     await prisma.$transaction(async (tx) => {
-      // 최신 진행 중 스탬프북
-      let stampBook = await tx.stampBook.findFirst({
+      // 1) 최신 진행 중 스탬프북
+      let book = await tx.stampBook.findFirst({
         where: {
           userId,
           cafeId,
           convertedAt: null,
           expiredAt: null,
           isCompleted: false,
+          status: 'active',
         },
         orderBy: { createdAt: 'desc' },
       });
 
-      // 없으면 생성 (14일 만료)
-      if (!stampBook) {
+      // 2) 없으면 생성 (14일 만료)
+      if (!book) {
         const now = new Date();
         const expiresAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
 
-        stampBook = await tx.stampBook.create({
+        book = await tx.stampBook.create({
           data: {
             userId,
             cafeId,
@@ -178,165 +179,176 @@ export const addStampToUser = async (req, res, next) => {
             goalCount: 10,
             isCompleted: false,
             isConverted: false,
+            startedAt: now,          // ★ 필수
+            status: 'active',        // ★ 필수 (enum StampBookStatus)
             expiresAt,
           },
         });
       }
 
-      // 목표 초과 방지
-      if (stampBook.currentCount >= stampBook.goalCount) {
-        goalExceeded = true;
-        return; // 트랜잭션 종료
+      // 3) 목표 초과 방지
+      if (book.currentCount >= book.goalCount) {
+        throw Object.assign(new Error("GOAL_EXCEEDED"), { code: "GOAL_EXCEEDED" });
       }
 
-      // 스탬프 1개 생성
+      const now = new Date();
+
+      // 4) 스탬프 1개 생성 (스키마에 맞춰 필수값만)
       await tx.stamp.create({
         data: {
-          userId,
-          cafeId,
-          stampBookId: stampBook.id,
-          method: 'MANUAL',
+          stampBookId: book.id,
+          stampedAt: now,       // ★ 필수
+          source: 'owner',      // 자유 문자열 (예: 'owner' | 'qr' | 'pos')
+          method: 'MANUAL',     // VarChar(20) — 현재 문자열로 OK
+          // note, latitude, longitude, stampImageUrl 등은 선택
         },
       });
 
-      const newCount = stampBook.currentCount + 1;
-      const isCompleted = newCount >= stampBook.goalCount;
-
-      result = await tx.stampBook.update({
-        where: { id: stampBook.id },
+      // 5) 카운트 +1
+      updatedBook = await tx.stampBook.update({
+        where: { id: book.id },
         data: {
-          currentCount: newCount,
-          lastVisitedAt: new Date(),
-          ...(isCompleted
-            ? { isCompleted: true, completedAt: new Date(), status: 'completed' }
-            : {}),
+          currentCount: { increment: 1 },
+          lastVisitedAt: now,
         },
-        select: { id: true, currentCount: true, goalCount: true, isCompleted: true },
+        select: { id: true, currentCount: true, goalCount: true, isCompleted: true, status: true },
       });
+
+      // 6) 목표 달성 시 완료 플래그/타임만
+      if (!updatedBook.isCompleted && updatedBook.currentCount >= updatedBook.goalCount) {
+        updatedBook = await tx.stampBook.update({
+          where: { id: book.id },
+          data: {
+            isCompleted: true,
+            completedAt: now,
+            status: 'completed',  // enum에 'completed' 있으니 여기서 갱신 OK
+          },
+          select: { id: true, currentCount: true, goalCount: true, isCompleted: true, status: true },
+        });
+      }
     });
 
-    if (goalExceeded) {
-      return res.error({
-        errorCode: "STAMPBOOK_ALREADY_COMPLETED",
-        reason: "이미 목표를 달성한 스탬프북입니다.",
-        data: null,
-      });
-    }
-
-    // 액션 토큰 소모 처리
     if (req.actionToken?.jti) {
-      await markJtiUsed(req.actionToken.jti);
+      await markJtiUsed(req.actionToken.jti); // 성공 후 1회만 소모
     }
 
     return res.success({
-      stampBookId: result.id,
-      currentCount: result.currentCount,
-      goalCount: result.goalCount,
-      isCompleted: result.isCompleted,
+      stampBookId: updatedBook.id,
+      currentCount: updatedBook.currentCount,
+      goalCount: updatedBook.goalCount,
+      isCompleted: updatedBook.isCompleted,
     });
-
   } catch (err) {
+    if (err && err.code === "GOAL_EXCEEDED") {
+      return res.error({ errorCode: "STAMPBOOK_ALREADY_COMPLETED", reason: "이미 목표를 달성한 스탬프북입니다.", data: null }, 409);
+    }
     next(err);
   }
 };
 
   
-
-
-// QR 스캔으로 고객 정보 확인
+// QR로 고객 식별
 export const verifyQRToken = async (req, res, next) => {
-    const { qrToken } = req.body;
-    const cafeId = req.user.cafeId;
-  
-    try {
-      if (!qrToken) {
-        return res.error('QR 토큰이 필요합니다.', 400);
-      }
-  
-      const user = await prisma.user.findUnique({
-        where: { qrToken },
-        select: {
-          id: true,
-          nickname: true,
-          stamps: { select: { id: true } },
-          pointTransactions: {
-            where: { type: 'EARNED' },
-            select: { amount: true },
-          },
-          stampBooks: {
-            where: {
-              cafeId,
-              convertedAt: null,
-              expiredAt: null,
-              isCompleted: false,
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 1,
-          },
-          userCoupons: {
-            where: {
-              usedAt: null,
-              expiredAt: { gte: new Date() },
-            },
-            include: { couponTemplate: true },
-          },
+  try {
+    const qrToken = req.body?.qrToken;
+    const cafeId = req.user?.cafeId;
+    if (!qrToken) {
+      return res.error({ errorCode: 'BAD_REQUEST', reason: 'QR 토큰이 필요합니다.', data: null }, 400);
+    }
+    if (!cafeId) {
+      return res.error({ errorCode: 'CAFE_REQUIRED', reason: '사장님 토큰에 카페 정보가 없습니다.', data: null }, 403);
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { qrToken },
+      select: {
+        id: true,
+        nickname: true,
+        stampBooks: {
+          where: { cafeId, convertedAt: null, expiredAt: null, isCompleted: false },
+          orderBy: { createdAt: 'desc' },
+          take: 1,
         },
-      });
-  
-      if (!user) {
-        return res.error('해당 QR의 고객 정보를 찾을 수 없습니다.', 404);
-      }
-  
-      const activeChallenges = await prisma.challengeParticipant.findMany({
+        userCoupons: {
+          where: {
+            usedAt: null,
+            expiredAt: { gte: new Date() },
+            // ← 관계 필터는 is: 로 감싸야 함
+            couponTemplate: { is: { cafeId } },
+          },
+          include: { couponTemplate: true },
+        },
+      },
+    });
+    if (!user) {
+      return res.error({ errorCode: 'USER_NOT_FOUND', reason: '해당 QR의 고객 정보를 찾을 수 없습니다.', data: null }, 404);
+    }
+
+    const now = new Date();
+
+    const [totalStampCount, earnedAgg, spentAgg, activeChallenges] = await Promise.all([
+      prisma.stamp.count({ where: { userId: user.id } }),
+      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'EARNED' }, _sum: { amount: true } }),
+      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'SPENT' }, _sum: { amount: true } }),
+      prisma.challengeParticipant.findMany({
         where: {
           userId: user.id,
           completedAt: null,
+          // ← include 내부 where 대신 관계 where 사용
+          challenge: {
+            is: {
+              isActive: true,
+              startDate: { lte: now },
+              endDate:   { gte: now },
+              availableCafes: { some: { cafeId } },
+            },
+          },
         },
-        include: {
-          challenge: true,
-        },
-      });
-  
-      const totalStampCount = user.stamps.length;
-      const totalPoint = user.pointTransactions.reduce((acc, cur) => acc + cur.amount, 0);
-      const currentStampBook = user.stampBooks[0];
+        include: { challenge: true },
+      }),
+    ]);
 
-      const availableCoupons = user.userCoupons.map((uc) => ({
-        userCouponId: uc.id,
-        name: uc.couponTemplate.name,
-        description: uc.couponTemplate.description,
-        expiredAt: uc.expiredAt,
-      }));
-  
-      const ongoingChallenges = activeChallenges.map((cp) => ({
+    const totalPoint = (earnedAgg._sum.amount ?? 0) - (spentAgg._sum.amount ?? 0);
+    const currentStampBook = user.stampBooks[0] ?? null;
+
+    const availableCoupons = user.userCoupons.map((uc) => ({
+      userCouponId: uc.id,
+      name: uc.couponTemplate.name,
+      description: uc.couponTemplate.description,
+      expiredAt: uc.expiredAt,
+    }));
+
+    const ongoingChallenges = activeChallenges
+      .filter((cp) => cp.challenge)
+      .map((cp) => ({
         challengeId: cp.challenge.id,
         title: cp.challenge.title,
         expiredAt: cp.challenge.endDate,
       }));
-  
-      return res.success('QR 인증 성공', {
-        userId: user.id,
-        nickname: user.nickname,
-        stamp: {
-          totalCount: totalStampCount,
-          currentStampBook: currentStampBook
-            ? {
-                stampBookId: currentStampBook.id,
-                currentCount: currentStampBook.currentCount,
-                goalCount: currentStampBook.goalCount,
-              }
-            : null,
-        },
-        point: {
-          total: totalPoint,
-        },
-        availableCoupons,
-        ongoingChallenges,
-      });
-    } catch (err) {
-      next(err);
-    }
-  };  
+
+    return res.success({
+      userId: user.id,
+      nickname: user.nickname,
+      stamp: currentStampBook
+        ? {
+            totalCount: totalStampCount,
+            currentStampBook: {
+              stampBookId: currentStampBook.id,
+              currentCount: currentStampBook.currentCount,
+              goalCount: currentStampBook.goalCount,
+            },
+          }
+        : { totalCount: totalStampCount, currentStampBook: null },
+      point: { total: totalPoint },
+      availableCoupons,
+      ongoingChallenges,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
 
   // 포인트 사용
   export const useUserPoint = async (req, res, next) => {
