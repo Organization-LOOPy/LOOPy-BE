@@ -41,8 +41,7 @@ export const nlpSearch = async (searchQuery) => {
       return { cafeIds: [] };
     }
 
-    const searchRes = await qdrant.search({
-      collection_name: "cafes",
+    const searchRes = await qdrant.search("cafes", {
       vector,
       limit: 15,
       with_payload: true,
@@ -65,17 +64,11 @@ export async function preferenceTopK(userId, opts = {}) {
 
   try {
     // 사용자 벡터 조회
-    const prefPoint = await qdrant
-      .retrieve({
-        collection_name: "user_preferences",
-        ids: [String(userId)],
-        with_payload: true,
-        with_vectors: true,
-      })
-      .catch((e) => {
-        logger.warn("preferenceTopK: retrieve failed", e?.message);
-        return null;
-      });
+    const prefPoint = await qdrant.retrieve("user_preferences", {
+      ids: [String(userId)],
+      with_payload: true,
+      with_vectors: true,
+    });
 
     const point = Array.isArray(prefPoint) ? prefPoint[0] : null;
     const vector = point?.vector;
@@ -85,8 +78,7 @@ export async function preferenceTopK(userId, opts = {}) {
       return { cafeIds: [] };
     }
 
-    const hits = await qdrant.search({
-      collection_name: "cafes",
+    const hits = await qdrant.search("cafes", {
       vector,
       limit: topK,
       with_payload: true,
@@ -97,9 +89,10 @@ export async function preferenceTopK(userId, opts = {}) {
     return { cafeIds };
   } catch (err) {
     logger.error("preferenceTopK: 오류", err);
-    next(err);
+    return { cafeIds: [] };
   }
 }
+
 //---------------------------------카페임베딩---------------------
 function buildCafeText(cafe, menus) {
   const lines = [];
@@ -142,13 +135,13 @@ ${raw}`,
     },
   ];
 
-  const resp = await openai.responses.create({
+  const resp = await openai.chat.completions.create({
     model: "gpt-4o-mini",
-    input: prompt,
+    messages: prompt,
   });
 
   const text =
-    resp.output_text
+    resp.choices[0]?.message?.content
       ?.split("\n")
       .map((s) => s.trim())
       .filter(Boolean)
@@ -167,15 +160,14 @@ export const cafeEmbedding = async (cafe) => {
       model: "text-embedding-3-small",
       input: summary,
     });
-    const vector = embeddingRes.data[0].embedding;
+    const vectorRes = embeddingRes.data[0].embedding;
 
-    const upsertRes = await qdrant.upsert({
-      collection_name: "cafes",
+    const upsertRes = await qdrant.upsert("cafes", {
       wait: true,
       points: [
         {
           id: cafe.id,
-          vector,
+          vector: vectorRes,
           payload: {
             cafeId: cafe.id,
             region1DepthName: cafe.region1DepthName ?? null,
@@ -187,7 +179,9 @@ export const cafeEmbedding = async (cafe) => {
       ],
     });
 
-    return { ok: true, upsertRes, summary, dim: vector.length };
+    console.log(upsertRes);
+
+    return { ok: true, upsertRes, summary, dim: vectorRes.length };
   } catch (err) {
     logger.error("카페정보 임베딩중 오류 발생:", err);
   }
@@ -226,13 +220,13 @@ ${raw}`,
     },
   ];
 
-  const resp = await openai.responses.create({
+  const resp = await openai.chat.completions.create({
     model: "gpt-4o-mini",
-    input: prompt,
+    messages: prompt,
   });
 
   const text =
-    resp.output_text
+    resp.choices[0]?.message?.content
       ?.split("\n")
       .map((s) => s.trim())
       .filter(Boolean)
@@ -245,20 +239,22 @@ ${raw}`,
 export const userPreferenceEmbedding = async (
   preferredStore,
   preferredTakeout,
-  preferredMenu
+  preferredMenu,
+  userId
 ) => {
   try {
     const pref = {
       preferredStore,
       preferredTakeout,
       preferredMenu,
+      userId,
     };
 
     const summary = await summarizePreference(pref);
+    console.log(summary);
 
     const existing = await qdrant
-      .retrieve?.({
-        collection_name: "user_preferences",
+      .retrieve("user_preferences", {
         ids: [String(userId)],
         with_payload: true,
         with_vectors: false,
@@ -277,26 +273,32 @@ export const userPreferenceEmbedding = async (
       model: "text-embedding-3-small",
       input: summary,
     });
-    const vector = embeddingRes.data[0].embedding;
+    const vectorRes = embeddingRes.data[0].embedding;
 
-    const upsertRes = await qdrant.upsert({
-      collection_name: "user_preferences",
+    const upsertRes = await qdrant.upsert("user_preferences", {
       wait: true,
       points: [
         {
-          id: String(userId),
-          vector,
+          id: userId,
+          vector: vectorRes,
           payload: {
-            userId: String(userId),
+            userId: userId,
             summary,
           },
         },
       ],
     });
+    console.log(upsertRes);
 
-    return { ok: true, updated: true, upsertRes, summary, dim: vector.length };
+    return {
+      ok: true,
+      updated: true,
+      upsertRes,
+      summary,
+      dim: vectorRes.length,
+    };
   } catch (err) {
     logger.error("사용자 취향 임베딩중 오류 발생:", err);
-    next(err);
+    throw err;
   }
 };
