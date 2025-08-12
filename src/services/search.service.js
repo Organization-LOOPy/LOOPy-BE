@@ -154,7 +154,10 @@ export const cafeSearchService = {
       !hasSearchQuery && !hasAnyFilter && !hasRegionFilter;
 
     // 1) 처음 리스팅: preference 임베딩 Top-K 추천 (+ user_preference 지역 적용)
+    //유사도 검색은 성공 with_vectors 가 아니라 with_vector로 해야됨!
     if (isInitialRequest) {
+      console.log(isInitialRequest);
+
       const pref = await preferenceTopK(userId, { topK: 15 });
       const cafeIds = pref?.cafeIds ?? [];
       if (cafeIds.length === 0) {
@@ -234,6 +237,8 @@ export const cafeSearchService = {
       };
     }
 
+    console.log(whereConditions);
+
     // 3) RDB 결과 없음 → 임베딩 폴백(Top-15). 검색어 없고 필터만 있어도 폴백.
     const filterQuery =
       typeof buildQueryFromFilters === "function"
@@ -300,6 +305,8 @@ export const cafeSearchService = {
         hasMore: false,
       };
     }
+
+    console.log(fallbackRows);
 
     // 폴백도 없으면 빈 결과
     return {
