@@ -78,10 +78,6 @@ export const cafeDetail = async (req, res, next) => {
     const cafe = req.cafe;
     const { x, y } = req.query;
 
-    if (!x && !y) {
-      throw new MissingUserCoordinate();
-    }
-
     const cafeDetails = await cafeSearchService.getCafeDetails(cafe, x, y);
 
     logger.debug(`카페 검색 정보 조회 성공: ${cafeDetails.name}`);

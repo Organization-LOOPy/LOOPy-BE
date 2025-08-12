@@ -316,7 +316,7 @@ model Cafe {
   keywords                      Json?
   status                        CafeStatus                @default(inactive)
   createdAt                     DateTime                  @default(now()) @map("created_at")
-  updatedAt                     DateTime                  @updatedAt @map("updated_at")
+  updatedAt                     DateTime?                  @updatedAt @map("updated_at")
   ownerId                       Int                       @unique @map("owner_id")
   region1DepthName              String                    @map("region_1depth_name") @db.VarChar(50)
   region2DepthName              String                    @map("region_2depth_name") @db.VarChar(50)
