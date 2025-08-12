@@ -21,14 +21,17 @@ def prev_month_range(ref_dt: datetime | None = None):
     return start, end
 
 def fetch_monthly_metrics(cafe_id: int, ref_dt: datetime | None = None):
-    start, end = prev_month_range(ref_dt)
+    start, end = prev_month_range(ref_dt) 
+    start_dt = start.strftime("%Y-%m-%d")
+    end_dt = end.strftime("%Y-%m-%d")
+    cafe_id = int(cafe_id)
+
     q = f"""
-    -- ⚠️ 테이블/컬럼명을 실제로 치환하세요
     WITH visits AS (
       SELECT user_id, DATE(visited_at) AS v_date
       FROM visits_table
       WHERE cafe_id = {cafe_id}
-        AND DATE(visited_at) BETWEEN DATE '{start}' AND DATE '{end}'
+        AND dt BETWEEN '{start_dt}' AND '{end_dt}'     
     ),
     first_visit AS (
       SELECT user_id, MIN(DATE(visited_at)) AS first_date
@@ -36,45 +39,59 @@ def fetch_monthly_metrics(cafe_id: int, ref_dt: datetime | None = None):
       WHERE cafe_id = {cafe_id}
       GROUP BY user_id
     ),
-    month_users AS (SELECT DISTINCT user_id FROM visits),
+    month_users AS (
+      SELECT DISTINCT user_id FROM visits
+    ),
     new_users AS (
       SELECT mu.user_id
       FROM month_users mu
       JOIN first_visit fv ON mu.user_id = fv.user_id
-      WHERE fv.first_date BETWEEN DATE '{start}' AND DATE '{end}'
+      WHERE fv.first_date BETWEEN DATE '{start_dt}' AND DATE '{end_dt}'
     ),
-    user_counts AS (SELECT user_id, COUNT(*) AS c FROM visits GROUP BY user_id),
-    returning_users AS (SELECT user_id FROM user_counts WHERE c >= 2),
+    user_counts AS (
+      SELECT user_id, COUNT(*) AS c FROM visits GROUP BY user_id
+    ),
+    returning_users AS (
+      SELECT user_id FROM user_counts WHERE c >= 2
+    ),
     coupon_use AS (
       SELECT COUNT(*) AS used
       FROM coupons
       WHERE cafe_id = {cafe_id}
-        AND DATE(used_at) BETWEEN DATE '{start}' AND DATE '{end}'
+        AND dt BETWEEN '{start_dt}' AND '{end_dt}'   
+        AND used_at IS NOT NULL
     ),
     coupon_issued AS (
       SELECT COUNT(*) AS issued
       FROM coupons
       WHERE cafe_id = {cafe_id}
-        AND DATE(issued_at) BETWEEN DATE '{start}' AND DATE '{end}'
+        AND dt BETWEEN '{start_dt}' AND '{end_dt}'   
     ),
     chg AS (
       SELECT COUNT(*) AS joined
       FROM challenge_participants
       WHERE cafe_id = {cafe_id}
-        AND DATE(joined_at) BETWEEN DATE '{start}' AND DATE '{end}'
+        AND dt BETWEEN '{start_dt}' AND '{end_dt}' 
     )
     SELECT
       (SELECT COUNT(*) FROM visits) AS visits,
       (SELECT COUNT(*) FROM new_users) AS new_customers,
-      (SELECT CAST(COUNT(*) AS DOUBLE) / NULLIF(COUNT(*) OVER(),0)
-         FROM returning_users) AS revisit_rate,
-      (SELECT CAST(cu.used AS DOUBLE) / NULLIF(ci.issued,0)
-         FROM coupon_use cu CROSS JOIN coupon_issued ci) AS coupon_use_rate,
+      (
+        SELECT CAST(COUNT(*) AS DOUBLE)
+               / NULLIF((SELECT COUNT(*) FROM month_users), 0)
+        FROM returning_users
+      ) AS revisit_rate,                             
+      (
+        SELECT CAST(cu.used AS DOUBLE) / NULLIF(ci.issued, 0)
+        FROM coupon_use cu CROSS JOIN coupon_issued ci
+      ) AS coupon_use_rate,
       (SELECT joined FROM chg) AS challenge_join;
     """
+
     with _conn().cursor() as cur:
         cur.execute(q)
         row = cur.fetchone()
+
     return {
         "month": f"{start.year}-{start.month:02d}",
         "kpis": {
@@ -83,5 +100,5 @@ def fetch_monthly_metrics(cafe_id: int, ref_dt: datetime | None = None):
             "revisitRate": float(row[2] or 0.0),
             "couponUseRate": float(row[3] or 0.0),
             "challengeJoin": int(row[4] or 0),
-        }
+        },
     }

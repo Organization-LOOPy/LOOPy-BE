@@ -35,8 +35,8 @@ def _sample_indicators() -> Dict[str, Any]:
             "visits": 1480,
             "newCustomers": 210,
             "revisitRate": 0.35,
-            "couponUseRate": 0.18,       # 선택 KPI
-            "challengeJoin": 96          # 선택 KPI
+            "couponUseRate": 0.18,  
+            "challengeJoin": 96    
         }
     }
 
