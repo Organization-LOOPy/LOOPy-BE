@@ -76,8 +76,9 @@ export const updateUserPreferences = async (req, res, next) => {
       req.user.id,
       req.body.preferredKeywords
     );
-    console.log(req.user.id);
+    console.log(result);
     const userId = req.user.id;
+    console.log(userId);
     await userPreferenceEmbedding(
       result.preferredStore,
       result.preferredTakeout,
