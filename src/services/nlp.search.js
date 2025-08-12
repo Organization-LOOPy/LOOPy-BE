@@ -184,6 +184,7 @@ export const cafeEmbedding = async (cafe) => {
     return { ok: true, upsertRes, summary, dim: vectorRes.length };
   } catch (err) {
     logger.error("카페정보 임베딩중 오류 발생:", err);
+    return err;
   }
 };
 
@@ -236,12 +237,12 @@ ${raw}`,
   return text.slice(0, 600);
 }
 
-export const userPreferenceEmbedding = async (
+export const userPreferenceEmbedding = async ({
   preferredStore,
   preferredTakeout,
   preferredMenu,
-  userId
-) => {
+  userId,
+}) => {
   try {
     const pref = {
       preferredStore,
@@ -299,6 +300,6 @@ export const userPreferenceEmbedding = async (
     };
   } catch (err) {
     logger.error("사용자 취향 임베딩중 오류 발생:", err);
-    throw err;
+    return err;
   }
 };
