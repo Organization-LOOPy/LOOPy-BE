@@ -39,7 +39,6 @@ def synthesize_and_store(state: GState) -> GState:
         state.indicators,
         state.menus,
         state.features,
-        promNotes=None
     )
     save_report_to_s3(
         cafe_id=state.cafeId,
