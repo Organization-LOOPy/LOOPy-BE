@@ -85,6 +85,7 @@ export const updateUserPreferences = async (req, res, next) => {
       preferredMenu: result.preferredMenu,
       userId: req.user.id,
     });
+
     return res.success({
       message: "선호 키워드가 저장되었습니다.",
       storeFilters: result.preferredStore,
