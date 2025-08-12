@@ -14,6 +14,7 @@ export const uploadStampImagesService = async (userId, files) => {
   if (!files || files.length === 0) {
     throw new NoStampImageError();
   }
+  const MAX_TOTAL_IMAGES = 4;
 
   return await prisma.$transaction(async (tx) => {
     const cafe = await tx.cafe.findFirst({
@@ -26,12 +27,13 @@ export const uploadStampImagesService = async (userId, files) => {
       where: { cafeId: cafe.id },
     });
 
-    const capacity = 2 - existingCount;
+    const capacity = MAX_TOTAL_IMAGES - existingCount;
+
     if (capacity <= 0) {
-      throw new StampImageLimitExceededError();
+      throw new StampImageLimitExceededError(); 
     }
     if (files.length > capacity) {
-      throw new StampImageLimitExceededError();
+      throw new StampImageLimitExceededError(); 
     }
 
     const results = [];
@@ -46,6 +48,7 @@ export const uploadStampImagesService = async (userId, files) => {
     return results;
   });
 };
+
 
 // 스탬프 정책 등록 
 export const createStampPolicy = async (userId, policyData) => {

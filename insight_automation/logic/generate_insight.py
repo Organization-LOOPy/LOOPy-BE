@@ -1,11 +1,11 @@
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Any
 
-from logic.sources.insight_monthly import (
+from insight_automation.logic.sources.insight_monthly import (
     get_monthly_indicators,
     synthesize_monthly_insight,
 )
-from logic.sources.perplexity import (
+from insight_automation.logic.sources.perplexity import (
     get_trending_menu_info,
     get_popular_cafe_features,
 )

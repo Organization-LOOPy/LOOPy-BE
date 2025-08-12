@@ -1,9 +1,9 @@
 import requests
 import os
 from typing import List
-from utils.perplexity import fetch_cafe_trend
-from utils.jsonsafe import coerce_json_array
-from logic.schemas import MenuTrendItem, CafeFeatureItem
+from insight_automation.utils.perplexity import fetch_cafe_trend
+from insight_automation.utils.jsonsafe import coerce_json_array
+from insight_automation.logic.schemas import MenuTrendItem, CafeFeatureItem
 
 PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 

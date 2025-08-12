@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node -r dotenv/config server.js",
     "test": "echo \"Error: no test specified\" && exit 1",
+    "prisma:seed": "node prisma/seed.js",
     "dev": "cross-env NODE_ENV=dev nodemon -r dotenv/config --exec node server.js",
     "prod": "cross-env NODE_ENV=prod node -r dotenv/config server.js"
   },
