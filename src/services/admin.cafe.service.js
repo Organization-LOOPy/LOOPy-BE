@@ -14,6 +14,27 @@ import {
 } from "../errors/customErrors.js";
 import { uploadToS3, deleteFromS3 } from "../utils/s3.js";
 
+const defaultStampImages = (process.env.DEFAULT_STAMP_IMAGES || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const ensureDefaultStampImages = async (tx, cafeId) => {
+  const count = await tx.stampImage.count({ where: { cafeId } });
+  if (count > 0) return;
+
+  const urls = defaultStampImages.length > 0
+    ? defaultStampImages
+    : [
+        'https://default-images/stamp1.png',
+        'https://default-images/stamp2.png',
+      ];
+
+  await tx.stampImage.createMany({
+    data: urls.map((url) => ({ cafeId, imageUrl: url })),
+  });
+};
+
 export const createMyCafeBasicInfo = async (userId, basicInfo) => {
   const {
     name,
@@ -46,11 +67,14 @@ export const createMyCafeBasicInfo = async (userId, basicInfo) => {
 
   if (existing) throw new CafeAlreadyExistError(userId);
 
-  return await prisma.cafe.create({
-    data: {
-      ...basicInfo,
-      ownerId: userId,
-    },
+  return await prisma.$transaction(async (tx) => {
+    const cafe = await tx.cafe.create({
+      data: { ...basicInfo, ownerId: Number(userId) },
+    });
+
+    await ensureDefaultStampImages(tx, cafe.id); 
+
+    return cafe;
   });
 };
 
