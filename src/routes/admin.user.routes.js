@@ -16,8 +16,8 @@ import { attachCafeId } from "../middlewares/attachCafeId.js";
 const router = express.Router();
 
 router.use(authenticateJWT(['OWNER'])); 
-router.use(requireCafeContext());       
-router.use(attachCafeId());           
+router.use(attachCafeId());      
+router.use(requireCafeContext());            
 
 router.get("/users/search", getUserByPhone);
 
@@ -48,3 +48,4 @@ router.post(
 );
 
 export default router;
+

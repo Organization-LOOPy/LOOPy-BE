@@ -3,6 +3,7 @@ import { PointTransactionType } from '@prisma/client';
 const prisma = new PrismaClient();
 
 import { signActionToken } from '../utils/actionToken.js';
+import { markJtiUsed } from '../utils/actionToken.js';
 
 const normalizePhone = (v = '') => v.replace(/\D/g, '');
 const formatPhoneDisplay = (digits) => {
@@ -11,16 +12,9 @@ const formatPhoneDisplay = (digits) => {
   return digits;
 };
 
+// 전화번호 고객 조회
 export const getUserByPhone = async (req, res, next) => {
-  let cafeId = req.user.cafeId;
-
-  if (!cafeId && req.user.roles?.includes("OWNER")) {
-    const ownerCafe = await prisma.cafe.findFirst({
-      where: { ownerId: req.user.id },
-      select: { id: true },
-    });
-    cafeId = ownerCafe?.id;
-  }
+  const cafeId = req.user.cafeId;
 
   const rawPhone = req.query.phone;
 
@@ -99,12 +93,12 @@ export const getUserByPhone = async (req, res, next) => {
       ? Math.max(0, Math.ceil((new Date(sb.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
       : null;
 
-    const actionToken = signActionToken({
-      userId: user.id,
-      cafeId,
-      purpose: 'ADD_STAMP',
-      ttlSec: 120
-    });
+      const actionToken = signActionToken({
+        userId: user.id,
+        cafeId,
+        scope: 'ADD_STAMP',
+        ttlSec: 120
+        });
 
     return res.success({
       userId: user.id,
@@ -131,8 +125,7 @@ export const getUserByPhone = async (req, res, next) => {
   }
 };
 
-import { markJtiUsed } from '../utils/actionToken.js'; // 경로 맞게
-
+// 스탬프 적립
 export const addStampToUser = async (req, res, next) => {
   try {
     const userId = Number(req.params.userId);
