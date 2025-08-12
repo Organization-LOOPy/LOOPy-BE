@@ -14,6 +14,27 @@ import {
 } from "../errors/customErrors.js";
 import { uploadToS3, deleteFromS3 } from "../utils/s3.js";
 
+const defaultStampImages = (process.env.DEFAULT_STAMP_IMAGES || '')
+  .split(',')
+  .map((s) => s.trim())
+  .filter(Boolean);
+
+const ensureDefaultStampImages = async (tx, cafeId) => {
+  const count = await tx.stampImage.count({ where: { cafeId } });
+  if (count > 0) return;
+
+  const urls = defaultStampImages.length > 0
+    ? defaultStampImages
+    : [
+        'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_1.png',
+        'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_2.png',
+      ];
+
+  await tx.stampImage.createMany({
+    data: urls.map((url) => ({ cafeId, imageUrl: url })),
+  });
+};
+
 export const createMyCafeBasicInfo = async (userId, basicInfo) => {
   const {
     name,
@@ -46,11 +67,14 @@ export const createMyCafeBasicInfo = async (userId, basicInfo) => {
 
   if (existing) throw new CafeAlreadyExistError(userId);
 
-  return await prisma.cafe.create({
-    data: {
-      ...basicInfo,
-      ownerId: userId,
-    },
+  return await prisma.$transaction(async (tx) => {
+    const cafe = await tx.cafe.create({
+      data: { ...basicInfo, ownerId: Number(userId) },
+    });
+
+    await ensureDefaultStampImages(tx, cafe.id); 
+
+    return cafe;
   });
 };
 

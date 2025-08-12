@@ -2,13 +2,13 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List
 from langgraph.graph import StateGraph, END
 
-from logic.sources.insight_monthly import (
+from insight_automation.logic.sources.insight_monthly import (
     get_monthly_indicators, synthesize_monthly_insight
 )
-from logic.sources.perplexity import (
+from insight_automation.logic.sources.perplexity import (
     get_trending_menu_info, get_popular_cafe_features
 )
-from utils.storage import save_report_to_s3 # type: ignore
+from insight_automation.utils.storage import save_report_to_s3 # type: ignore
 
 @dataclass
 class GState:

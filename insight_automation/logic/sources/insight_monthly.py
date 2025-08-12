@@ -3,9 +3,9 @@ import openai
 from datetime import datetime, timedelta, timezone
 from calendar import monthrange
 from dotenv import load_dotenv
-from typing import Dict, Any, List
-from utils.athena import fetch_monthly_metrics
-from logic.schemas import MenuTrendItem, CafeFeatureItem
+from typing import Dict, Any, List, Optional
+from insight_automation.utils.athena import fetch_monthly_metrics
+from insight_automation.logic.schemas import MenuTrendItem, CafeFeatureItem
 
 load_dotenv()
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -13,7 +13,7 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 KST = timezone(timedelta(hours=9))
 
 
-def _prev_month_range(ref_dt: datetime | None = None):
+def _prev_month_range(ref_dt: Optional[datetime] = None):
     ref_dt = ref_dt or datetime.now(KST)
     year, month = ref_dt.year, ref_dt.month
     if month == 1:
@@ -41,7 +41,7 @@ def _sample_indicators() -> Dict[str, Any]:
     }
 
 
-def get_monthly_indicators(cafe_id: int, ref_dt: datetime | None = None) -> Dict[str, Any]:
+def get_monthly_indicators(cafe_id: int, ref_dt: Optional[datetime] = None) -> Dict[str, Any]:
     """지난달(완료월) 지표를 Athena에서 조회."""
     return fetch_monthly_metrics(cafe_id, ref_dt)
 

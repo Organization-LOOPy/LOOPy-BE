@@ -1,4 +1,5 @@
-from datetime import datetime, timedelta, timezone
+from typing import Optional, Dict, Any, Tuple
+from datetime import datetime, timedelta, timezone, date
 from pyathena import connect
 import os
 
@@ -11,7 +12,7 @@ def _conn():
         work_group=os.getenv("ATHENA_WORKGROUP", "primary"),
     )
 
-def prev_month_range(ref_dt: datetime | None = None):
+def prev_month_range(ref_dt: Optional[datetime] = None) -> Tuple[date, date]:
     ref_dt = ref_dt or datetime.now(KST)
     y, m = ref_dt.year, ref_dt.month
     y, m = (y-1, 12) if m == 1 else (y, m-1)
@@ -20,7 +21,7 @@ def prev_month_range(ref_dt: datetime | None = None):
            - timedelta(days=1))
     return start, end
 
-def fetch_monthly_metrics(cafe_id: int, ref_dt: datetime | None = None):
+def fetch_monthly_metrics(cafe_id: int, ref_dt: Optional[datetime] = None) -> Dict[str, Any]:
     start, end = prev_month_range(ref_dt) 
     start_dt = start.strftime("%Y-%m-%d")
     end_dt = end.strftime("%Y-%m-%d")
