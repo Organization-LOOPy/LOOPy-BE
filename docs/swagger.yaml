@@ -5006,7 +5006,7 @@ paths:
         - 현재 카페에서 진행 중인 스탬프북이 없으면 자동으로 새 스탬프북을 생성합니다.  
         - 반환된 `actionToken`은 즉시 스탬프 적립 API에 사용할 수 있습니다.  
       tags:
-        - Owner - User
+        - Owner Users
       security:
         - bearerAuth: []
       parameters:
@@ -5228,7 +5228,7 @@ paths:
         - 목표 개수를 초과하면 적립이 불가합니다.
         - 스탬프북 생성 시 `startedAt`, `status`(active), `expiresAt`이 설정됩니다.
       tags:
-        - Owner - Stamp
+        - Owner Users
       security:
         - bearerAuth: []
       parameters:
@@ -5387,7 +5387,7 @@ paths:
 
   /api/v1/owner/qrs/verify:
     post:
-      tags: [Owner]
+      tags: [Owner Users]
       summary: QR로 고객 식별 (userId 기반)
       description: 프론트가 QR을 해석해 전달한 userId로, 사장님 카페 컨텍스트에서 고객의 스탬프/포인트/보유 쿠폰/참여 중 챌린지를 조회합니다. 컨트롤러/경로명은 verifyQRToken을 유지합니다.
       security:
@@ -5466,6 +5466,212 @@ paths:
                   code: USER_NOT_FOUND
                   message: "해당 고객 정보를 찾을 수 없습니다."
                 success: null
+
+    /api/v1/owner/users/{userId}/points/use:
+      post:
+        summary: 포인트 전액 사용 (잔액 0 처리)
+        description: 해당 사용자의 보유 포인트를 모두 사용 처리합니다. 원장(earned+refunded−spent) 합계를 0으로 만드는 `spent` 트랜잭션 1건을 생성합니다.
+        tags: [Owner User]
+        security:
+          - bearerAuth: []
+        parameters:
+          - in: path
+            name: userId
+            required: true
+            schema:
+              type: integer
+            description: 포인트를 사용할 사용자 ID
+        requestBody:
+          required: false
+        responses:
+          '200':
+            description: 포인트 전액 사용 완료
+            content:
+              application/json:
+                schema:
+                  type: object
+                  properties:
+                    status:
+                      type: string
+                      example: SUCCESS
+                    code:
+                      type: integer
+                      example: 200
+                    message:
+                      type: string
+                      example: 포인트 전액 사용 완료
+                    data:
+                      $ref: '#/components/schemas/UseAllPointsResult'
+          '400':
+            description: 사용 가능한 포인트가 없음 등 잘못된 요청
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ErrorResponse'
+                examples:
+                  noBalance:
+                    summary: 잔액 없음
+                    value:
+                      status: FAIL
+                      code: 400
+                      message: 사용 가능한 포인트가 없습니다.
+                      data: null
+          '401':
+            description: 인증 실패(토큰 누락/만료)
+          '403':
+            description: 권한 없음(OWNER 아님 등)
+          '404':
+            description: 사용자 미존재(서비스 정책에 따라 사용 시)
+          '500':
+            description: 서버 오류
+
+  /api/v1/owner/users/{userId}/coupons/{couponId}:
+    patch:
+      summary: 쿠폰 사용 처리
+      description: 지정한 사용자 쿠폰을 사용 처리합니다. 조건(본인 소유, 사용 전, 미만료, status=active)을 만족할 때 `usedAt`을 현재 시각으로 설정하고 `status`를 `used`로 변경합니다.
+      tags: [Owner, Coupon]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: 쿠폰을 사용할 사용자 ID
+        - in: path
+          name: couponId
+          required: true
+          schema:
+            type: integer
+          description: 사용 처리할 사용자 쿠폰 ID
+      responses:
+        '200':
+          description: 쿠폰 사용 처리 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: SUCCESS
+                  code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: 쿠폰 사용 처리 완료
+                  data:
+                    type: object
+                    properties:
+                      userCouponId:
+                        type: integer
+                        example: 123
+                      usedAt:
+                        type: string
+                        format: date-time
+                        example: 2025-08-12T06:20:00.000Z
+        '400':
+          description: 사용 불가(이미 사용/만료/조건 불일치)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                unusable:
+                  summary: 사용 가능한 쿠폰이 없음
+                  value:
+                    status: FAIL
+                    code: 400
+                    message: 사용 가능한 쿠폰이 없습니다.
+                    data: null
+        '401':
+          description: 인증 실패
+        '403':
+          description: 권한 없음 (OWNER 아님 등) # *카페 제약을 검증한다면 여기로 반환
+        '404':
+          description: 쿠폰 미존재(정책에 따라 사용 시)
+        '500':
+          description: 서버 오류
+
+  /api/v1/owner/users/{userId}/challenges/{challengeId}/verify:
+    post:
+      summary: 챌린지 인증 처리 (해당 챌린지에서 3회 완료 시 보상 지급)
+      description: 
+        사장님 카페에서 특정 사용자의 챌린지를 인증 처리합니다.  
+        - 조건: 사장님 토큰의 카페와 챌린지 참여 시 등록된 카페가 일치해야 함  
+        - 3회째 인증 시 보상(예: 포인트)을 지급합니다.
+      tags: [Owner, Challenge]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: userId
+          required: true
+          schema:
+            type: integer
+          description: 인증할 사용자 ID
+        - in: path
+          name: challengeId
+          required: true
+          schema:
+            type: integer
+          description: 인증할 챌린지 ID
+      requestBody:
+        required: false
+      responses:
+        '200':
+          description: 챌린지 인증 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: SUCCESS
+                  code:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: 챌린지 인증 완료
+                  data:
+                    type: object
+                    properties:
+                      completedAt:
+                        type: string
+                        format: date-time
+                        example: 2025-08-12T06:30:00.000Z
+                      completedCount:
+                        type: integer
+                        example: 3
+                      milestoneRewarded:
+                        type: integer
+                        example: 500
+        '400':
+          description: 잘못된 요청(이미 완료, 인증 조건 불일치 등)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                alreadyCompleted:
+                  summary: 이미 완료됨
+                  value:
+                    status: FAIL
+                    code: 400
+                    message: 이미 완료되었거나 인증 조건이 맞지 않습니다.
+                    data: null
+        '401':
+          description: 인증 실패(토큰 누락/만료)
+        '403':
+          description: 권한 없음(사장님 카페 불일치 등)
+        '404':
+          description: 챌린지 참여 이력 없음
+        '500':
+          description: 서버 오류
 
 
 
@@ -7328,7 +7534,21 @@ components:
           type: string
           format: date-time
 
-
+    UseAllPointsResult:
+      type: object
+      properties:
+        before:
+          type: integer
+          description: 사용 전 잔액(포인트)
+          example: 1200
+        usedAmount:
+          type: integer
+          description: 이번에 사용된 포인트(전액)
+          example: 1200
+        remaining:
+          type: integer
+          description: 사용 후 잔액(항상 0)
+          example: 0
 
 tags:
   - name: Users

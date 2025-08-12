@@ -29,8 +29,8 @@ router.post(
 
 router.post("/qrs/verify", verifyQRToken);
 
-router.patch(
-  "/users/:userId/points",
+router.post(
+  "/users/:userId/points/use",
   verifyActionToken("USE_POINT", { required: false, strictCafe: false }),
   useUserPoint
 );
