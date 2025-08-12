@@ -4,7 +4,7 @@ from pyathena import connect
 import os
 
 KST = timezone(timedelta(hours=9))
-
+ATHENA_DB = os.getenv("ATHENA_DB", "default")
 def _conn():
     return connect(
         s3_staging_dir=os.getenv("ATHENA_STAGING_DIR"),
@@ -30,13 +30,13 @@ def fetch_monthly_metrics(cafe_id: int, ref_dt: Optional[datetime] = None) -> Di
     q = f"""
     WITH visits AS (
       SELECT user_id, DATE(visited_at) AS v_date
-      FROM visits_table
+      FROM {ATHENA_DB}.visits_table
       WHERE cafe_id = {cafe_id}
         AND dt BETWEEN '{start_dt}' AND '{end_dt}'     
     ),
     first_visit AS (
       SELECT user_id, MIN(DATE(visited_at)) AS first_date
-      FROM visits_table
+      FROM {ATHENA_DB}.visits_table
       WHERE cafe_id = {cafe_id}
       GROUP BY user_id
     ),
@@ -57,20 +57,20 @@ def fetch_monthly_metrics(cafe_id: int, ref_dt: Optional[datetime] = None) -> Di
     ),
     coupon_use AS (
       SELECT COUNT(*) AS used
-      FROM coupons
+      FROM  {ATHENA_DB}.coupons
       WHERE cafe_id = {cafe_id}
         AND dt BETWEEN '{start_dt}' AND '{end_dt}'   
         AND used_at IS NOT NULL
     ),
     coupon_issued AS (
       SELECT COUNT(*) AS issued
-      FROM coupons
+      FROM  {ATHENA_DB}.coupons
       WHERE cafe_id = {cafe_id}
         AND dt BETWEEN '{start_dt}' AND '{end_dt}'   
     ),
     chg AS (
       SELECT COUNT(*) AS joined
-      FROM challenge_participants
+      FROM  {ATHENA_DB}.challenge_participants
       WHERE cafe_id = {cafe_id}
         AND dt BETWEEN '{start_dt}' AND '{end_dt}' 
     )

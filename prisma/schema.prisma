@@ -102,6 +102,7 @@ model UserBookmark {
   id        Int      @id @default(autoincrement())
   userId    Int      @map("user_id")
   cafeId    Int      @map("cafe_id")
+  updatedAt DateTime @updatedAt @map("updated_at") 
   createdAt DateTime @default(now()) @map("created_at")
   cafe      Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
