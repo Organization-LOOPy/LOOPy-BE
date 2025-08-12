@@ -26,8 +26,8 @@ const ensureDefaultStampImages = async (tx, cafeId) => {
   const urls = defaultStampImages.length > 0
     ? defaultStampImages
     : [
-        'https://default-images/stamp1.png',
-        'https://default-images/stamp2.png',
+        'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_1.png',
+        'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_2.png',
       ];
 
   await tx.stampImage.createMany({
