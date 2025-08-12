@@ -5074,9 +5074,11 @@ paths:
       summary: 특정 사용자에게 스탬프 1개 적립
       description: |
         점주(OWNER)가 특정 사용자에게 수동으로 스탬프를 1개 적립합니다.  
-        요청 시 **x-action-token** 헤더를 포함해야 하며, 해당 토큰의 목적(purpose)은 `ADD_STAMP`여야 합니다.
+        요청 시 `x-action-token` 헤더를 포함해야 하며, 해당 토큰의 목적(`purpose`)은 `ADD_STAMP`여야 합니다.
+        
         - 현재 진행 중인 스탬프북이 없으면 새로 생성합니다. (14일 만료)
         - 목표 개수를 초과하면 적립이 불가합니다.
+        - 스탬프북 생성 시 `startedAt`, `status`(active), `expiresAt`이 설정됩니다.
       tags:
         - Owner - Stamp
       security:
@@ -5125,7 +5127,7 @@ paths:
                         type: boolean
                         example: false
         '400':
-          description: 잘못된 요청 (이미 목표 달성 등)
+          description: 잘못된 요청 (유효하지 않은 사용자 ID 등)
           content:
             application/json:
               schema:
@@ -5139,10 +5141,10 @@ paths:
                     properties:
                       errorCode:
                         type: string
-                        example: STAMPBOOK_ALREADY_COMPLETED
+                        example: BAD_REQUEST
                       reason:
                         type: string
-                        example: 이미 목표를 달성한 스탬프북입니다.
+                        example: 유효하지 않은 사용자 ID입니다.
                       data:
                         type: string
                         nullable: true
@@ -5155,6 +5157,31 @@ paths:
           description: 인증 실패 (JWT 또는 액션 토큰 누락/유효하지 않음)
         '403':
           description: 카페 불일치 또는 권한 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: CAFE_REQUIRED
+                      reason:
+                        type: string
+                        example: 사장님 토큰에 카페 정보가 없습니다.
+                      data:
+                        type: string
+                        nullable: true
+                        example: null
+                  success:
+                    type: string
+                    nullable: true
+                    example: null
         '404':
           description: 존재하지 않는 사용자
           content:
@@ -5174,6 +5201,33 @@ paths:
                       reason:
                         type: string
                         example: 존재하지 않는 사용자입니다.
+                      data:
+                        type: string
+                        nullable: true
+                        example: null
+                  success:
+                    type: string
+                    nullable: true
+                    example: null
+        '409':
+          description: 이미 목표를 달성한 스탬프북
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: object
+                    properties:
+                      errorCode:
+                        type: string
+                        example: STAMPBOOK_ALREADY_COMPLETED
+                      reason:
+                        type: string
+                        example: 이미 목표를 달성한 스탬프북입니다.
                       data:
                         type: string
                         nullable: true
