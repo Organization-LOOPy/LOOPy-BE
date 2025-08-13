@@ -305,7 +305,7 @@ export const updateMyCafe = async (userId, cafeId, updateData) => {
   });
 };
 
-export const getCafePhoto = async (userId) => {
+export const getCafePhotos = async (userId) => {
   return await prisma.cafePhoto.findMany({
     where: {
       cafe: {

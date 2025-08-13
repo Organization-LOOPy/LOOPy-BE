@@ -5,7 +5,7 @@ import {
   addCafePhotos,
   finishCafeRegistration,
   updateMyCafe,
-  getCafePhoto,
+  getCafePhotos,
   deleteCafePhoto,
   getCafeBasicInfo,
   getCafeBusinessInfo,
@@ -189,10 +189,15 @@ export const updateCafe = async (req, res, next) => {
 export const getMyCafePhoto = async (req, res, next) => {
   try {
     const userId = req.user.id;
-    const result = await getCafePhoto(userId);
-    res.status(200).json(result);
-  } catch (err) {
-    next(err);
+    const result = await getCafePhotos(userId);
+    return res.status(200).json({
+      message: "내 카페 사진 조회 성공",
+      data: {
+        result,
+      },
+    });
+  } catch (error) {
+    next(error);
   }
 };
 
