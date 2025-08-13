@@ -10,6 +10,7 @@ import {
   savePhoneNumberAfterVerificationService,
   saveUserAgreementsService,
   deleteMyAccountService,
+  getUserPreferencesService,
 } from "../services/user.service.js";
 import { QRNotFoundError, NotFoundPhoneError } from "../errors/customErrors.js";
 import { verifyPhoneNumber } from "../services/firebase.service.js";
@@ -204,5 +205,20 @@ export const getUserQrCode = async (req, res, next) => {
     });
   } catch (err) {
     next(err);
+  }
+};
+
+export const getUserPreferences = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+
+    const preferences = await getUserPreferencesService(userId);
+
+    res.status(200).json({
+      message: '선호 키워드 조회 성공',
+      data: preferences
+    });
+  } catch (error) {
+    next(error);
   }
 };

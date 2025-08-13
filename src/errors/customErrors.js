@@ -557,6 +557,12 @@ export class RepresentativeLimitExceededError extends CustomError {
   }
 }
 
+export class CafeMenuNotExistError extends CustomError {
+  constructor() {
+    super(404, "CAFE_MENU_NOT_EXIST", "메뉴가 존재하지 않습니다.");
+  }
+}
+
 // 사진 등록
 export class InvalidPhotoUrlsError extends CustomError {
   constructor(reason) {
@@ -667,6 +673,12 @@ export class InvalidCafeParticipationError extends Error {
     super("해당 매장은 챌린지 참여 가능한 매장이 아닙니다.");
     this.name = "InvalidCafeParticipationError";
     this.statusCode = 400;
+  }
+}
+
+export class PreferenceNotFoundError extends CustomError {
+  constructor(message = '선호 키워드를 찾을 수 없습니다.', data = null) {
+    super(message, 404, data);
   }
 }
 

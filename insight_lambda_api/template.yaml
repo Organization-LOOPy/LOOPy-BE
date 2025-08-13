@@ -1,0 +1,27 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Cafe Insight API (FastAPI on Lambda)
+
+Globals:
+  Function:
+    Runtime: python3.11
+    Timeout: 30
+    MemorySize: 1024
+    Environment:
+      Variables:
+        OPENAI_API_KEY: "{{resolve:ssm:/insight/OPENAI_API_KEY:1}}"
+        PERPLEXITY_API_KEY: "{{resolve:ssm:/insight/PERPLEXITY_API_KEY:1}}"
+
+Resources:
+  InsightApiFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: app.handler
+      CodeUri: .
+      Architectures: [ x86_64 ]
+      Events:
+        HttpApiEvent:
+          Type: HttpApi
+          Properties:
+            Path: /{proxy+}
+            Method: ANY

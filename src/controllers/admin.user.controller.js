@@ -14,93 +14,129 @@ const formatPhoneDisplay = (digits) => {
 };
 
 export const getUserByPhone = async (req, res, next) => {
-  const cafeId = req.user.cafeId;
-
-  const rawPhone = req.query.phone;
-
   try {
+    // 1) 카페 ID 확보 (OWNER일 때 fallback)
+    let cafeId = req.user.cafeId;
+    if (!cafeId && req.user.roles?.includes('OWNER')) {
+      const ownerCafe = await prisma.cafe.findFirst({
+        where: { ownerId: req.user.id },
+        select: { id: true },
+      });
+      cafeId = ownerCafe?.id;
+    }
+
+    const rawPhone = req.query.phone;
     if (!rawPhone) return res.error({ reason: '전화번호 입력 누락' });
-    if (!cafeId) return res.error({ reason: '카페 ID 정보가 없습니다.' });
+    if (!cafeId)  return res.error({ reason: '카페 ID 정보가 없습니다.' });
 
     const phone = normalizePhone(rawPhone);
 
+    // 2) 유저 조회
     const user = await prisma.user.findFirst({
       where: { phoneNumber: phone },
-      select: {
-        id: true,
-        nickname: true,
-        phoneNumber: true
-      }
+      select: { id: true, nickname: true, phoneNumber: true },
     });
-
     if (!user) return res.error({ reason: '해당 전화번호의 고객을 찾을 수 없습니다.' });
 
+    // 3) 진행중 스탬프북 조회
     let sb = await prisma.stampBook.findFirst({
       where: {
         userId: user.id,
         cafeId,
         convertedAt: null,
         expiredAt: null,
-        isCompleted: false
+        isCompleted: false,
       },
       orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        currentCount: true,
-        goalCount: true,
-        expiresAt: true
-      }
+      select: { id: true, currentCount: true, goalCount: true, expiresAt: true },
     });
 
+    // 4) 없으면 생성(✅ rewardDetail 필수 채우기; 정책이 있으면 정책 기반)
     if (!sb) {
+      const policy = await prisma.stampPolicy.findUnique({
+        where: { cafeId },
+        include: { menu: { select: { name: true } } },
+      });
+
+      // goalCount: 정책(개수 기반)이 있으면 그 값을, 없으면 기본값
+      let goalCount = 10;
+      if (policy?.conditionType === 'COUNT' && policy?.stampPerCount) {
+        goalCount = policy.stampPerCount;
+      }
+
+      // rewardDetail: 사람 읽기 좋은 문구 생성
+      let rewardDetail = '리워드 미정';
+      if (policy) {
+        switch (policy.rewardType) {
+          case 'DISCOUNT':
+            rewardDetail = policy.discountAmount ? `${policy.discountAmount}원 할인` : '할인 리워드';
+            break;
+          case 'SIZE_UP':
+            rewardDetail = '사이즈 업 1회';
+            break;
+          case 'FREE_DRINK':
+            rewardDetail = '무료 음료 1잔';
+            break;
+          default:
+            rewardDetail = '리워드 제공';
+        }
+      }
+
+      const now = new Date();
+      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30일
+
       sb = await prisma.stampBook.create({
         data: {
           userId: user.id,
           cafeId,
           currentCount: 0,
-          goalCount: 10,
-          startedAt: new Date(),
-          expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          goalCount,
+          rewardDetail,                               // ✅ NOT NULL 채움
+          selectedRewardType: policy?.rewardType ?? null,
+          selectedRewardMeta: policy
+            ? { conditionType: policy.conditionType, menuId: policy.menuId ?? null }
+            : null,
+          startedAt: now,
+          expiresAt,
           status: 'active',
           isCompleted: false,
           isConverted: false,
-          round: 1
+          round: 1,
         },
-        select: {
-          id: true,
-          currentCount: true,
-          goalCount: true,
-          expiresAt: true
-        }
+        select: { id: true, currentCount: true, goalCount: true, expiresAt: true },
       });
     }
 
+    // 5) 유저 전체 스탬프/포인트 집계
     const totalStampCount = await prisma.stamp.count({
-      where: { stampBook: { userId: user.id } }
-      });
+      where: { stampBook: { userId: user.id } },
+    });
 
-      const [earnedAgg, spentAgg, refundedAgg] = await Promise.all([
-        prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'earned' },   _sum: { point: true } }),
-        prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'spent' },    _sum: { point: true } }),
-        prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'refunded' }, _sum: { point: true } }),
-        ]);
+    const [earnedAgg, spentAgg, refundedAgg] = await Promise.all([
+      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'earned' },   _sum: { point: true } }),
+      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'spent' },    _sum: { point: true } }),
+      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'refunded' }, _sum: { point: true } }),
+    ]);
 
-      const totalPoint =
-          (earnedAgg._sum.point ?? 0) +
-          (refundedAgg._sum.point ?? 0) -
-          (spentAgg._sum.point ?? 0);
+    const totalPoint =
+      (earnedAgg._sum.point ?? 0) +
+      (refundedAgg._sum.point ?? 0) -
+      (spentAgg._sum.point ?? 0);
 
-    const progressRate = sb ? Math.floor((sb.currentCount / sb.goalCount) * 100) : null;
-    const daysLeft = sb
-      ? Math.max(0, Math.ceil((new Date(sb.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
-      : null;
+    // 6) 진행률/남은 일수 계산
+    const progressRate = Math.floor((sb.currentCount / sb.goalCount) * 100);
+    const daysLeft = Math.max(
+      0,
+      Math.ceil((new Date(sb.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
+    );
 
-      const actionToken = signActionToken({
-        userId: user.id,
-        cafeId,
-        scope: 'ADD_STAMP',
-        ttlSec: 120
-        });
+    // 7) 액션 토큰
+    const actionToken = signActionToken({
+      userId: user.id,
+      cafeId,
+      scope: 'ADD_STAMP',
+      ttlSec: 120,
+    });
 
     return res.success({
       userId: user.id,
@@ -108,22 +144,25 @@ export const getUserByPhone = async (req, res, next) => {
       phone: formatPhoneDisplay(normalizePhone(user.phoneNumber || phone)),
       stamp: {
         totalCount: totalStampCount,
-        currentStampBook: sb
-          ? {
-              stampBookId: sb.id,
-              currentCount: sb.currentCount,
-              goalCount: sb.goalCount,
-              progressRate,
-              expiresAt: sb.expiresAt,
-              daysLeft
-            }
-          : null
+        currentStampBook: {
+          stampBookId: sb.id,
+          currentCount: sb.currentCount,
+          goalCount: sb.goalCount,
+          progressRate,
+          expiresAt: sb.expiresAt,
+          daysLeft,
+        },
       },
       point: { total: totalPoint },
-      actionToken
+      actionToken,
     });
   } catch (err) {
-    next(err);
+    // 서버 표준 에러 포맷 유지
+    return res.error({
+      errorCode: err?.code || 'UNKNOWN',
+      reason: err?.message || '알 수 없는 오류가 발생했습니다.',
+      data: null,
+    });
   }
 };
 
@@ -250,18 +289,27 @@ export const addStampToUser = async (req, res, next) => {
 };
 
 
-// 고객 QR 인증
+// 고객 QR 인증 (안정화 버전)
 export const verifyQRToken = async (req, res, next) => {
   try {
-    const userId = req.body?.userId;
+    const rawUserId = req.body?.userId;
+    const userId = Number(rawUserId);
     const cafeId = req.user?.cafeId;
 
-    if (!userId) {
-      return res.error({ errorCode: 'BAD_REQUEST', reason: 'userId가 필요합니다.', data: null }, 400);
+    if (!Number.isInteger(userId)) {
+      return res.error(
+        { errorCode: 'BAD_REQUEST', reason: 'userId가 필요하며 숫자여야 합니다.', data: null },
+        400,
+      );
     }
     if (!cafeId) {
-      return res.error({ errorCode: 'CAFE_REQUIRED', reason: '사장님 토큰에 카페 정보가 없습니다.', data: null }, 403);
+      return res.error(
+        { errorCode: 'CAFE_REQUIRED', reason: '사장님 토큰에 카페 정보가 없습니다.', data: null },
+        403,
+      );
     }
+
+    const now = new Date();
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -272,29 +320,47 @@ export const verifyQRToken = async (req, res, next) => {
           where: { cafeId, convertedAt: null, expiredAt: null, isCompleted: false },
           orderBy: { createdAt: 'desc' },
           take: 1,
+          select: { id: true, currentCount: true, goalCount: true },
         },
-        userCoupons: {
+        // ✅ userCoupons → coupons 로 수정
+        coupons: {
           where: {
             usedAt: null,
-            expiredAt: { gte: new Date() },
+            expiredAt: { gte: now },
+            // 스키마상 관계명은 couponTemplate 이 맞음
             couponTemplate: { is: { cafeId } },
           },
-          include: { couponTemplate: true },
+          select: {
+            id: true,
+            expiredAt: true,
+            couponTemplate: { select: { name: true, usageCondition: true } },
+          },
         },
       },
     });
 
     if (!user) {
-      return res.error({ errorCode: 'USER_NOT_FOUND', reason: '해당 고객 정보를 찾을 수 없습니다.', data: null }, 404);
+      return res.error(
+        { errorCode: 'USER_NOT_FOUND', reason: '해당 고객 정보를 찾을 수 없습니다.', data: null },
+        404,
+      );
     }
 
-    const now = new Date();
-
+    // ✅ enum은 소문자: PointTransactionType.earned / .spent / .refunded
     const [totalStampCount, earnedAgg, spentAgg, refundedAgg, activeChallenges] = await Promise.all([
-      prisma.stamp.count({ where: { stampBook: { userId: user.id } } }), // ← 관계 필터
-      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'earned' },   _sum: { point: true } }),
-      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'spent' },    _sum: { point: true } }),
-      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'refunded' }, _sum: { point: true } }),
+      prisma.stamp.count({ where: { stampBook: { userId: user.id } } }),
+      prisma.pointTransaction.aggregate({
+        where: { userId: user.id, type: PointTransactionType.earned },
+        _sum: { point: true },
+      }),
+      prisma.pointTransaction.aggregate({
+        where: { userId: user.id, type: PointTransactionType.spent },
+        _sum: { point: true },
+      }),
+      prisma.pointTransaction.aggregate({
+        where: { userId: user.id, type: PointTransactionType.refunded },
+        _sum: { point: true },
+      }),
       prisma.challengeParticipant.findMany({
         where: {
           userId: user.id,
@@ -308,28 +374,27 @@ export const verifyQRToken = async (req, res, next) => {
             },
           },
         },
-        include: { challenge: true },
+        select: { challenge: { select: { id: true, title: true, endDate: true } } },
       }),
     ]);
 
     const totalPoint =
-      (earnedAgg._sum.point ?? 0) +
-      (refundedAgg._sum.point ?? 0) -
-      (spentAgg._sum.point ?? 0);
+      (earnedAgg._sum.point ?? 0) + (refundedAgg._sum.point ?? 0) - (spentAgg._sum.point ?? 0);
 
     const currentStampBook = user.stampBooks[0] ?? null;
 
-    const availableCoupons = user.userCoupons.map((uc) => ({
+    // ✅ user.userCoupons → user.coupons
+    const availableCoupons = user.coupons.map((uc) => ({
       userCouponId: uc.id,
-      name: uc.couponTemplate.name,
-      usageCondition: uc.couponTemplate.usageCondition, // ← description 대신
+      name: uc.couponTemplate?.name ?? '',
+      usageCondition: uc.couponTemplate?.usageCondition ?? null,
       expiredAt: uc.expiredAt,
     }));
 
-    const ongoingChallenges = activeChallenges.map((cp) => ({
-      challengeId: cp.challenge.id,
-      title: cp.challenge.title,
-      expiredAt: cp.challenge.endDate,
+    const ongoingChallenges = activeChallenges.map(({ challenge }) => ({
+      challengeId: challenge.id,
+      title: challenge.title,
+      expiredAt: challenge.endDate,
     }));
 
     return res.success({
@@ -345,14 +410,21 @@ export const verifyQRToken = async (req, res, next) => {
             },
           }
         : { totalCount: totalStampCount, currentStampBook: null },
-      point: { total: totalPoint }, // ← 총액 정상 계산
+      point: { total: totalPoint },
       availableCoupons,
       ongoingChallenges,
     });
   } catch (err) {
-    next(err);
+    console.error('[verifyQRToken]', err);
+    // res.error가 status를 제대로 반영하지 않는 듯하니 명시적으로 500 내려주자.
+    return res.status(500).json({
+      resultType: 'FAIL',
+      error: { errorCode: 'INTERNAL_ERROR', reason: '서버 오류', data: null },
+      success: null,
+    });
   }
 };
+
 
 // 포인트 전액 사용 (잔액=0)
 export const useUserPoint = async (req, res, next) => {
