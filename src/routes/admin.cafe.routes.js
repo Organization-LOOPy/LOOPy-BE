@@ -11,6 +11,7 @@ import {
     getMyCafeMenus,
     getMyCafeBasicInfo,
     getMyCafeBusinessInfo,
+    deleteCafeMenu,
     getFirstCafePhotoController
 } from '../controllers/admin.cafe.controller.js';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
@@ -41,4 +42,5 @@ router.get('/photos', getMyCafePhoto);
 router.delete('/photos/:photoId', deleteMyCafePhoto);
 router.get('/myCafe/menus', getMyCafeMenus);
 router.get('/photos/first', getFirstCafePhotoController);
+router.delete("/menus/:menuId", deleteCafeMenu);
 export default router;

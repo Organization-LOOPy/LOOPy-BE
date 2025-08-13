@@ -11,6 +11,7 @@ import {
   CafePhotoNotFoundError,
   UnauthCafeAccessError,
   RepresentativeLimitExceededError,
+  CafeMenuNotExistError,
 } from "../errors/customErrors.js";
 import { uploadToS3, deleteFromS3 } from "../utils/s3.js";
 
@@ -261,6 +262,32 @@ export const getCafeBasicInfo = async (userId) => {
     },
   });
 };
+
+export const deleteCafeMenuService = async (userId, menuId) => {
+
+  const menu = await prisma.cafeMenu.findUnique({
+    where: { id: menuId },
+    select: {
+      id: true,
+      cafe: { select: { ownerId: true } },
+    },
+  });
+
+  if (!menu) {
+    throw new CafeMenuNotExistError();
+  }
+
+  if (menu.cafe.ownerId !== userId) {
+    throw new UnauthCafeAccessError();
+  }
+
+  await prisma.cafeMenu.delete({
+    where: { id: menuId },
+  });
+
+  return menuId;
+};
+
 
 export const getCafeBusinessInfo = async (userId) => {
   const cafe = await prisma.cafe.findFirst({
