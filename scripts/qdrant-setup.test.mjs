@@ -92,7 +92,7 @@ async function searchNear(collection, vector) {
 async function main() {
   try {
     await qdrant.deleteCollection("cafes").catch(() => {});
-    await qdrant.deleteCollection("user_preferences").catch(() => {});
+    //await qdrant.deleteCollection("user_preferences").catch(() => {});
 
     // 1) 임베딩으로 차원 결정 (업서트와 동일 모델/벡터로 보장)
     const testVector = await getEmbeddingVector("qdrant-setup sanity check");
@@ -117,7 +117,7 @@ async function main() {
       summary: "더미 카페 요약입니다.",
     });
 
-    // user_preferences
+    /*/ user_preferences
     const userPk = randomInt();
     await upsertDummyPoint("user_preferences", userPk, testVector, {
       userId: userPk, // 실제 사용자 PK 타입 그대로
@@ -125,6 +125,7 @@ async function main() {
     });
     // 4) 검색 체크
     await searchNear("cafes", testVector);
+    */
     await searchNear("user_preferences", testVector);
 
     logger.info("[ALL DONE] Qdrant collections ready.");
