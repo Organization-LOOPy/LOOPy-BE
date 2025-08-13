@@ -3992,55 +3992,63 @@ paths:
       security:
       - bearerAuth: []
       responses:
-        200:
-          description: 운영 정보 조회 성공
+        '200':
+          description: 내 카페 기본 정보 조회 성공
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  businessHourType:
+                  message:
                     type: string
-                    description: 운영 시간 입력 방식 선택값
-                    enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
-                    example: WEEKDAY_WEEKEND
-                  businessHours:
+                    example: 내 카페 기본 정보 조회 성공
+                  data:
                     type: array
-                    description: 요일별 영업시간 및 브레이크 타임 정보
                     items:
-                      $ref: '#/components/schemas/CafeDetailBusinessHour'
-                  hasNoHoliday:
-                    type: boolean
-                    description: 모든 요일이 영업 중인지 여부
-                    example: true
-                  keywords:
-                    type: array
-                    description: 대표 해시태그 (최대 2개)
-                    items:
-                      type: string
-                      example: "루프탑"
-                  selectedKeywords:
-                    type: object
-                    description: 선택한 카페 키워드
-                    properties:
-                      storeFilters:
-                        type: array
-                        description: 매장 필터 키워드
-                        items:
+                      type: object
+                      properties:
+                        name:
                           type: string
-                          example: "노트북"
-                      takeOutFilters:
-                        type: array
-                        description: 포장 필터 키워드
-                        items:
+                          example: 카페 루피
+                        ownerName:
                           type: string
-                          example: "텀블러 할인"
-                      menuFilters:
-                        type: array
-                        description: 메뉴 필터 키워드
-                        items:
+                          example: 홍길동
+                        address:
                           type: string
-                          example: "디카페인"
+                          example: 서울특별시 강남구 테헤란로 123
+                        region1DepthName:
+                          type: string
+                          example: 서울특별시
+                        region2DepthName:
+                          type: string
+                          example: 강남구
+                        region3DepthName:
+                          type: string
+                          example: 역삼동
+                        phone:
+                          type: string
+                          example: 02-1234-5678
+                        description:
+                          type: string
+                          example: 아늑한 분위기의 디저트 카페
+                        websiteUrl:
+                          type: string
+                          example: https://example.com
+                        photos:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id:
+                                type: integer
+                                example: 10
+                              photoUrl:
+                                type: string
+                                example: https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/1/photos/photo1.jpg
+        '401':
+          description: 인증 실패
+        '404':
+          description: 카페가 존재하지 않습니다
 
   /api/v1/owner/cafes/myCafe/menus:
     get:
@@ -4082,6 +4090,48 @@ paths:
                         description:
                           type: string
                           example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
+
+  /api/v1/owner/cafes/menus/{menuId}:
+    delete:
+      tags:
+        - Admin Cafe
+      summary: 카페 메뉴 삭제
+      description: 메뉴 ID로 해당 메뉴를 삭제합니다. 로그인한 사장님의 카페에 속한 메뉴만 삭제할 수 있습니다.
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: menuId
+          required: true
+          schema:
+            type: integer
+          description: 삭제할 메뉴의 ID
+          example: 5
+      responses:
+        '200':
+          description: 메뉴 삭제 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 카페 메뉴가 삭제되었습니다.
+                  data:
+                    type: object
+                    properties:
+                      menuId:
+                        type: integer
+                        example: 5
+        '401':
+          description: 인증 실패
+        '403':
+          description: 해당 메뉴에 대한 접근 권한이 없습니다.
+        '404':
+          description: 메뉴가 존재하지 않습니다.
+
+
 
   /api/v1/owner/cafes/photos/first:
     get:

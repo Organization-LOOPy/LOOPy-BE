@@ -9,6 +9,7 @@ import {
   deleteCafePhoto,
   getCafeBasicInfo,
   getCafeBusinessInfo,
+  deleteCafeMenuService,
   getCafeMenus,
   getFirstCafePhotoByOwner,
 } from "../services/admin.cafe.service.js";
@@ -240,6 +241,22 @@ export const getFirstCafePhotoController = async (req, res, next) => {
     const ownerId = req.user.id;
     const photo = await getFirstCafePhotoByOwner(ownerId);
     res.status(200).json({ photo });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteCafeMenu = async (req, res, next) => {
+  try {
+    const userId = req.user.id; 
+    const { menuId } = req.params;
+
+    const deletedId = await deleteCafeMenuService(userId, parseInt(menuId, 10));
+
+    return res.status(200).json({
+      message: "카페 메뉴가 삭제되었습니다.",
+      data: { menuId: deletedId },
+    });
   } catch (error) {
     next(error);
   }
