@@ -65,12 +65,28 @@ export const getChallengeDetail = async (req, res, next) => {
   const userId = req.user.id;
 
   try {
+    const id = Number(challengeId);
+
     const challenge = await prisma.challenge.findUnique({
-      where: { id: Number(challengeId) },
+      where: { id },
       include: {
         availableCafes: {
           include: {
-            cafe: true,
+            cafe: {
+              select: {
+                id: true,
+                name: true,
+                address: true,
+                region1DepthName: true,
+                region2DepthName: true,
+                region3DepthName: true,
+                photos: {
+                  orderBy: { displayOrder: 'asc' },
+                  take: 1,
+                  select: { photoUrl: true },
+                },
+              },
+            },
           },
         },
       },
@@ -81,24 +97,36 @@ export const getChallengeDetail = async (req, res, next) => {
     }
 
     const participation = await prisma.challengeParticipant.findUnique({
-      where: {
-        userId_challengeId: {
-          userId,
-          challengeId: Number(challengeId),
-        },
-      },
+      where: { userId_challengeId: { userId, challengeId: id } },
       include: {
-        joinedCafe: true,
+        joinedCafe: { select: { id: true, name: true } },
       },
     });
 
     const isParticipated = !!participation;
     const joinedCafe = participation?.joinedCafe
-      ? {
-          id: participation.joinedCafe.id,
-          name: participation.joinedCafe.name,
-        }
+      ? { id: participation.joinedCafe.id, name: participation.joinedCafe.name }
       : null;
+
+    const availableCafeIds = challenge.availableCafes.map((ac) => ac.cafe.id);
+    let joinedCount = 0;
+
+    if (isParticipated && availableCafeIds.length > 0) {
+      joinedCount = await prisma.stamp.count({
+        where: {
+          stampBook: {
+            userId,
+            cafeId: { in: availableCafeIds },
+          },
+          stampedAt: {
+            gte: new Date(challenge.startDate),
+            lte: new Date(
+              new Date(challenge.endDate).setHours(23, 59, 59, 999)
+            ),
+          },
+        },
+      });
+    }
 
     const challengeDetail = {
       id: challenge.id,
@@ -112,11 +140,12 @@ export const getChallengeDetail = async (req, res, next) => {
       rewardPoint: challenge.rewardPoint,
       isParticipated,
       joinedCafe,
+      joinedCount, 
       availableCafes: challenge.availableCafes.map((entry) => ({
         id: entry.cafe.id,
         name: entry.cafe.name,
         address: entry.cafe.address,
-        image: entry.cafe.image,
+        image: entry.cafe.photos?.[0]?.photoUrl ?? null, 
         region1DepthName: entry.cafe.region1DepthName,
         region2DepthName: entry.cafe.region2DepthName,
         region3DepthName: entry.cafe.region3DepthName,
@@ -129,6 +158,7 @@ export const getChallengeDetail = async (req, res, next) => {
     next(err);
   }
 };
+
 
 // 챌린지 참여
 export const participateInChallenge = async (req, res, next) => {
