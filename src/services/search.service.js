@@ -202,11 +202,16 @@ export const cafeSearchService = {
     const hardRows = hardResults?.cafes ?? [];
 
     if (hardRows.length > 0) {
+      const sortedData = applyDistanceAndSort(hardRows, refinedX, refinedY);
+
       return {
         fromNLP: false,
         message: null,
-        data: applyDistanceAndSort(hardRows, refinedX, refinedY),
-        nextCursor: hardResults?.nextCursor ?? null,
+        data: sortedData,
+        nextCursor:
+          sortedData.length > 0
+            ? sortedData[sortedData.length - 1].id.toString()
+            : null,
         hasMore: hardResults?.hasMore ?? false,
       };
     }

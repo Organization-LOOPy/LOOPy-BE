@@ -7,7 +7,7 @@ export const cafeSearchRepository = {
 
     // cursor가 문자열이고 유효할 때만 추가
     if (cursor && typeof cursor === "string" && cursor.trim() !== "") {
-      whereClause.createdAt = { lt: new Date(cursor) };
+      whereClause.id = { gt: parseInt(cursor) };
     }
 
     const cafeList = await prisma.cafe.findMany({
@@ -55,9 +55,10 @@ export const cafeSearchRepository = {
     // nextCursor 계산
     const hasMore = cafeList.length > take;
     const cafes = hasMore ? cafeList.slice(0, -1) : cafeList;
-    const nextCursor = hasMore
-      ? cafes[cafes.length - 1].createdAt.toISOString()
-      : null;
+    const nextCursor =
+      hasMore && cafes.length > 0
+        ? cafes[cafes.length - 1].id.toString()
+        : null;
 
     return {
       cafes,
