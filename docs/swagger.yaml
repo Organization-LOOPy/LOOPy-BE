@@ -2380,6 +2380,12 @@ paths:
                           name:
                             type: string
                             example: 카페 위니
+                      joinedCount:
+                        type: integer
+                        description: >
+                          참여 중인 경우, 챌린지 기간 내 '참여 가능 매장'에서 사용자가 적립한 스탬프 수.
+                          미참여 시 0.
+                        example: 2
                       availableCafes:
                         type: array
                         description: 챌린지 참여 가능한 카페 목록
@@ -2397,6 +2403,8 @@ paths:
                               example: 서울 서대문구 이화여대길 52
                             image:
                               type: string
+                              nullable: true
+                              description: 카페 대표 이미지(첫 번째 사진). 없으면 null.
                               example: https://cdn.loopy.com/cafes/12.jpg
                             region1DepthName:
                               type: string
@@ -2407,6 +2415,7 @@ paths:
                             region3DepthName:
                               type: string
                               example: 이화동
+
 
   /api/v1/challenges/{challengeId}/join:
     post:
