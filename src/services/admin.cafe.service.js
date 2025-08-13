@@ -254,6 +254,7 @@ export const getCafeBasicInfo = async (userId) => {
       websiteUrl: true,
       photos: {
         select: {
+          id: true,
           photoUrl: true,
         },
       },
