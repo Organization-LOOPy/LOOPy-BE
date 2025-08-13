@@ -10,12 +10,9 @@ PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
 def _map_legacy_keys(obj: dict) -> dict:
     """프롬프트/모델에 따라 키가 살짝 다를 수 있어 호환 처리."""
     mapped = dict(obj)
-    # menu trends: allow "example" -> "exampleCafe"
     if "example" in mapped and "exampleCafe" not in mapped:
         mapped["exampleCafe"] = mapped["example"]
-    # features: allow "whyPopular" -> "whyEffective" fallback 등
     if "whyPopular" in mapped and "whyEffective" not in mapped:
-        # 의미가 비슷하면 옮겨줌(트렌드/특징 프롬프트를 혼용했을 때 대비)
         mapped["whyEffective"] = mapped["whyPopular"]
     return mapped
 
@@ -43,7 +40,6 @@ def get_trending_menu_info() -> List[MenuTrendItem]:
         try:
             items.append(MenuTrendItem(**_map_legacy_keys(obj)))
         except Exception:
-            # 유효하지 않은 항목은 스킵 (로깅 필요시 여기서 처리)
             continue
     return items
 

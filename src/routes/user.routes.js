@@ -13,7 +13,8 @@ import {
   notifyPhoneVerification,
   saveUserAgreements,
   getUserQrCode,
-  deleteMyAccount
+  deleteMyAccount,
+  getUserPreferences
 } from '../controllers/user.controller.js';
 
 import {
@@ -44,6 +45,7 @@ router.patch('/me/preferences', updateUserPreferences);
 router.patch('/me/preferred-area', updatePreferredArea);
 router.patch('/me/kakao-alert', updateKakaoAlert);
 router.patch('/me/fcm-token', updateFcmToken);
+router.get('/me/preferences', getUserPreferences);
 
 // 북마크
 router.get('/me/bookmarks', getBookmarkedCafes);

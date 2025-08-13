@@ -676,5 +676,11 @@ export class InvalidCafeParticipationError extends Error {
   }
 }
 
+export class PreferenceNotFoundError extends CustomError {
+  constructor(message = '선호 키워드를 찾을 수 없습니다.', data = null) {
+    super(message, 404, data);
+  }
+}
+
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;

@@ -7,6 +7,7 @@ import {
   InvalidPreferredAreaError,
   QRCodeError,
   InvalidExitRoleError,
+  PreferenceNotFoundError,
 } from '../errors/customErrors.js';
 import QRCode from 'qrcode';
 
@@ -307,5 +308,30 @@ export const generateQRCode = async (userId) => {
     return based64Image;
   } catch (err) {
     throw new QRCodeError('QR 코드 생성 실패: ');
+  }
+};
+
+export const getUserPreferencesService = async (userId) => {
+  try {
+    const preferences = await prisma.userPreference.findUnique({
+      where: { userId },
+      select: {
+        preferredStore: true,
+        preferredTakeout: true,
+        preferredMenu: true
+      }
+    });
+
+    if (!preferences) {
+      throw new PreferenceNotFoundError('사용자의 선호 키워드가 없습니다.');
+    }
+
+    return {
+      preferredStore: preferences.preferredStore || {},
+      preferredTakeout: preferences.preferredTakeout || {},
+      preferredMenu: preferences.preferredMenu || {}
+    };
+  } catch (err) {
+    throw err;
   }
 };

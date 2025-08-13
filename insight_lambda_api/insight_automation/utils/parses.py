@@ -1,12 +1,33 @@
 from __future__ import annotations
+import json
+import re
 
 from typing import Any, Dict, Iterable, List, Sequence, Union
 
+from insight_automation.utils.perplexity import ensure_dict_array_from_text
 from insight_automation.logic.schemas import CafeFeatureItem, MenuTrendItem
 from insight_automation.utils.jsonsafe import coerce_json_array
 
 JsonLike = Union[str, Sequence[Dict[str, Any]], Sequence[MenuTrendItem], Sequence[CafeFeatureItem]]
 
+def safe_json_parse(text: str):
+    """Perplexity 응답에서 JSON 부분만 안전하게 추출/파싱"""
+    if not text:
+        print("⚠️ safe_json_parse: 입력이 비어 있음")
+        return None
+    try:
+        match = re.search(r"\{.*\}", text, re.DOTALL)
+        if match:
+            parsed = json.loads(match.group(0))
+            print(f"✅ JSON 파싱 성공 (길이={len(str(parsed))})")
+            return parsed
+        parsed = json.loads(text)
+        print(f"✅ JSON 파싱 성공 (길이={len(str(parsed))})")
+        return parsed
+    except Exception as e:
+        print(f"❌ JSON 파싱 실패: {e}\n원본 텍스트:\n{text[:300]}...")
+        return None
+    
 def _map_menu_keys(odj: Dict[str, Any]) -> Dict[str, Any]:
     """
     Perplexity가 키를 살짝 다르게 줄 때 호환 처리.
@@ -55,46 +76,40 @@ def _ensure_dict_array(payload: JsonLike) -> List[Dict[str,Any]]:
 
     return []
 
-def parse_menu_trends(payload: JsonLike, max_items: int | None = None) -> List[MenuTrendItem]:
-    """
-    Perplexity '메뉴 트렌드' 응답을 List[MenuTrendItem]로 파싱.
-    - payload: JSON 문자열, dict 리스트, 또는 MenuTrendItem 리스트
-    - max_items: 상위 n개만 반환하고 싶을 때 지정
-    """
-    if isinstance(payload, list) and payload and isinstance(payload[0], MenuTrendItem):
-        items = payload  # type: ignore[assignment]
-        return items[:max_items] if max_items else items  # type: ignore[return-value]
+def parse_menu_trends(payload: str, max_items: int | None = None) -> list[MenuTrendItem]:
+    print("📥 parse_menu_trends 호출됨")
+    dicts = ensure_dict_array_from_text(payload)
+    print(f"  - dicts 개수: {len(dicts)}")
 
-    dicts = _ensure_dict_array(payload)
-    items: List[MenuTrendItem] = []
+    items: list[MenuTrendItem] = []
     for obj in dicts:
         try:
             items.append(MenuTrendItem(**_map_menu_keys(obj)))
-        except Exception:
+        except Exception as e:
+            print(f"⚠️ MenuTrendItem 변환 실패: {e} | 데이터: {obj}")
             continue
 
+    print(f"  - 변환 성공 개수: {len(items)}")
     return items[:max_items] if max_items else items
 
-def parse_cafe_features(payload: JsonLike, max_items: int | None = None) -> List[CafeFeatureItem]:
-    """
-    Perplexity '인기 카페 특징' 응답을 List[CafeFeatureItem]로 파싱.
-    - payload: JSON 문자열, dict 리스트, 또는 CafeFeatureItem 리스트
-    - max_items: 상위 n개만 반환하고 싶을 때 지정
-    """
-    # 이미 모델 리스트인 경우
-    if isinstance(payload, list) and payload and isinstance(payload[0], CafeFeatureItem):
-        items = payload  # type: ignore[assignment]
-        return items[:max_items] if max_items else items  # type: ignore[return-value]
 
+
+def parse_cafe_features(payload: JsonLike, max_items: int | None = None) -> List[CafeFeatureItem] | None:
+    print("📥 parse_cafe_features 호출됨")
     dicts = _ensure_dict_array(payload)
+    print(f"  - dicts 개수: {len(dicts)}")
+
     items: List[CafeFeatureItem] = []
     for obj in dicts:
         try:
             items.append(CafeFeatureItem(**_map_feature_keys(obj)))
-        except Exception:
+        except Exception as e:
+            print(f"⚠️ CafeFeatureItem 변환 실패: {e} | 데이터: {obj}")
             continue
 
+    print(f"  - 변환 성공 개수: {len(items)}")
+
+    if not items:  # 변환 성공이 없으면 None 반환
+        return None
+
     return items[:max_items] if max_items else items
-
-
-__all__ = ["parse_menu_trends", "parse_cafe_features"]
