@@ -557,6 +557,12 @@ export class RepresentativeLimitExceededError extends CustomError {
   }
 }
 
+export class CafeMenuNotExistError extends CustomError {
+  constructor() {
+    super(404, "CAFE_MENU_NOT_EXIST", "메뉴가 존재하지 않습니다.");
+  }
+}
+
 // 사진 등록
 export class InvalidPhotoUrlsError extends CustomError {
   constructor(reason) {
