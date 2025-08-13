@@ -1992,15 +1992,15 @@ paths:
             schema:
               type: object
               properties:
-                storeFilter:
+                storeFilters:
                   type: object
                   description: 매장 필터 조건
                   example: {}
-                takeOutFilter:
+                takeOutFilters:
                   type: object
                   description: 테이크아웃 필터 조건
                   example: {}
-                menuFilter:
+                menuFilters:
                   type: object
                   description: 메뉴 필터 조건
                   example: {}

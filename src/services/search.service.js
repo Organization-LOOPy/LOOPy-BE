@@ -35,9 +35,9 @@ function hasAnyKeys(o) {
 // 지역 필터링 전처리
 function buildRegionCondition(region1, region2, region3) {
   const cond = {};
-  if (region1) cond.region1DepthName = region1.trim();
-  if (region2) cond.region2DepthName = region2.trim();
-  if (region3) cond.region3DepthName = region3.trim();
+  if (region1) cond.region1DepthName = region1.trim(); // camelCase
+  if (region2) cond.region2DepthName = region2.trim(); // camelCase
+  if (region3) cond.region3DepthName = region3.trim(); // camelCase
   return cond;
 }
 
@@ -182,16 +182,46 @@ export const cafeSearchService = {
 
     // 2) 검색: 지역 미지정이면 전국, 지정 시 해당 지역만 (RDB 하드 검색 우선)
     const whereConditions = { AND: [] };
-    if (hasRegionFilter) whereConditions.AND.push(explicitRegionCond);
+    if (hasRegionFilter) {
+      // 각 지역 조건을 개별적으로 추가
+      Object.entries(explicitRegionCond).forEach(([key, value]) => {
+        whereConditions.AND.push({ [key]: value });
+      });
+    }
     if (hasSearchQuery) whereConditions.AND.push({ name: { contains: query } });
     selectedStoreFilters.forEach((f) =>
-      whereConditions.AND.push({ storeFilters: { path: [f], equals: true } })
+      whereConditions.AND.push({
+        storeFilters: {
+          path: f, // 배열 제거
+          equals: true,
+        },
+      })
     );
+
     selectedMenuFilters.forEach((f) =>
-      whereConditions.AND.push({ menuFilters: { path: [f], equals: true } })
+      whereConditions.AND.push({
+        menuFilters: {
+          path: f, // 배열 제거
+          equals: true,
+        },
+      })
     );
+
     selectedTakeOutFilters.forEach((f) =>
-      whereConditions.AND.push({ takeOutFilters: { path: [f], equals: true } })
+      whereConditions.AND.push({
+        takeOutFilters: {
+          path: f, // 배열 제거
+          equals: true,
+        },
+      })
+    );
+    console.log("=== 지역 필터 디버깅 ===");
+    console.log("받은 지역 파라미터:", { region1, region2, region3 });
+    console.log("buildRegionCondition 결과:", explicitRegionCond);
+    console.log("hasRegionFilter:", hasRegionFilter);
+    console.log(
+      "최종 whereConditions:",
+      JSON.stringify(whereConditions, null, 2)
     );
 
     const hardResults = await cafeSearchRepository.findCafeByInfos(
