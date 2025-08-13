@@ -10,6 +10,7 @@ const qdrant = new QdrantClient({
 const COLLECTION_NAME = "cafes";
 
 // 업로드했던 카페 ID 목록
+
 const EXPECTED_CAFE_IDS = [
   1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 53, 54,
   55, 56, 57, 68, 69, 70, 71, 72,

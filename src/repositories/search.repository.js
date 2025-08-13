@@ -2,7 +2,7 @@ import { logger } from "../utils/logger.js";
 import prisma from "../../prisma/client.js";
 
 export const cafeSearchRepository = {
-  async findCafeByInfos(whereConditions, cursor, userId, take = 10) {
+  async findCafeByInfos(whereConditions, cursor, userId, take = 15) {
     const whereClause = { ...whereConditions };
 
     // cursor가 문자열이고 유효할 때만 추가

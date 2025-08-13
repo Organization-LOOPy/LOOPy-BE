@@ -92,7 +92,7 @@ async function searchNear(collection, vector) {
 async function main() {
   try {
     await qdrant.deleteCollection("cafes").catch(() => {});
-    //await qdrant.deleteCollection("user_preferences").catch(() => {});
+    await qdrant.deleteCollection("user_preferences").catch(() => {});
 
     // 1) 임베딩으로 차원 결정 (업서트와 동일 모델/벡터로 보장)
     const testVector = await getEmbeddingVector("qdrant-setup sanity check");
