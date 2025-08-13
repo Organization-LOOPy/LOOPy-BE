@@ -4,7 +4,7 @@ from pyathena import connect
 import os
 
 KST = timezone(timedelta(hours=9))
-ATHENA_DB = os.getenv("ATHENA_DB", "default")
+ATHENA_DB = os.getenv("ATHENA_DB", "cafe_analytics")
 def _conn():
     return connect(
         s3_staging_dir=os.getenv("ATHENA_STAGING_DIR"),

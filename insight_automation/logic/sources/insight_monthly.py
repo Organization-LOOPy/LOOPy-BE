@@ -1,5 +1,5 @@
 import os
-import openai
+from openai import OpenAI
 from datetime import datetime, timedelta, timezone
 from calendar import monthrange
 from dotenv import load_dotenv
@@ -8,7 +8,8 @@ from insight_automation.utils.athena import fetch_monthly_metrics
 from insight_automation.logic.schemas import MenuTrendItem, CafeFeatureItem
 
 load_dotenv()
-openai.api_key = os.getenv("OPENAI_API_KEY")
+client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
 
 KST = timezone(timedelta(hours=9))
 
@@ -110,18 +111,13 @@ def synthesize_monthly_insight(indicators: Dict[str, Any],
 모든 텍스트는 한국어로 작성하세요.
 """
 
-    resp = openai.ChatCompletion.create(
-        model="gpt-4o",
-        messages=[
-            {"role": "system", "content": "당신은 친절하고 신뢰할 수 있는 카페 인사이트 분석가입니다."},
-            {"role": "user", "content": prompt},
-        ],
-        temperature=0.2,
+    resp = client.chat.completions.create(
+    model="gpt-4o",
+    messages=[
+        {"role": "system", "content": "당신은 친절하고 신뢰할 수 있는 카페 인사이트 분석가입니다."},
+        {"role": "user", "content": prompt},
+    ],
+    temperature=0.2,
     )
-    content = resp["choices"][0]["message"]["content"]
-    return {
-        "type": "monthly_insight",
-        "period": month_label,
-        "kpis": kpis,
-        "content": content  
-    }
+
+    content = resp.choices[0].message.content

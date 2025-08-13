@@ -13,14 +13,24 @@ def fetch_cafe_trend(prompt: str) -> str:
         "Content-Type": "application/json",
     }
     data = {
-        "model": "llama-3-sonar-small-32k-online",
-        "messages": [{"role": "user", "content": prompt}],
+        "model": "sonar-pro",
+        "messages": [
+            {"role": "system", "content": "Be precise and concise."},
+            {"role": "user", "content": prompt}
+        ],
+        "temperature": 0.7,
+        "max_tokens": 500
     }
+
     resp = requests.post(PERPLEXITY_URL, json=data, headers=headers, timeout=60)
+
+
+    print(f"🔍 Status: {resp.status_code}")
+    print(f"🔍 Raw Response: {resp.text}")
+
     resp.raise_for_status()
 
     j = resp.json()
-    # 방어적으로 키 존재 확인
     try:
         return j["choices"][0]["message"]["content"]
     except Exception as e:
