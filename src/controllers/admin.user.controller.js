@@ -250,18 +250,27 @@ export const addStampToUser = async (req, res, next) => {
 };
 
 
-// 고객 QR 인증
+// 고객 QR 인증 (안정화 버전)
 export const verifyQRToken = async (req, res, next) => {
   try {
-    const userId = req.body?.userId;
+    const rawUserId = req.body?.userId;
+    const userId = Number(rawUserId);
     const cafeId = req.user?.cafeId;
 
-    if (!userId) {
-      return res.error({ errorCode: 'BAD_REQUEST', reason: 'userId가 필요합니다.', data: null }, 400);
+    if (!Number.isInteger(userId)) {
+      return res.error(
+        { errorCode: 'BAD_REQUEST', reason: 'userId가 필요하며 숫자여야 합니다.', data: null },
+        400,
+      );
     }
     if (!cafeId) {
-      return res.error({ errorCode: 'CAFE_REQUIRED', reason: '사장님 토큰에 카페 정보가 없습니다.', data: null }, 403);
+      return res.error(
+        { errorCode: 'CAFE_REQUIRED', reason: '사장님 토큰에 카페 정보가 없습니다.', data: null },
+        403,
+      );
     }
+
+    const now = new Date();
 
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -272,29 +281,47 @@ export const verifyQRToken = async (req, res, next) => {
           where: { cafeId, convertedAt: null, expiredAt: null, isCompleted: false },
           orderBy: { createdAt: 'desc' },
           take: 1,
+          select: { id: true, currentCount: true, goalCount: true },
         },
-        userCoupons: {
+        // ✅ userCoupons → coupons 로 수정
+        coupons: {
           where: {
             usedAt: null,
-            expiredAt: { gte: new Date() },
+            expiredAt: { gte: now },
+            // 스키마상 관계명은 couponTemplate 이 맞음
             couponTemplate: { is: { cafeId } },
           },
-          include: { couponTemplate: true },
+          select: {
+            id: true,
+            expiredAt: true,
+            couponTemplate: { select: { name: true, usageCondition: true } },
+          },
         },
       },
     });
 
     if (!user) {
-      return res.error({ errorCode: 'USER_NOT_FOUND', reason: '해당 고객 정보를 찾을 수 없습니다.', data: null }, 404);
+      return res.error(
+        { errorCode: 'USER_NOT_FOUND', reason: '해당 고객 정보를 찾을 수 없습니다.', data: null },
+        404,
+      );
     }
 
-    const now = new Date();
-
+    // ✅ enum은 소문자: PointTransactionType.earned / .spent / .refunded
     const [totalStampCount, earnedAgg, spentAgg, refundedAgg, activeChallenges] = await Promise.all([
-      prisma.stamp.count({ where: { stampBook: { userId: user.id } } }), // ← 관계 필터
-      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'earned' },   _sum: { point: true } }),
-      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'spent' },    _sum: { point: true } }),
-      prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'refunded' }, _sum: { point: true } }),
+      prisma.stamp.count({ where: { stampBook: { userId: user.id } } }),
+      prisma.pointTransaction.aggregate({
+        where: { userId: user.id, type: PointTransactionType.earned },
+        _sum: { point: true },
+      }),
+      prisma.pointTransaction.aggregate({
+        where: { userId: user.id, type: PointTransactionType.spent },
+        _sum: { point: true },
+      }),
+      prisma.pointTransaction.aggregate({
+        where: { userId: user.id, type: PointTransactionType.refunded },
+        _sum: { point: true },
+      }),
       prisma.challengeParticipant.findMany({
         where: {
           userId: user.id,
@@ -308,28 +335,27 @@ export const verifyQRToken = async (req, res, next) => {
             },
           },
         },
-        include: { challenge: true },
+        select: { challenge: { select: { id: true, title: true, endDate: true } } },
       }),
     ]);
 
     const totalPoint =
-      (earnedAgg._sum.point ?? 0) +
-      (refundedAgg._sum.point ?? 0) -
-      (spentAgg._sum.point ?? 0);
+      (earnedAgg._sum.point ?? 0) + (refundedAgg._sum.point ?? 0) - (spentAgg._sum.point ?? 0);
 
     const currentStampBook = user.stampBooks[0] ?? null;
 
-    const availableCoupons = user.userCoupons.map((uc) => ({
+    // ✅ user.userCoupons → user.coupons
+    const availableCoupons = user.coupons.map((uc) => ({
       userCouponId: uc.id,
-      name: uc.couponTemplate.name,
-      usageCondition: uc.couponTemplate.usageCondition, // ← description 대신
+      name: uc.couponTemplate?.name ?? '',
+      usageCondition: uc.couponTemplate?.usageCondition ?? null,
       expiredAt: uc.expiredAt,
     }));
 
-    const ongoingChallenges = activeChallenges.map((cp) => ({
-      challengeId: cp.challenge.id,
-      title: cp.challenge.title,
-      expiredAt: cp.challenge.endDate,
+    const ongoingChallenges = activeChallenges.map(({ challenge }) => ({
+      challengeId: challenge.id,
+      title: challenge.title,
+      expiredAt: challenge.endDate,
     }));
 
     return res.success({
@@ -345,14 +371,21 @@ export const verifyQRToken = async (req, res, next) => {
             },
           }
         : { totalCount: totalStampCount, currentStampBook: null },
-      point: { total: totalPoint }, // ← 총액 정상 계산
+      point: { total: totalPoint },
       availableCoupons,
       ongoingChallenges,
     });
   } catch (err) {
-    next(err);
+    console.error('[verifyQRToken]', err);
+    // res.error가 status를 제대로 반영하지 않는 듯하니 명시적으로 500 내려주자.
+    return res.status(500).json({
+      resultType: 'FAIL',
+      error: { errorCode: 'INTERNAL_ERROR', reason: '서버 오류', data: null },
+      success: null,
+    });
   }
 };
+
 
 // 포인트 전액 사용 (잔액=0)
 export const useUserPoint = async (req, res, next) => {
