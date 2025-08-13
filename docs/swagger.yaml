@@ -640,7 +640,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-
+    get:
+      tags:
+        - User Preferences
+      summary: 선호 키워드 조회
+      description: preferredArea를 제외한 선호 키워드(매장, 테이크아웃, 메뉴) 선택 여부를 조회합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 선호 키워드 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 선호 키워드 조회 성공
+                  data:
+                    type: object
+                    properties:
+                      preferredStore:
+                        type: object
+                        example:
+                          노트북: true
+                          1인석: false
+                      preferredTakeout:
+                        type: object
+                        example:
+                          텀블러 할인: true
+                          포장 할인: false
+                      preferredMenu:
+                        type: object
+                        example:
+                          비건: false
+                          디카페인: true
+        '404':
+          description: 선호 키워드가 없음
 
   /api/v1/users/me/preferred-area:
     patch:
