@@ -2054,9 +2054,10 @@ paths:
                       type: string
                       example: "역삼동"
             example:
-              storeFilter: {}
-              takeOutFilter: {}
-              menuFilter: {}
+              storeFilters: {}
+              takeOutFilters: {}
+              menuFilters: {}
+              addressInfo: {}
       security:
         - bearerAuth: []
       responses:
