@@ -171,32 +171,6 @@ export const cafeSearchService = {
       }
       let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
 
-      // 사용자 선호 지역이 있다면 적용
-      const preferredArea =
-        typeof getUserPreferredAreaCond === "function"
-          ? await getUserPreferredAreaCond(userId)
-          : {};
-      if (hasAnyKeys(preferredArea)) {
-        rows = rows.filter((c) => {
-          if (
-            preferredArea.region1DepthName &&
-            c.region1DepthName !== preferredArea.region1DepthName
-          )
-            return false;
-          if (
-            preferredArea.region2DepthName &&
-            c.region2DepthName !== preferredArea.region2DepthName
-          )
-            return false;
-          if (
-            preferredArea.region3DepthName &&
-            c.region3DepthName !== preferredArea.region3DepthName
-          )
-            return false;
-          return true;
-        });
-      }
-
       return {
         fromNLP: true,
         message: null,
