@@ -642,7 +642,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
     get:
       tags:
-        - User Preferences
+        - Users
       summary: 선호 키워드 조회
       description: preferredArea를 제외한 선호 키워드(매장, 테이크아웃, 메뉴) 선택 여부를 조회합니다.
       security:
