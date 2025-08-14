@@ -47,9 +47,6 @@ jobs:
             
             echo "Waiting for container to start..."
             sleep 15
-
-            echo "Syncing Prisma schema..."
-            docker exec loopy-app npx prisma db push --skip-generate
             
             echo "Checking container status..."
             docker ps
