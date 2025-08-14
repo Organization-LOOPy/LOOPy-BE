@@ -1,7 +1,4 @@
 -- DropForeignKey
-ALTER TABLE `point_transactions` DROP FOREIGN KEY `point_transactions_stamp_book_id_fkey`;
-
--- DropForeignKey
 ALTER TABLE `user_role` DROP FOREIGN KEY `user_role_userId_fkey`;
 
 -- AlterTable
