@@ -3719,7 +3719,7 @@ paths:
   /api/v1/users/owner-cafe:
     post:
       tags:
-        - User
+        - Users
       summary: 카페 생성
       description: |
         사용자의 역할이 `OWNER`이면 기본 카페 정보를 생성하고 해당 `cafeId`를 반환합니다.
