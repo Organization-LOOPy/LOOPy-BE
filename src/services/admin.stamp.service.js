@@ -28,9 +28,11 @@ export const uploadStampImagesService = async (userId, files) => {
     });
     if (!cafe) throw new CafeNotFoundError();
 
+    // 내가 올린 것만 카운트
     const existingCount = await tx.stampImage.count({
       where: {
         cafeId: cafe.id,
+        createdBy: Number(userId),
         imageUrl: { notIn: defaultStampImages },
       },
     });
@@ -38,17 +40,21 @@ export const uploadStampImagesService = async (userId, files) => {
     const capacity = MAX_TOTAL_IMAGES - defaultStampImages.length - existingCount;
 
     if (capacity <= 0) {
-      throw new StampImageLimitExceededError(); 
+      throw new StampImageLimitExceededError();
     }
     if (files.length > capacity) {
-      throw new StampImageLimitExceededError(); 
+      throw new StampImageLimitExceededError();
     }
 
     const results = [];
     for (const file of files) {
       const imageUrl = await uploadToS3(file, 'cafes/stamps');
       const saved = await tx.stampImage.create({
-        data: { cafeId: cafe.id, imageUrl },
+        data: {
+          cafeId: cafe.id,
+          imageUrl,
+          createdBy: Number(userId),
+        },
         select: { id: true, imageUrl: true },
       });
       results.push(saved);
