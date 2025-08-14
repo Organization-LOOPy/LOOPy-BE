@@ -16,6 +16,11 @@ export const uploadStampImagesService = async (userId, files) => {
   }
   const MAX_TOTAL_IMAGES = 4;
 
+  const defaultStampImages = [
+    'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_1.png',
+    'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_2.png',
+  ];
+
   return await prisma.$transaction(async (tx) => {
     const cafe = await tx.cafe.findFirst({
       where: { ownerId: Number(userId) },
@@ -24,10 +29,13 @@ export const uploadStampImagesService = async (userId, files) => {
     if (!cafe) throw new CafeNotFoundError();
 
     const existingCount = await tx.stampImage.count({
-      where: { cafeId: cafe.id },
+      where: {
+        cafeId: cafe.id,
+        imageUrl: { notIn: defaultStampImages },
+      },
     });
 
-    const capacity = MAX_TOTAL_IMAGES - existingCount;
+    const capacity = MAX_TOTAL_IMAGES - defaultStampImages.length - existingCount;
 
     if (capacity <= 0) {
       throw new StampImageLimitExceededError(); 
