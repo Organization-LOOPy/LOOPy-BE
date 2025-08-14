@@ -3676,7 +3676,7 @@ paths:
       summary: 내 카페 운영 정보 수정
       description: 운영시간, 버튼 상태, 브레이크타임, 해시태그, 키워드 정보를 수정합니다.
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -3691,12 +3691,57 @@ paths:
                   type: string
                   description: 운영 시간 입력 방식 선택값
                   enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
-                  example: WEEKDAY_WEEKEND
+                  example: SAME_ALL_DAYS
                 businessHours:
-                  type: array
-                  description: 요일별 운영 시간 및 브레이크 타임 정보
-                  items:
-                    $ref: '#/components/schemas/CafeDetailBusinessHour'
+                  description: 요일별 또는 구분별 운영 시간 정보
+                  oneOf:
+                    - type: object
+                      description: 모든 날 동일
+                      properties:
+                        open:
+                          type: string
+                          example: "10:00"
+                        close:
+                          type: string
+                          example: "20:00"
+                    - type: object
+                      description: 평일/주말 구분
+                      properties:
+                        weekday:
+                          type: object
+                          properties:
+                            open:
+                              type: string
+                              example: "09:00"
+                            close:
+                              type: string
+                              example: "18:00"
+                        weekend:
+                          type: object
+                          properties:
+                            open:
+                              type: string
+                              example: "11:00"
+                            close:
+                              type: string
+                              example: "17:00"
+                    - type: array
+                      description: 요일별 각각 다름
+                      items:
+                        type: object
+                        properties:
+                          day:
+                            type: string
+                            example: "월"
+                          isClosed:
+                            type: boolean
+                            example: false
+                          openTime:
+                            type: string
+                            example: "09:00"
+                          closeTime:
+                            type: string
+                            example: "18:00"
                 breakTime:
                   type: string
                   description: 전체 브레이크 타임 (호환용, 현재 미사용 가능)
@@ -3725,6 +3770,69 @@ paths:
                   items:
                     type: string
                     example: "디카페인"
+            examples:
+              sameAllDays:
+                summary: 모든 날 동일
+                value:
+                  businessHourType: SAME_ALL_DAYS
+                  businessHours:
+                    open: "10:00"
+                    close: "20:00"
+                  breakTime: "14:00~15:00"
+                  keywords: ["루프탑", "브런치"]
+                  storeFilters: ["노트북", "단체석"]
+                  takeOutFilters: ["텀블러 할인"]
+                  menuFilters: ["비건", "디카페인"]
+              weekdayWeekend:
+                summary: 평일/주말 다름
+                value:
+                  businessHourType: WEEKDAY_WEEKEND
+                  businessHours:
+                    weekday:
+                      open: "09:00"
+                      close: "18:00"
+                    weekend:
+                      open: "11:00"
+                      close: "17:00"
+                  breakTime: "14:00~15:00"
+                  keywords: ["한옥카페", "디저트"]
+                  storeFilters: ["주차 가능"]
+                  takeOutFilters: ["포장 할인"]
+                  menuFilters: ["저당"]
+              differentEachDay:
+                summary: 요일별 각각 다름
+                value:
+                  businessHourType: DIFFERENT_EACH_DAY
+                  businessHours:
+                    - day: "월"
+                      isClosed: false
+                      openTime: "09:00"
+                      closeTime: "18:00"
+                    - day: "화"
+                      isClosed: false
+                      openTime: "09:00"
+                      closeTime: "18:00"
+                    - day: "수"
+                      isClosed: false
+                      openTime: "10:00"
+                      closeTime: "19:00"
+                    - day: "목"
+                      isClosed: false
+                      openTime: "10:00"
+                      closeTime: "19:00"
+                    - day: "금"
+                      isClosed: false
+                      openTime: "11:00"
+                      closeTime: "20:00"
+                    - day: "토"
+                      isClosed: true
+                    - day: "일"
+                      isClosed: true
+                  breakTime: "14:00~15:00"
+                  keywords: ["루프탑", "야경"]
+                  storeFilters: ["애견 동반"]
+                  takeOutFilters: ["텀블러 할인"]
+                  menuFilters: ["디카페인"]
       responses:
         200:
           description: 운영 정보 수정 성공
@@ -3741,25 +3849,54 @@ paths:
                     type: string
                     example: WEEKDAY_WEEKEND
                   businessHours:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/CafeDetailBusinessHour'
+                    oneOf:
+                      - type: object
+                        example:
+                          open: "10:00"
+                          close: "20:00"
+                      - type: object
+                        example:
+                          weekday:
+                            open: "09:00"
+                            close: "18:00"
+                          weekend:
+                            open: "11:00"
+                            close: "17:00"
+                      - type: array
+                        example:
+                          - day: "월"
+                            isClosed: false
+                            openTime: "09:00"
+                            closeTime: "18:00"
+                          - day: "화"
+                            isClosed: false
+                            openTime: "09:00"
+                            closeTime: "18:00"
+                          - day: "수"
+                            isClosed: false
+                            openTime: "10:00"
+                            closeTime: "19:00"
                   storeFilters:
                     type: array
                     items:
                       type: string
+                    example: ["노트북", "단체석"]
                   takeOutFilters:
                     type: array
                     items:
                       type: string
+                    example: ["텀블러 할인"]
                   menuFilters:
                     type: array
                     items:
                       type: string
+                    example: ["디카페인"]
                   keywords:
                     type: array
                     items:
                       type: string
+                    example: ["루프탑", "브런치"]
+
 
 
   /api/v1/owner/cafes/menus:
@@ -4020,17 +4157,17 @@ paths:
                           type: string
                           description: 사진 URL
                           example: "https://s3.aws.com/cafe/photo1.jpg"
-
+  
   /api/v1/owner/cafes/myCafe/operation:
     get:
       tags: [Admin Cafe]
       summary: 내 카페 운영 정보 조회
-      description: 사장님의 카페 운영 시간, 버튼 선택 상태, 해시태그 및 필터 키워드를 조회
+      description: 사장님의 카페 운영 시간, 브레이크타임(옵션), 해시태그 및 필터 키워드(버튼 선택 상태) 조회
       security:
-      - bearerAuth: []
+        - bearerAuth: []
       responses:
         '200':
-          description: 내 카페 기본 정보 조회 성공
+          description: 내 카페 운영 정보 조회 성공
           content:
             application/json:
               schema:
@@ -4038,54 +4175,174 @@ paths:
                 properties:
                   message:
                     type: string
-                    example: 내 카페 기본 정보 조회 성공
+                    example: 내 카페 운영 정보 조회 성공
                   data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                          example: 카페 루피
-                        ownerName:
-                          type: string
-                          example: 홍길동
-                        address:
-                          type: string
-                          example: 서울특별시 강남구 테헤란로 123
-                        region1DepthName:
-                          type: string
-                          example: 서울특별시
-                        region2DepthName:
-                          type: string
-                          example: 강남구
-                        region3DepthName:
-                          type: string
-                          example: 역삼동
-                        phone:
-                          type: string
-                          example: 02-1234-5678
-                        description:
-                          type: string
-                          example: 아늑한 분위기의 디저트 카페
-                        websiteUrl:
-                          type: string
-                          example: https://example.com
-                        photos:
-                          type: array
-                          items:
-                            type: object
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                        description: 카페 ID
+                        example: 3
+                      businessHourType:
+                        type: string
+                        description: 운영 시간 입력 방식
+                        enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
+                        example: SAME_ALL_DAYS
+                      businessHours:
+                        description: 운영 시간 값(선택한 타입에 따라 형태 상이)
+                        oneOf:
+                          - type: object
+                            description: 모든 날 동일 (SAME_ALL_DAYS)
                             properties:
-                              id:
-                                type: integer
-                                example: 10
-                              photoUrl:
+                              open:
                                 type: string
-                                example: https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/1/photos/photo1.jpg
+                                example: "10:00"
+                              close:
+                                type: string
+                                example: "20:00"
+                          - type: object
+                            description: 평일/주말 구분 (WEEKDAY_WEEKEND)
+                            properties:
+                              weekday:
+                                type: object
+                                properties:
+                                  open:
+                                    type: string
+                                    example: "09:00"
+                                  close:
+                                    type: string
+                                    example: "18:00"
+                              weekend:
+                                type: object
+                                properties:
+                                  open:
+                                    type: string
+                                    example: "11:00"
+                                  close:
+                                    type: string
+                                    example: "17:00"
+                          - type: array
+                            description: 요일별 각각 다름 (DIFFERENT_EACH_DAY)
+                            items:
+                              type: object
+                              properties:
+                                day:
+                                  type: string
+                                  example: "월"
+                                isClosed:
+                                  type: boolean
+                                  example: false
+                                openTime:
+                                  type: string
+                                  example: "09:00"
+                                closeTime:
+                                  type: string
+                                  example: "18:00"
+                      breakTime:
+                        type: string
+                        description: 전체 브레이크 타임 (호환용, 미사용 가능)
+                        example: "14:00~15:00"
+                      keywords:
+                        type: array
+                        description: 대표 해시태그 (최대 2개)
+                        items:
+                          type: string
+                        example: ["루프탑", "브런치"]
+                      storeFilters:
+                        type: array
+                        description: 매장 관련 키워드(버튼 선택 상태)
+                        items:
+                          type: string
+                        example: ["노트북", "단체석"]
+                      takeOutFilters:
+                        type: array
+                        description: 테이크아웃 관련 키워드(버튼 선택 상태)
+                        items:
+                          type: string
+                        example: ["텀블러 할인"]
+                      menuFilters:
+                        type: array
+                        description: 메뉴 관련 키워드(버튼 선택 상태)
+                        items:
+                          type: string
+                        example: ["디카페인", "비건"]
+              examples:
+                sameAllDays:
+                  summary: 모든 날 동일
+                  value:
+                    message: 내 카페 운영 정보 조회 성공
+                    data:
+                      id: 3
+                      businessHourType: SAME_ALL_DAYS
+                      businessHours:
+                        open: "10:00"
+                        close: "20:00"
+                      breakTime: "14:00~15:00"
+                      keywords: ["루프탑", "브런치"]
+                      storeFilters: ["노트북", "단체석"]
+                      takeOutFilters: ["텀블러 할인"]
+                      menuFilters: ["디카페인"]
+                weekdayWeekend:
+                  summary: 평일/주말 다름
+                  value:
+                    message: 내 카페 운영 정보 조회 성공
+                    data:
+                      id: 3
+                      businessHourType: WEEKDAY_WEEKEND
+                      businessHours:
+                        weekday:
+                          open: "09:00"
+                          close: "18:00"
+                        weekend:
+                          open: "11:00"
+                          close: "17:00"
+                      breakTime: "14:00~15:00"
+                      keywords: ["한옥카페", "디저트"]
+                      storeFilters: ["주차 가능"]
+                      takeOutFilters: ["포장 할인"]
+                      menuFilters: ["저당"]
+                differentEachDay:
+                  summary: 요일별 각각 다름
+                  value:
+                    message: 내 카페 운영 정보 조회 성공
+                    data:
+                      id: 3
+                      businessHourType: DIFFERENT_EACH_DAY
+                      businessHours:
+                        - day: "월"
+                          isClosed: false
+                          openTime: "09:00"
+                          closeTime: "18:00"
+                        - day: "화"
+                          isClosed: false
+                          openTime: "09:00"
+                          closeTime: "18:00"
+                        - day: "수"
+                          isClosed: false
+                          openTime: "10:00"
+                          closeTime: "19:00"
+                        - day: "목"
+                          isClosed: false
+                          openTime: "10:00"
+                          closeTime: "19:00"
+                        - day: "금"
+                          isClosed: false
+                          openTime: "11:00"
+                          closeTime: "20:00"
+                        - day: "토"
+                          isClosed: true
+                        - day: "일"
+                          isClosed: true
+                      breakTime: "14:00~15:00"
+                      keywords: ["루프탑", "야경"]
+                      storeFilters: ["애견 동반"]
+                      takeOutFilters: ["텀블러 할인"]
+                      menuFilters: ["디카페인"]
         '401':
           description: 인증 실패
         '404':
           description: 카페가 존재하지 않습니다
+
 
   /api/v1/owner/cafes/myCafe/menus:
     get:
