@@ -24,10 +24,27 @@ passport.use(
           select: { id: true },
         });
         if (!user) return done(null, false);
-        const role = payload.currentRole ?? payload.role ?? payload.roles?.[0] ?? null;
-        const cafeId = payload.cafeId ?? null;
 
-        return done(null, { id: user.id, role, cafeId });
+        // roles, role, cafeId 계산
+        const roles = (payload.roles ?? []).map((r) => String(r).toUpperCase());
+
+        let role =
+          payload.currentRole?.toUpperCase?.() ??
+          (roles.includes("OWNER")
+            ? "OWNER"
+            : payload.role?.toUpperCase?.() ?? roles[0] ?? null);
+
+        let cafeId = payload.cafeId ?? null;
+        if (!cafeId && roles.includes("OWNER")) {
+          const ownerCafe = await prisma.cafe.findFirst({
+            where: { ownerId: user.id },
+            select: { id: true },
+          });
+          cafeId = ownerCafe?.id ?? null;
+        }
+
+        // 최종 user 객체 전달
+        return done(null, { id: user.id, role, roles, cafeId });
       } catch (err) {
         return done(err, false);
       }
