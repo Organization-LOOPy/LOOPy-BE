@@ -381,6 +381,27 @@ export const cafeSearchService = {
     const embeddingQuery = hasSearchQuery ? query : filterQuery;
 
     let fallbackRows = [];
+    function addDistanceWithoutSort(rows, x, y) {
+      return rows.map((cafe) => {
+        const distance = getDistanceInMeters(
+          parseFloat(cafe.latitude),
+          parseFloat(cafe.longitude),
+          parseFloat(y),
+          parseFloat(x)
+        );
+        const isBookmarked =
+          Array.isArray(cafe.bookmarkedBy) && cafe.bookmarkedBy.length > 0;
+        return { ...cafe, distance, isBookmarked };
+      });
+    }
+
+    // 유사도 순서를 유지하면서 카페 정보를 정렬하는 함수
+    const sortByOriginalOrder = (cafes, orderedIds) => {
+      const cafeMap = new Map(cafes.map((cafe) => [cafe.id, cafe]));
+      return orderedIds.map((id) => cafeMap.get(id)).filter(Boolean);
+    };
+
+    // fallback 로직에서 유사도 순서 유지하는 전체 수정:
     if (embeddingQuery) {
       const nlpRes = await nlpSearch(embeddingQuery);
       const fallbackIds = Array.isArray(nlpRes?.cafeIds)
@@ -392,7 +413,10 @@ export const cafeSearchService = {
           userId
         );
 
-        // 2)의 지역 규칙 준수
+        // 🔥 유사도 순서 유지
+        rows = sortByOriginalOrder(rows, fallbackIds);
+
+        // 지역 필터 적용
         if (hasRegionFilter) {
           rows = rows.filter((c) => {
             if (
@@ -414,7 +438,7 @@ export const cafeSearchService = {
           });
         }
 
-        // 선택된 필터도 JS 레벨에서 보수 적용(일관성)
+        // 선택된 필터 적용
         rows = applyExplicitFiltersToRows(
           rows,
           selectedStoreFilters,
@@ -422,7 +446,8 @@ export const cafeSearchService = {
           selectedTakeOutFilters
         );
 
-        fallbackRows = rows;
+        // 🔥 거리만 계산하고 정렬하지 않음 (유사도 순서 유지)
+        fallbackRows = addDistanceWithoutSort(rows, refinedX, refinedY);
       }
     }
 
@@ -430,15 +455,11 @@ export const cafeSearchService = {
       return {
         fromNLP: true,
         message: "검색 결과가 없어 유사 카페를 추천합니다.",
-        data: filterResponseData(
-          applyDistanceAndSort(fallbackRows, refinedX, refinedY)
-        ),
+        data: filterResponseData(fallbackRows), // applyDistanceAndSort 제거!
         nextCursor: null,
         hasMore: false,
       };
     }
-
-    console.log(fallbackRows);
 
     // 폴백도 없으면 빈 결과
     return {
