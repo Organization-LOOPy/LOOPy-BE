@@ -20,7 +20,7 @@ export const getCurrentPointByUserIdService = async (userId) => {
   return total;
 };
 
-// 포인트 내역 조회 
+// 포인트 내역 전체 조회 
 export const getPointTransactionsByUserId = async (userId) => {
   const transactions = await prisma.pointTransaction.findMany({
     where: {
