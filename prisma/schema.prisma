@@ -34,6 +34,7 @@ model User {
   userPreferences       UserPreference?
   roles                 UserRole[]
   verificationCodes     VerificationCode[]
+  cafeNotifications UserCafeNotification[]
 
   @@map("users")
 }
@@ -330,6 +331,7 @@ model Cafe {
   challengeParticipantsJoinedAt ChallengeParticipant[]    @relation("CafeToJoinedChallengeParticipants")
   CouponTemplate                CouponTemplate[]
   notifications                 Notification[]
+  userNotifications UserCafeNotification[]
   reviews                       Review[]
   stampBooks                    StampBook[]
   stampImages                   StampImage[]
@@ -402,6 +404,24 @@ model Notification {
   @@index([userId], map: "notifications_user_id_fkey")
   @@map("notifications")
 }
+
+model UserCafeNotification {
+  userId    Int @map("user_id")
+  cafeId    Int @map("cafe_id")
+  
+  // 복합 기본키 (코드에서 userId_cafeId로 찾고 있으니)
+  @@id([userId, cafeId])
+  
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  // 관계 설정
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+
+  @@map("user_cafe_notifications")
+}
+
 
 model CouponTemplate {
   id               Int                   @id @default(autoincrement())

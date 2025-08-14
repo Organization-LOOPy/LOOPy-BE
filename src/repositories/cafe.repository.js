@@ -157,7 +157,7 @@ export const cafeRepository = {
 
 export const cafeNotificationRepository = {
   async findNotification(cafeId, userId) {
-    const notification = await prisma.notification.findUnique({
+    const notification = await prisma.userCafeNotification.findUnique({
       where: {
         userId_cafeId: {
           userId,
@@ -174,7 +174,7 @@ export const cafeNotificationRepository = {
   },
 
   async removeNotification(cafeId, userId) {
-    await prisma.notification.delete({
+    await prisma.userCafeNotification.delete({
       where: {
         userId_cafeId: {
           userId,
@@ -185,7 +185,7 @@ export const cafeNotificationRepository = {
   },
 
   async addNotification(cafeId, userId) {
-    const notification = await prisma.notification.create({
+    const notification = await prisma.userCafeNotification.create({
       data: {
         userId,
         cafeId,
