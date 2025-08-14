@@ -63,4 +63,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # 마이그레이션 + 앱 실행
-CMD sh -c "npx prisma migrate deploy && pnpm start"
+CMD sh -c "npx prisma db push --skip-generate && pnpm start"
