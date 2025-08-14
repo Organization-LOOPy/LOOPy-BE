@@ -1193,7 +1193,7 @@ paths:
                   message: "서버 내부 오류가 발생했습니다"
                 success: null
 
-  /api/v1/cafes/{cafeId}/notification:
+  /api/v1/cafes/{cafeId}/alram:
     post:
       tags:
         - Cafe
