@@ -13,6 +13,7 @@ router.use(authenticateJWT);
 
 // 챌린지 목록 조회
 router.get('/:cafeId/challenges/available', getLiveChallengesController);
+
 // 챌린지 참여
 router.post('/:cafeId/challenges/:challengeId/join',joinChallengeController);
 
