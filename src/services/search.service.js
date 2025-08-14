@@ -189,10 +189,11 @@ export const cafeSearchService = {
       });
     }
     if (hasSearchQuery) whereConditions.AND.push({ name: { contains: query } });
+
     selectedStoreFilters.forEach((f) =>
       whereConditions.AND.push({
         storeFilters: {
-          path: f, // 배열 제거
+          path: `$."${f}"`,
           equals: true,
         },
       })
@@ -201,7 +202,7 @@ export const cafeSearchService = {
     selectedMenuFilters.forEach((f) =>
       whereConditions.AND.push({
         menuFilters: {
-          path: f, // 배열 제거
+          path: `$."${f}"`,
           equals: true,
         },
       })
@@ -210,7 +211,7 @@ export const cafeSearchService = {
     selectedTakeOutFilters.forEach((f) =>
       whereConditions.AND.push({
         takeOutFilters: {
-          path: f, // 배열 제거
+          path: `$."${f}"`,
           equals: true,
         },
       })
