@@ -973,6 +973,7 @@ paths:
                 $ref: "#/components/schemas/ErrorResponse"
 
 
+
   /api/v1/pages/home:
     get:
       summary: 홈 정보 조회
