@@ -1,6 +1,3 @@
--- DropForeignKey
-ALTER TABLE `user_role` DROP FOREIGN KEY `user_role_userId_fkey`;
-
 -- AlterTable
 ALTER TABLE `cafe_menu` MODIFY `updated_at` DATETIME(3) NULL;
 
