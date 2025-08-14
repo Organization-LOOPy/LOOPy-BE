@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import pkg from '@prisma/client';
+const { PrismaClient } = pkg;
 
 // 고객 알림 메시지 전송
 export const sendNotificationToCustomers = async (req, res, next) => {
