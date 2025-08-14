@@ -20,7 +20,6 @@ function parsePreferredArea(area) {
   };
 }
 
-// 검색 쿼리 전처리
 function normalizeQuery(s) {
   return (s ?? "").trim().replace(/"/g, "").normalize("NFC");
 }
@@ -139,9 +138,124 @@ export const cafeSearchService = {
 
     const query = normalizeQuery(searchQuery);
 
-    const selectedStoreFilters = pickTrueKeys(storeFilters);
-    const selectedTakeOutFilters = pickTrueKeys(takeOutFilters);
-    const selectedMenuFilters = pickTrueKeys(menuFilters);
+    // 필터 매핑 함수들 추가
+    const getFilterMappings = () => {
+      return {
+        store: {
+          single_seat: "1인석",
+          group_seat: "단체석",
+          laptop_seat: "노트북석",
+          pet_friendly: "애견 동반",
+          reservation: "예약 가능",
+          parking: "주차 가능",
+          "24hours": "24시간 운영",
+          wifi: "와이파이 제공",
+        },
+        takeOut: {
+          package_discount: "포장 할인",
+          tumbler_discount: "텀블러 할인",
+        },
+        menu: {
+          vegan: "비건",
+          decaf: "디카페인",
+          gluten_free: "글루텐프리",
+          sugar_free: "저당/무가당",
+        },
+      };
+    };
+
+    const convertFiltersToKorean = (filters, type) => {
+      const mappings = getFilterMappings();
+      const converted = {};
+      Object.keys(filters || {}).forEach((englishKey) => {
+        const koreanKey = mappings[type][englishKey];
+        if (koreanKey) {
+          converted[koreanKey] = filters[englishKey];
+        }
+      });
+      return converted;
+    };
+
+    // 요청에서 보낸 필터 키들만 응답에 포함하는 함수
+    const filterResponseData = (cafeData) => {
+      return cafeData.map((cafe) => {
+        const filteredCafe = { ...cafe };
+
+        // 요청에서 보낸 storeFilters 키들만 포함
+        if (storeFilters && Object.keys(storeFilters).length > 0) {
+          const filteredStoreFilters = {};
+          Object.keys(storeFilters).forEach((englishKey) => {
+            const mappings = getFilterMappings();
+            const koreanKey = mappings.store[englishKey];
+            if (
+              koreanKey &&
+              cafe.storeFilters &&
+              cafe.storeFilters[koreanKey] !== undefined
+            ) {
+              filteredStoreFilters[koreanKey] = cafe.storeFilters[koreanKey];
+            }
+          });
+          filteredCafe.storeFilters = filteredStoreFilters;
+        } else {
+          filteredCafe.storeFilters = {};
+        }
+
+        // 요청에서 보낸 takeOutFilters 키들만 포함
+        if (takeOutFilters && Object.keys(takeOutFilters).length > 0) {
+          const filteredTakeOutFilters = {};
+          Object.keys(takeOutFilters).forEach((englishKey) => {
+            const mappings = getFilterMappings();
+            const koreanKey = mappings.takeOut[englishKey];
+            if (
+              koreanKey &&
+              cafe.takeOutFilters &&
+              cafe.takeOutFilters[koreanKey] !== undefined
+            ) {
+              filteredTakeOutFilters[koreanKey] =
+                cafe.takeOutFilters[koreanKey];
+            }
+          });
+          filteredCafe.takeOutFilters = filteredTakeOutFilters;
+        } else {
+          filteredCafe.takeOutFilters = {};
+        }
+
+        // 요청에서 보낸 menuFilters 키들만 포함
+        if (menuFilters && Object.keys(menuFilters).length > 0) {
+          const filteredMenuFilters = {};
+          Object.keys(menuFilters).forEach((englishKey) => {
+            const mappings = getFilterMappings();
+            const koreanKey = mappings.menu[englishKey];
+            if (
+              koreanKey &&
+              cafe.menuFilters &&
+              cafe.menuFilters[koreanKey] !== undefined
+            ) {
+              filteredMenuFilters[koreanKey] = cafe.menuFilters[koreanKey];
+            }
+          });
+          filteredCafe.menuFilters = filteredMenuFilters;
+        } else {
+          filteredCafe.menuFilters = {};
+        }
+
+        return filteredCafe;
+      });
+    };
+
+    // 영어 필터를 한국어로 변환
+    const convertedStoreFilters = convertFiltersToKorean(storeFilters, "store");
+    const convertedTakeOutFilters = convertFiltersToKorean(
+      takeOutFilters,
+      "takeOut"
+    );
+    const convertedMenuFilters = convertFiltersToKorean(menuFilters, "menu");
+
+    // 변환된 필터에서 true인 키들만 추출
+    const selectedStoreFilters = pickTrueKeys(convertedStoreFilters);
+    const selectedTakeOutFilters = pickTrueKeys(convertedTakeOutFilters);
+    const selectedMenuFilters = pickTrueKeys(convertedMenuFilters);
+
     const explicitRegionCond = buildRegionCondition(region1, region2, region3);
 
     const hasSearchQuery = !!query;
@@ -154,7 +268,6 @@ export const cafeSearchService = {
       !hasSearchQuery && !hasAnyFilter && !hasRegionFilter;
 
     // 1) 처음 리스팅: preference 임베딩 Top-K 추천 (+ user_preference 지역 적용)
-    //유사도 검색은 성공 with_vectors 가 아니라 with_vector로 해야됨!
     if (isInitialRequest) {
       console.log(isInitialRequest);
 
@@ -174,7 +287,9 @@ export const cafeSearchService = {
       return {
         fromNLP: true,
         message: null,
-        data: applyDistanceAndSort(rows, refinedX, refinedY),
+        data: filterResponseData(
+          applyDistanceAndSort(rows, refinedX, refinedY)
+        ),
         nextCursor: null,
         hasMore: false,
       };
@@ -216,6 +331,11 @@ export const cafeSearchService = {
         },
       })
     );
+
+    console.log("=== 필터 변환 디버깅 ===");
+    console.log("원본 storeFilters:", storeFilters);
+    console.log("변환된 storeFilters:", convertedStoreFilters);
+    console.log("선택된 storeFilters:", selectedStoreFilters);
     console.log("=== 지역 필터 디버깅 ===");
     console.log("받은 지역 파라미터:", { region1, region2, region3 });
     console.log("buildRegionCondition 결과:", explicitRegionCond);
@@ -238,7 +358,7 @@ export const cafeSearchService = {
       return {
         fromNLP: false,
         message: null,
-        data: sortedData,
+        data: filterResponseData(sortedData),
         nextCursor:
           sortedData.length > 0
             ? sortedData[sortedData.length - 1].id.toString()
@@ -253,9 +373,9 @@ export const cafeSearchService = {
     const filterQuery =
       typeof buildQueryFromFilters === "function"
         ? buildQueryFromFilters(
-            storeFilters ?? {},
-            takeOutFilters ?? {},
-            menuFilters ?? {}
+            convertedStoreFilters ?? {},
+            convertedTakeOutFilters ?? {},
+            convertedMenuFilters ?? {}
           )
         : "";
     const embeddingQuery = hasSearchQuery ? query : filterQuery;
@@ -310,7 +430,9 @@ export const cafeSearchService = {
       return {
         fromNLP: true,
         message: "검색 결과가 없어 유사 카페를 추천합니다.",
-        data: applyDistanceAndSort(fallbackRows, refinedX, refinedY),
+        data: filterResponseData(
+          applyDistanceAndSort(fallbackRows, refinedX, refinedY)
+        ),
         nextCursor: null,
         hasMore: false,
       };
