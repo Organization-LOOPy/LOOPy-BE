@@ -6129,6 +6129,29 @@ components:
           nullable: true
           example: null
 
+    PointTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 12
+        point:
+          type: integer
+          example: 50
+        type:
+          type: string
+          example: EARN
+        description:
+          type: string
+          example: 스탬프 적립 보상
+        createdAt:
+          type: string
+          format: date-time
+          example: "2025-08-14T07:12:34.000Z"
+        cafeName:
+          type: string
+          nullable: true
+          example: 카페 루피
   
     OwnerProfile:
       type: object
@@ -7948,29 +7971,6 @@ components:
           type: integer
           description: 사용 후 잔액(항상 0)
           example: 0
-    PointTransaction:
-      type: object
-      properties:
-        id:
-          type: integer
-          example: 12
-        point:
-          type: integer
-          example: 50
-        type:
-          type: string
-          example: EARN
-        description:
-          type: string
-          example: 스탬프 적립 보상
-        createdAt:
-          type: string
-          format: date-time
-          example: "2025-08-14T07:12:34.000Z"
-        cafeName:
-          type: string
-          nullable: true
-          example: 카페 루피
   
 tags:
   - name: Users
