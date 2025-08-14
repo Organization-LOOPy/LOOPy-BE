@@ -1,6 +1,6 @@
 import express from 'express';
 import { authenticateJWT } from '../middlewares/authMiddleware.js';
-import { getAvailableChallengesController,
+import { getLiveChallengesController,
          joinChallengeController,
          getInProgressChallengesController,
          getPastChallengesController,
@@ -11,9 +11,8 @@ const router = express.Router();
 
 router.use(authenticateJWT);
 
-// 참여 가능한 챌린지 조회
-router.get('/:cafeId/challenges/available',getAvailableChallengesController);
-
+// 챌린지 목록 조회
+router.get('/:cafeId/challenges/available', getLiveChallengesController);
 // 챌린지 참여
 router.post('/:cafeId/challenges/:challengeId/join',joinChallengeController);
 

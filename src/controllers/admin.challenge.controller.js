@@ -1,21 +1,20 @@
-import { getAvailableChallengesService,
+import { getAllActiveChallengesService,
          joinChallengeService,
          getInProgressChallengesService,
          getChallengeDetailService,
          getPastChallengesByCafe,
          getChallengeStatisticsService} from '../services/admin.challenge.service.js';
 
-
-export const getAvailableChallengesController = async (req, res, next) => {
+export const getLiveChallengesController = async (req, res, next) => {
   try {
-    const { cafeId } = req.params;
-    const challenges = await getAvailableChallengesService(cafeId);
-    res.status(200).json({
+    const { cafeId } = req.params; // path param
+    const challenges = await getAllActiveChallengesService(cafeId);
+    return res.status(200).json({
       resultType: 'SUCCESS',
       data: challenges,
     });
-  } catch (error) {
-    next(error);
+  } catch (err) {
+    next(err);
   }
 };
 

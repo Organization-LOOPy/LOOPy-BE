@@ -1,29 +1,33 @@
 import prisma from '../../prisma/client.js';
 
-export const getAvailableChallengesByCafe = async (cafeId) => {
+export const findAllActiveChallengesByCafe = async (cafeId) => {
   const today = new Date();
 
   const challenges = await prisma.challenge.findMany({
     where: {
       isActive: true,
-      startDate: { lte: today },
-      endDate: { gte: today },
+      endDate: { gte: today }, // 종료일이 오늘 이후
     },
     include: {
       availableCafes: {
         where: { cafeId: Number(cafeId) },
         select: { id: true }
       }
-    }
+    },
+    orderBy: { startDate: 'asc' }
   });
 
   return challenges.map(challenge => ({
     id: challenge.id,
     title: challenge.title,
+    description: challenge.description,
     thumbnailUrl: challenge.thumbnailUrl,
-    startDate: challenge.startDate ? challenge.startDate.toISOString().split('T')[0] : null,
-    endDate: challenge.endDate ? challenge.endDate.toISOString().split('T')[0] : null,
-    isJoined: challenge.availableCafes.length > 0,
+    startDate: challenge.startDate?.toISOString().split('T')[0] ?? null,
+    endDate: challenge.endDate?.toISOString().split('T')[0] ?? null,
+    goalCount: challenge.goalCount,
+    goalDescription: challenge.goalDescription,
+    rewardPoint: challenge.rewardPoint,
+    isJoined: challenge.availableCafes.length > 0
   }));
 };
 
