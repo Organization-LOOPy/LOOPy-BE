@@ -1,7 +1,4 @@
 -- DropForeignKey
-ALTER TABLE `challenge_participants` DROP FOREIGN KEY `challenge_participants_joined_cafe_id_fkey`;
-
--- DropForeignKey
 ALTER TABLE `notifications` DROP FOREIGN KEY `notifications_cafe_id_fkey`;
 
 -- DropForeignKey
