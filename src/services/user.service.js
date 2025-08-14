@@ -53,6 +53,8 @@ export const deleteMyAccountService = async (userId) => {
   if (!hasOwnerRole) {
     throw new InvalidExitRoleError('OWNER');
   }
+  await prisma.userPreference.deleteMany({ where: { userId } });
+await prisma.userRole.deleteMany({ where: { userId } });
 
   const deletedUser = await prisma.user.delete({
     where: { id: userId },
