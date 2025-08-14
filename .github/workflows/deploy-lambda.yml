@@ -20,11 +20,13 @@ jobs:
         with:
           python-version: "3.10"
 
-      # 3. AWS CLI 설치
-      - name: Install AWS CLI
+      # 3. AWS CLI v2 설치
+      - name: Install AWS CLI v2
         run: |
-          sudo apt-get update
-          sudo apt-get install -y awscli zip
+          curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+          unzip awscliv2.zip
+          sudo ./aws/install
+          aws --version
 
       # 4. Python 의존성 설치 및 Lambda 패키징
       - name: Package Lambda function
