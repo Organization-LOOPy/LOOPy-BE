@@ -7948,6 +7948,7 @@ components:
           type: integer
           description: 사용 후 잔액(항상 0)
           example: 0
+          
     PointTransaction:
       type: object
       properties:
