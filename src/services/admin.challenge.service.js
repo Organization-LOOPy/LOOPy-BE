@@ -1,5 +1,5 @@
 import prisma from '../../prisma/client.js';
-import { getAvailableChallengesByCafe,
+import { findAllActiveChallengesByCafe,
          getInProgressChallengesByCafe,
          getChallengeDetailByCafe } from '../repositories/admin.challenge.repository.js';
 import { CafeNotFoundError,
@@ -8,14 +8,14 @@ import { CafeNotFoundError,
          ChallengeUnavailableError } from '../errors/customErrors.js';
 
 // 참여 가능한 챌린지 조회 서비스       
-export const getAvailableChallengesService = async (cafeId) => {
+export const getAllActiveChallengesService = async (cafeId) => {
   const cafe = await prisma.cafe.findUnique({
     where: { id: Number(cafeId) }
   });
 
   if (!cafe) throw new CafeNotFoundError(cafeId);
 
-  return await getAvailableChallengesByCafe(cafeId);
+  return await findAllActiveChallengesByCafe(cafeId);
 };
 
 // 챌린지 참여 서비스
