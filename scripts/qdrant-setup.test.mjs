@@ -107,7 +107,7 @@ async function main() {
     const randomInt = (min = 1, max = 2 ** 31 - 1) =>
       Math.floor(Math.random() * (max - min + 1)) + min;
 
-    // cafes
+    /* cafes
     const cafeId = randomInt();
     await upsertDummyPoint("cafes", cafeId, testVector, {
       cafeId, // payload에도 동일 타입 유지
@@ -115,7 +115,7 @@ async function main() {
       region2DepthName: "강남구",
       region3DepthName: "역삼동",
       summary: "더미 카페 요약입니다.",
-    });
+    }); */
 
     /*/ user_preferences
     const userPk = randomInt();
