@@ -20,15 +20,6 @@ ALTER TABLE `cafes` MODIFY `updated_at` DATETIME(3) NULL;
 ALTER TABLE `user_bookmarks` MODIFY `updated_at` DATETIME(3) NULL;
 
 -- CreateTable
-CREATE TABLE `user_cafe_notifications` (
-    `user_id` INTEGER NOT NULL,
-    `cafe_id` INTEGER NOT NULL,
-    `created_at` DATETIME(3) NOT NULL DEFAULT CURRENT_TIMESTAMP(3),
-    `updated_at` DATETIME(3) NOT NULL,
-
-    PRIMARY KEY (`user_id`, `cafe_id`)
-) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
 -- AddForeignKey
 ALTER TABLE `user_role` ADD CONSTRAINT `user_role_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
