@@ -5525,7 +5525,7 @@ paths:
                 example:
                   reason: 해당 전화번호의 고객을 찾을 수 없습니다.
 
-  /owner/cafes/{cafeId}/notification:
+  /api/v1/owner/cafes/{cafeId}/notification:
     post:
       tags:
         - Owner
