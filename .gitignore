@@ -6,6 +6,22 @@ umc.pem
 .env
 .env.local
 .env.*.local
+
 # VSCode
 .vscode/
 src/credentials/*.json
+
+# Python build artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Installed packages in project folder
+insight_lambda_api/*.dist-info/
+insight_lambda_api/*/
+!insight_lambda_api/app.py
+!insight_lambda_api/requirements.txt
+
+# Zip or build files
+*.zip

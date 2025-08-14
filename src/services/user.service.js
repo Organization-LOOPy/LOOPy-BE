@@ -8,6 +8,7 @@ import {
   QRCodeError,
   InvalidExitRoleError,
   PreferenceNotFoundError,
+  UserPreferenceNotFoundError 
 } from '../errors/customErrors.js';
 import QRCode from 'qrcode';
 
@@ -334,4 +335,17 @@ export const getUserPreferencesService = async (userId) => {
   } catch (err) {
     throw err;
   }
+};
+
+export const getPreferredAreaService = async (userId) => {
+  const preference = await prisma.userPreference.findUnique({
+    where: { userId },
+    select: { preferredArea: true },
+  });
+
+  if (!preference) {
+    throw new UserPreferenceNotFoundError(userId);
+  }
+
+  return preference.preferredArea;
 };

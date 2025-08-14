@@ -728,6 +728,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    
+    get:
+      tags:
+        - Users
+      summary: 선호 지역 조회
+      description: 사용자의 선호 지역(preferredArea)을 조회합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 선호 지역 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 선호 지역 조회 성공
+                  data:
+                    type: object
+                    properties:
+                      preferredArea:
+                        type: string
+                        example: 서울특별시 강남구
+        "404":
+          description: 선호 지역이 설정되지 않은 경우
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User preference not found for userId=1
 
   /api/v1/users/me/kakao-alert:
     patch:

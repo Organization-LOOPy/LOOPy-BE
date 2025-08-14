@@ -24,7 +24,7 @@ def ensure_dict_array_from_text(text: str) -> list[dict]:
     else:
         return []
     
-def fetch_cafe_trend(prompt: str) -> str:
+def fetch_cafe_trend(prompt: str, max_tokens: int = 500, timeout: int = 60) -> str:
     if not PERPLEXITY_API_KEY:
         raise RuntimeError("PERPLEXITY_API_KEY is not set")
 
@@ -39,11 +39,10 @@ def fetch_cafe_trend(prompt: str) -> str:
             {"role": "user", "content": prompt}
         ],
         "temperature": 0.7,
-        "max_tokens": 500
+        "max_tokens": max_tokens
     }
 
-    resp = requests.post(PERPLEXITY_URL, json=data, headers=headers, timeout=60)
-
+    resp = requests.post(PERPLEXITY_URL, json=data, headers=headers, timeout=timeout)
 
     print(f"🔍 Status: {resp.status_code}")
     print(f"🔍 Raw Response: {resp.text}")
@@ -56,7 +55,8 @@ def fetch_cafe_trend(prompt: str) -> str:
     except Exception as e:
         raise RuntimeError(f"Unexpected Perplexity response shape: {j}") from e
 
-def fetch_menu_trends() -> str:
+
+def fetch_menu_trends(max_tokens: int = 500, timeout: int = 60) -> str:
     """
     Perplexity API를 통해 인기 카페 메뉴 트렌드 데이터를 JSON 문자열로 가져옴
     """
@@ -75,10 +75,10 @@ def fetch_menu_trends() -> str:
 ]
 한국어로 응답해 주세요.
 """
-    return fetch_cafe_trend(prompt)
+    return fetch_cafe_trend(prompt, max_tokens=max_tokens, timeout=timeout)
 
 
-def fetch_cafe_features() -> str:
+def fetch_cafe_features(max_tokens: int = 500, timeout: int = 60) -> str:
     """
     Perplexity API를 통해 인기 있는 카페 특징 정보를 JSON 문자열로 가져옴
     """
@@ -95,4 +95,4 @@ def fetch_cafe_features() -> str:
 ]
 모든 응답은 한국어로 응답해 주세요.
 """
-    return fetch_cafe_trend(prompt)
+    return fetch_cafe_trend(prompt, max_tokens=max_tokens, timeout=timeout)

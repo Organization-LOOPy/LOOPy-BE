@@ -11,6 +11,7 @@ import {
   saveUserAgreementsService,
   deleteMyAccountService,
   getUserPreferencesService,
+  getPreferredAreaService 
 } from "../services/user.service.js";
 import { QRNotFoundError, NotFoundPhoneError } from "../errors/customErrors.js";
 import { verifyPhoneNumber } from "../services/firebase.service.js";
@@ -217,6 +218,20 @@ export const getUserPreferences = async (req, res, next) => {
     res.status(200).json({
       message: '선호 키워드 조회 성공',
       data: preferences
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPreferredAreaController = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const preferredArea = await getPreferredAreaService(userId);
+
+    res.status(200).json({
+      message: "선호 지역 조회 성공",
+      data: { preferredArea },
     });
   } catch (error) {
     next(error);
