@@ -1,7 +1,4 @@
 -- DropForeignKey
-ALTER TABLE `notifications` DROP FOREIGN KEY `notifications_cafe_id_fkey`;
-
--- DropForeignKey
 ALTER TABLE `point_transactions` DROP FOREIGN KEY `point_transactions_stamp_book_id_fkey`;
 
 -- DropForeignKey
