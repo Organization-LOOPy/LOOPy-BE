@@ -43,7 +43,7 @@ model UserRole {
   id     Int      @id @default(autoincrement())
   userId Int
   role   RoleType
-  user   User     @relation(fields: [userId], references: [id])
+  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, role])
   @@map("user_role")
@@ -144,7 +144,7 @@ model ChallengeParticipant {
   updatedAt    DateTime                   @updatedAt @map("updated_at")
   joinedCafeId Int?                       @map("joined_cafe_id")
   challenge    Challenge                  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  joinedCafe   Cafe?                      @relation("CafeToJoinedChallengeParticipants", fields: [joinedCafeId], references: [id])
+  joinedCafe   Cafe?                      @relation("CafeToJoinedChallengeParticipants", fields: [joinedCafeId], references: [id], onDelete: Cascade)
   user         User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, challengeId])
@@ -292,7 +292,7 @@ model PointTransaction {
   type        PointTransactionType
   description String               @db.VarChar(255)
   createdAt   DateTime             @default(now()) @map("created_at")
-  stampBook   StampBook?           @relation(fields: [stampBookId], references: [id])
+  stampBook   StampBook?           @relation(fields: [stampBookId], references: [id], onDelete: Cascade)
   user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([stampBookId], map: "point_transactions_stamp_book_id_fkey")
@@ -397,7 +397,7 @@ model Notification {
   content   String           @db.Text
   isRead    Boolean          @default(false) @map("is_read")
   createdAt DateTime         @default(now()) @map("created_at")
-  cafe      Cafe?            @relation(fields: [cafeId], references: [id])
+  cafe      Cafe?            @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([cafeId], map: "notifications_cafe_id_fkey")
