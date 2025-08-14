@@ -1,0 +1,58 @@
+name: Deploy Lambda to AWS
+
+on:
+  push:
+    branches:
+      - main  # main 브랜치에 머지될 때만 배포
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 소스 코드 체크아웃
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Python 환경 설정
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+
+      # 3. AWS CLI 설치
+      - name: Install AWS CLI
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y awscli zip
+
+      # 4. Python 의존성 설치 및 Lambda 패키징
+      - name: Package Lambda function
+        run: |
+          cd insight_lambda_api
+          rm -rf .venv __pycache__ *.dist-info *.egg-info
+          find . -type d -name "pydantic*" -exec rm -rf {} +
+          find . -type d -name "pydantic_core*" -exec rm -rf {} +
+          
+          pip install --upgrade pip --root-user-action=ignore
+          pip install --no-cache-dir -r requirements.txt -t .
+          zip -r9 lambda_package.zip .
+
+      # 5. S3에 업로드
+      - name: Upload package to S3
+        run: |
+          aws s3 cp insight_lambda_api/lambda_package.zip s3://loopy-insight/lambda_package.zip
+
+      # 6. Lambda 코드 업데이트
+      - name: Update Lambda function
+        run: |
+          aws lambda update-function-code \
+            --function-name insightLambdaApi \
+            --s3-bucket loopy-insight \
+            --s3-key lambda_package.zip \
+            --region ap-northeast-2
+
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      AWS_REGION: ap-northeast-2
