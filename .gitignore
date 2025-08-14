@@ -11,6 +11,7 @@ umc.pem
 .vscode/
 src/credentials/*.json
 
+<<<<<<< HEAD
 # Python build artifacts
 __pycache__/
 *.pyc
@@ -26,3 +27,8 @@ insight_lambda_api/*/
 
 # Zip or build files
 *.zip
+=======
+*.dist-info/
+__pycache__/
+*.pyc
+>>>>>>> c8bf407df82d03f0ff987a3fbba74bb3a116a39e

@@ -22,6 +22,9 @@ export const cafeSearchRepository = {
         region1DepthName: true,
         region2DepthName: true,
         region3DepthName: true,
+        storeFilters: true,
+        takeOutFilters: true,
+        menuFilters: true,
         createdAt: true,
         photos: {
           orderBy: { displayOrder: "asc" },
@@ -97,9 +100,6 @@ export const cafeSearchRepository = {
               select: { id: true },
             }
           : false,
-      },
-      orderBy: {
-        createdAt: "asc",
       },
     });
   },

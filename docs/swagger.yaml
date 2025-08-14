@@ -2323,7 +2323,7 @@ paths:
                     type: "null"
                     example: null
 
-  /api/v1/challenges:
+  /api/v1/owner/cafes/{cafeId}/challenges/available:
     get:
       summary: 챌린지 목록 조회
       description: 현재 유효한 챌린지 목록을 조회합니다. (종료일 오름차순 정렬)
@@ -2377,7 +2377,7 @@ paths:
                           type: boolean
                           example: true
 
-  /api/v1/challenges/{challengeId}:
+  /api/v1/owner/cafes/{cafeId}/challenges/{challengeId}:
     get:
       summary: 챌린지 상세 조회
       description: 챌린지 ID로 상세 정보를 조회합니다.
@@ -2491,7 +2491,7 @@ paths:
                               example: 이화동
 
 
-  /api/v1/challenges/{challengeId}/join:
+  /api/v1/owner/cafes/{cafeId}/challenges/{challengeId}/join:
     post:
       summary: 챌린지 참여
       description: 해당 챌린지에 로그인 유저가 참여합니다. 참여 시 선택한 매장 ID를 함께 전달해야 합니다.
@@ -5244,7 +5244,7 @@ paths:
                     type: string
                     example: "텀블러 챌린지 참여 완료"
 
-  /api/v1/owner/cafe/{cafeId}/challenges/in-progress:
+  /api/v1/owner/cafes/{cafeId}/challenges/in-progress:
     get:
       tags:
         - Admin Challenges
@@ -5289,7 +5289,7 @@ paths:
                         completedCount:
                           type: integer
 
-  /api/v1/owner/cafe/{cafeId}/challenges/past:
+  /api/v1/owner/cafes/{cafeId}/challenges/past:
     get:
       tags:
         - Admin Challenges
@@ -5334,7 +5334,7 @@ paths:
                         completedCount:
                           type: integer
   
-  /api/v1/owner/cafe/{cafeId}/challenges/{challengeId}:
+  /api/v1/owner/cafes/{cafeId}/challenges/{challengeId}:
     get:
       tags:
         - Admin Challenges
@@ -5560,15 +5560,17 @@ paths:
                 example:
                   reason: 해당 전화번호의 고객을 찾을 수 없습니다.
 
-  /admin/cafes/{cafeId}/notification:
+  /api/v1/owner/cafes/{cafeId}/notification:
     post:
       tags:
-        - Admin Notification
+        - Owner
       summary: 사장님이 카페 고객에게 알림 메시지 전송
       description: |
         지정한 카페의 **알림 허용 설정된 고객**에게 사장님 메시지를 전송합니다.
         - 메시지는 최대 500자까지 입력 가능
         - JWT 인증 필요
+        - 사장님 권한(OWNER) 필요
+        - URL의 `cafeId`는 본인 카페와 일치해야 함
       security:
         - bearerAuth: []
       parameters:
@@ -5609,9 +5611,26 @@ paths:
                     example: null
                   success:
                     type: string
-                    example: "알림 메시지가 전송되었습니다."
+                    example: "알림 메시지가 전송되었습니다. (대상 15명)"
+        '200(empty)':
+          description: 발송 대상이 없을 경우
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: object
+                    nullable: true
+                    example: null
+                  success:
+                    type: string
+                    example: "발송 대상 사용자가 없습니다. (조건을 충족하는 유저 0명)"
         '400':
-          description: 잘못된 요청 (message 누락 또는 500자 초과)
+          description: 잘못된 요청 (유효하지 않은 cafeId, message 누락, 500자 초과)
           content:
             application/json:
               schema:
@@ -5625,6 +5644,26 @@ paths:
                     example:
                       errorCode: UNKNOWN
                       reason: "알림 메시지를 입력해주세요."
+                      data: null
+                  success:
+                    type: string
+                    nullable: true
+                    example: null
+        '403':
+          description: 권한 없음 (사장님 아님 / 본인 카페 아님)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: object
+                    example:
+                      errorCode: FORBIDDEN
+                      reason: "본인 카페에만 알림을 보낼 수 있습니다."
                       data: null
                   success:
                     type: string
@@ -8010,3 +8049,5 @@ components:
 tags:
   - name: Users
     description: 사용자 정보 및 설정 관련 API
+
+

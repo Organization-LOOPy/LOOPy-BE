@@ -231,30 +231,31 @@ export const savePhoneNumberAfterVerificationService = async (userId, phoneNumbe
 };
 
 // 사장 카페 임시 생성  
-export const makeOwnerCafe = async (userId, role) => {
+export const makeOwnerCafe = async (userId, agreementData, role) => {
   let cafeId = null;
 
-  if (role==='OWNER') {
-  const cafe = await tx.cafe.create({
-    data: {
-      ownerId: Number(userId),
-      name: '임시 카페 이름',
-      address: '임시 주소',
-      latitude: 0,
-      longitude: 0,
-      ownerName: '임시 사장님 이름',
-      region1DepthName: '임시 시/도',
-      region2DepthName: '임시 시/군/구',
-      region3DepthName: '임시 동/읍/면',
-      businessHours: {},
-    },
+  return await prisma.$transaction(async (tx) => {
+    if (role?.toUpperCase() === 'OWNER') {
+      const cafe = await tx.cafe.create({
+        data: {
+          ownerId: Number(userId),
+          name: '임시 카페 이름',
+          address: '임시 주소',
+          latitude: 0,
+          longitude: 0,
+          ownerName: '임시 사장님 이름',
+          region1DepthName: '임시 시/도',
+          region2DepthName: '임시 시/군/구',
+          region3DepthName: '임시 동/읍/면',
+          businessHours: {},
+        },
+      });
+      cafeId = cafe.id;
+    }
+
+    return { cafeId }; // 여기서 꼭 cafeId 반환
   });
-  cafeId = cafe.id;
-}
-
-  return { cafeId };
 };
-
 export const generateQRCode = async (userId) => {
   const qrData = `https://loopy://user/${userId}`;
 
