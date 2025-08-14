@@ -942,13 +942,36 @@ paths:
                   success:
                     type: array
                     items:
-                      $ref: "#/components/schemas/PointTransaction"
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                          example: 12
+                        point:
+                          type: integer
+                          example: 50
+                        type:
+                          type: string
+                          example: EARN
+                          description: 포인트 거래 유형 (EARN, USE, REFUND 등)
+                        description:
+                          type: string
+                          example: 스탬프 적립 보상
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: "2025-08-14T07:12:34.000Z"
+                        cafeName:
+                          type: string
+                          nullable: true
+                          example: 카페 루피
         "401":
           description: 인증 실패
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorResponse"
+
 
   /api/v1/pages/home:
     get:
