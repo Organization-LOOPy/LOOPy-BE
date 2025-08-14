@@ -9,9 +9,6 @@ ALTER TABLE `user_bookmarks` MODIFY `updated_at` DATETIME(3) NULL;
 
 -- CreateTable
 -- AddForeignKey
-ALTER TABLE `user_role` ADD CONSTRAINT `user_role_userId_fkey` FOREIGN KEY (`userId`) REFERENCES `users`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
-
--- AddForeignKey
 ALTER TABLE `challenge_participants` ADD CONSTRAINT `challenge_participants_joined_cafe_id_fkey` FOREIGN KEY (`joined_cafe_id`) REFERENCES `cafes`(`id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
