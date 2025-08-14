@@ -17,12 +17,9 @@ import { generateQRCode } from './user.service.js';
 export const signupService = async (body) => {
   const { email, password, nickname, phoneNumber, agreements, role } = body;
   console.log('📌 signup req.body:', body);
-  if (!password || !nickname ||  !role) {
-    throw new MissingFieldsError([
-      "password",
-      "nickname",
-      "role",
-    ]);
+
+  if (!password || !nickname || !role) {
+    throw new MissingFieldsError(["password", "nickname", "role"]);
   }
 
   if (!agreements?.termsAgreed || !agreements?.privacyPolicyAgreed || !agreements?.locationPermission) {
@@ -38,11 +35,8 @@ export const signupService = async (body) => {
   }
 
   const existingUser = await prisma.user.findFirst({
-    where: {
-      OR: [{ email }, { phoneNumber }],
-    },
+    where: { OR: [{ email }, { phoneNumber }] },
   });
-
   if (existingUser) {
     throw new DuplicateUserError({ email, phoneNumber });
   }
@@ -77,6 +71,7 @@ export const signupService = async (body) => {
       data: { userId: createdUser.id },
     });
 
+    // 두 개 role 전부 생성
     await tx.userRole.createMany({
       data: [
         { userId: createdUser.id, role: RoleType.CUSTOMER },
@@ -85,7 +80,6 @@ export const signupService = async (body) => {
     });
 
     const finalQrCodeImage = await generateQRCode(createdUser.id);
-
     await tx.user.update({
       where: { id: createdUser.id },
       data: { qrCode: finalQrCodeImage },
@@ -98,11 +92,11 @@ export const signupService = async (body) => {
     where: { userId: user.id },
     select: { role: true },
   });
-
   const roles = userRoles.map((r) => r.role);
 
+  // JWT에 currentRole 명시
   const token = jwt.sign(
-    { id: user.id.toString(), roles },
+    { id: user.id.toString(), roles, currentRole: role },
     process.env.JWT_SECRET,
     { expiresIn: "7d" }
   );
@@ -114,10 +108,11 @@ export const signupService = async (body) => {
       id: user.id.toString(),
       email: user.email,
       nickname: user.nickname,
-      currentRole: role,
+      currentRole: role, // 가입 시 선택한 role
     },
   };
 };
+
 
 // 이메일 기반 로그인
 export const loginService = async (email, password, requestedRole) => {

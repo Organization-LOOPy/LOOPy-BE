@@ -8,7 +8,7 @@ import {
   updateKakaoAlertService,
   updateFcmTokenService,
   savePhoneNumberAfterVerificationService,
-  saveUserAgreementsService,
+  makeOwnerCafe,
   deleteMyAccountService,
   getUserPreferencesService,
   getPreferredAreaService 
@@ -176,7 +176,9 @@ export const notifyPhoneVerification = async (req, res, next) => {
 
 export const saveUserAgreements = async (req, res, next) => {
   try {
-    const result = await saveUserAgreementsService(req.body.userId, req.body);
+console.log("🔥 req.user:", req.user);
+
+    const result = await makeOwnerCafe(req.user.id, req.body, req.user.role);
     return res.success(result);
   } catch (err) {
     next(err);

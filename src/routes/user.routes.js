@@ -30,9 +30,6 @@ const router = express.Router();
 // sms 인증 확인 후 전화번호 저장
 router.post('/me/verify-phone', notifyPhoneVerification);
 
-// 약관 동의
-router.post('/me/agreements', saveUserAgreements);
-
 router.use(authenticateJWT);
 
 // 사용자 계정
@@ -40,6 +37,10 @@ router.patch('/me/inactive', deactivateUser);
 router.patch('/me/activate', reactivateUser);
 router.get('/me', getMyInfo);
 router.patch('/me/nickname', updateNickname);
+
+
+// 약관 동의
+router.post('/owner-cafe', saveUserAgreements);
 
 // 사용자 설정
 router.patch('/me/preferences', updateUserPreferences);

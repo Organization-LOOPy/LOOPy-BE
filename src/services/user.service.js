@@ -230,74 +230,29 @@ export const savePhoneNumberAfterVerificationService = async (userId, phoneNumbe
   };
 };
 
-// 약관 동의 상태 저장 
-export const saveUserAgreementsService = async (userId, agreementData, role) => {
-  const {
-    termsAgreed,
-    privacyPolicyAgreed,
-    marketingAgreed,
-    locationPermission,
-  } = agreementData;
+// 사장 카페 임시 생성  
+export const makeOwnerCafe = async (userId, role) => {
+  let cafeId = null;
 
-  if (
-    typeof termsAgreed !== 'boolean' ||
-    typeof privacyPolicyAgreed !== 'boolean' ||
-    typeof marketingAgreed !== 'boolean' ||
-    typeof locationPermission !== 'boolean'
-  ) {
-    throw new BadRequestError('모든 동의 항목은 boolean 타입이어야 합니다.');
-  }
-
-  return await prisma.$transaction(async (tx) => {
-
-    const updatedAgreement = await tx.userAgreement.upsert({
-      where: { userId: Number(userId) },
-      update: {
-        termsAgreed,
-        privacyPolicyAgreed,
-        marketingAgreed,
-        locationPermission,
-        agreedAt: new Date(),
-      },
-      create: {
-        userId: Number(userId),
-        termsAgreed,
-        privacyPolicyAgreed,
-        marketingAgreed,
-        locationPermission,
-        agreedAt: new Date(),
-      },
-    });
-
-    let cafeId = null;
-
-    if (role === 'OWNER') {
-      const cafe = await tx.cafe.create({
-        data: {
-          ownerId: Number(userId),
-          name: '임시 카페 이름',
-          address: '임시 주소',
-          latitude: 0,
-          longitude: 0,
-          ownerName: '임시 사장님 이름',
-          region1DepthName: '임시 시/도',
-          region2DepthName: '임시 시/군/구',
-          region3DepthName: '임시 동/읍/면',
-          businessHours: {},
-        },
-      });
-      cafeId = cafe.id;
-    }
-
-    return {
-      message: '약관 동의 저장 완료',
-      agreement: {
-        ...updatedAgreement,
-        userId: updatedAgreement.userId.toString(),
-      },
-      cafeId,
-    };
+  if (role==='OWNER') {
+  const cafe = await tx.cafe.create({
+    data: {
+      ownerId: Number(userId),
+      name: '임시 카페 이름',
+      address: '임시 주소',
+      latitude: 0,
+      longitude: 0,
+      ownerName: '임시 사장님 이름',
+      region1DepthName: '임시 시/도',
+      region2DepthName: '임시 시/군/구',
+      region3DepthName: '임시 동/읍/면',
+      businessHours: {},
+    },
   });
+  cafeId = cafe.id;
+}
+
+  return { cafeId };
 };
 
 export const generateQRCode = async (userId) => {
