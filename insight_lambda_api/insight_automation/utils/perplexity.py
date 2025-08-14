@@ -93,6 +93,6 @@ def fetch_cafe_features() -> str:
     "exampleCafe": "이 특징을 갖춘 대표 카페 이름 또는 설명"
   }
 ]
-한국어로 응답해 주세요.
+모든 응답은 한국어로 응답해 주세요.
 """
     return fetch_cafe_trend(prompt)
