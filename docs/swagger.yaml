@@ -3736,7 +3736,7 @@ paths:
                 businessHourType:
                   type: string
                   description: 운영 시간 입력 방식 선택값
-                  enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
+                  enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, EACH_DAY_DIFFERENT]
                   example: SAME_ALL_DAYS
                 businessHours:
                   description: 요일별 또는 구분별 운영 시간 정보
@@ -3848,7 +3848,7 @@ paths:
               differentEachDay:
                 summary: 요일별 각각 다름
                 value:
-                  businessHourType: DIFFERENT_EACH_DAY
+                  businessHourType: EACH_DAY_DIFFERENT
                   businessHours:
                     - day: "월"
                       isClosed: false
@@ -4232,7 +4232,7 @@ paths:
                       businessHourType:
                         type: string
                         description: 운영 시간 입력 방식
-                        enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
+                        enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, EACH_DAY_DIFFERENT]
                         example: SAME_ALL_DAYS
                       businessHours:
                         description: 운영 시간 값(선택한 타입에 따라 형태 상이)
@@ -4268,7 +4268,7 @@ paths:
                                     type: string
                                     example: "17:00"
                           - type: array
-                            description: 요일별 각각 다름 (DIFFERENT_EACH_DAY)
+                            description: 요일별 각각 다름 (EACH_DAY_DIFFERENT)
                             items:
                               type: object
                               properties:
@@ -4353,7 +4353,7 @@ paths:
                     message: 내 카페 운영 정보 조회 성공
                     data:
                       id: 3
-                      businessHourType: DIFFERENT_EACH_DAY
+                      businessHourType: EACH_DAY_DIFFERENT
                       businessHours:
                         - day: "월"
                           isClosed: false

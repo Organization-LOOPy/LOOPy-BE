@@ -18,6 +18,7 @@ __pycache__/
 *.pyd
 
 # Installed packages in project folder
+.venv
 insight_lambda_api/*.dist-info/
 insight_lambda_api/*/
 !insight_lambda_api/app.py

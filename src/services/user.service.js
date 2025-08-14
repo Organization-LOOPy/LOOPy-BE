@@ -31,41 +31,19 @@ export const deactivateUserService = async (userId) => {
 
 // 사장 탈퇴(바로 탈퇴 처리)
 export const deleteMyAccountService = async (userId) => {
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: {
-      id: true,
-      email: true,
-      roles: {
-        select: {
-          role: true,
-        },
-      },
-    },
+  return await prisma.$transaction(async (tx) => {
+
+    const cafe = await tx.cafe.findUnique({
+      where: { ownerId: userId },
+      select: { id: true },
+    });
+     
+    await tx.user.delete({ where: { id: userId } });
+
+    return { message: "사장 계정 및 관련 데이터 삭제 완료" };
   });
-
-  if (!user) {
-    throw new UserNotFoundError(userId);
-  }
-
-  const hasOwnerRole = user.roles.some((r) => r.role === 'OWNER');
-
-  if (!hasOwnerRole) {
-    throw new InvalidExitRoleError('OWNER');
-  }
-  await prisma.userPreference.deleteMany({ where: { userId } });
-await prisma.userRole.deleteMany({ where: { userId } });
-
-  const deletedUser = await prisma.user.delete({
-    where: { id: userId },
-  });
-
-  return {
-    id: deletedUser.id.toString(),
-    email: deletedUser.email,
-  };
 };
- 
+
 // 휴면 계정 활성화 
 export const reactivateUserService = async (userId) => {
   const updatedUser = await prisma.user.update({
@@ -253,7 +231,7 @@ export const savePhoneNumberAfterVerificationService = async (userId, phoneNumbe
 };
 
 // 약관 동의 상태 저장 
-export const saveUserAgreementsService = async (userId, agreementData) => {
+export const saveUserAgreementsService = async (userId, agreementData, role) => {
   const {
     termsAgreed,
     privacyPolicyAgreed,
@@ -270,32 +248,56 @@ export const saveUserAgreementsService = async (userId, agreementData) => {
     throw new BadRequestError('모든 동의 항목은 boolean 타입이어야 합니다.');
   }
 
-  const updated = await prisma.userAgreement.upsert({
-    where: { userId: Number(userId) },
-    update: {
-      termsAgreed,
-      privacyPolicyAgreed,
-      marketingAgreed,
-      locationPermission,
-      agreedAt: new Date(),
-    },
-    create: {
-      userId: Number(userId),
-      termsAgreed,
-      privacyPolicyAgreed,
-      marketingAgreed,
-      locationPermission,
-      agreedAt: new Date(),
-    },
-  });
+  return await prisma.$transaction(async (tx) => {
 
-  return {
-    message: '약관 동의 저장 완료',
-    agreement: {
-      ...updated,
-      userId: updated.userId.toString(),
-    },
-  };
+    const updatedAgreement = await tx.userAgreement.upsert({
+      where: { userId: Number(userId) },
+      update: {
+        termsAgreed,
+        privacyPolicyAgreed,
+        marketingAgreed,
+        locationPermission,
+        agreedAt: new Date(),
+      },
+      create: {
+        userId: Number(userId),
+        termsAgreed,
+        privacyPolicyAgreed,
+        marketingAgreed,
+        locationPermission,
+        agreedAt: new Date(),
+      },
+    });
+
+    let cafeId = null;
+
+    if (role === 'OWNER') {
+      const cafe = await tx.cafe.create({
+        data: {
+          ownerId: Number(userId),
+          name: '임시 카페 이름',
+          address: '임시 주소',
+          latitude: 0,
+          longitude: 0,
+          ownerName: '임시 사장님 이름',
+          region1DepthName: '임시 시/도',
+          region2DepthName: '임시 시/군/구',
+          region3DepthName: '임시 동/읍/면',
+          businessHours: {},
+        },
+      });
+      cafeId = cafe.id;
+    }
+
+    return {
+      message: '약관 동의 저장 완료',
+      agreement: {
+        ...updatedAgreement,
+        userId: updatedAgreement.userId.toString(),
+      },
+      cafeId,
+    };
+  });
 };
 
 export const generateQRCode = async (userId) => {
