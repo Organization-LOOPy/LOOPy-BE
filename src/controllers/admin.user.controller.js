@@ -222,6 +222,7 @@ export const addStampToUser = async (req, res, next) => {
             startedAt: now,
             status: 'active',
             expiresAt,
+            rewardDetail: "스탬프 리워드 쿠폰",
             round: nextRound,
           },
         });
