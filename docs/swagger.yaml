@@ -2323,7 +2323,7 @@ paths:
                     type: "null"
                     example: null
 
-  /api/v1/owner/cafes/{cafeId}/challenges/available:
+  /api/v1/cafes/{cafeId}/challenges/available:
     get:
       summary: 챌린지 목록 조회
       description: 현재 유효한 챌린지 목록을 조회합니다. (종료일 오름차순 정렬)
@@ -2377,7 +2377,7 @@ paths:
                           type: boolean
                           example: true
 
-  /api/v1/owner/cafes/{cafeId}/challenges/{challengeId}:
+  /api/v1/cafes/{cafeId}/challenges/{challengeId}:
     get:
       summary: 챌린지 상세 조회
       description: 챌린지 ID로 상세 정보를 조회합니다.
@@ -2491,7 +2491,7 @@ paths:
                               example: 이화동
 
 
-  /api/v1/owner/cafes/{cafeId}/challenges/{challengeId}/join:
+  /api/v1/cafes/{cafeId}/challenges/{challengeId}/join:
     post:
       summary: 챌린지 참여
       description: 해당 챌린지에 로그인 유저가 참여합니다. 참여 시 선택한 매장 ID를 함께 전달해야 합니다.
@@ -2540,43 +2540,43 @@ paths:
                         type: string
                         example: 챌린지 참여가 완료되었습니다.
 
-  success:
-  type: array
-  description: 참여 가능한 카페 목록
-  items:
-    type: object
-    properties:
-      cafeId:
-        type: integer
-        example: 12
-        description: 카페 ID
-      name:
-        type: string
-        example: 카페 위니
-        description: 카페 이름
-      address:
-        type: string
-        example: 서울 서대문구 이화여대길 52
-      image:
-        type: string
-        example: https://cdn.loopy.com/cafes/12.jpg
-        description: 카페 대표 이미지 URL
-      region1DepthName:
-        type: string
-        example: 서울특별시
-        description: 시/도
-      region2DepthName:
-        type: string
-        example: 서대문구
-        description: 구/군
-      region3DepthName:
-        type: string
-        example: 이화동
-        description: 동/읍/면
-      distance:
-        type: number
-        example: 500
-        description: 거리 (단위: 미터, 위치 기반 계산)
+      success:
+      type: array
+      description: 참여 가능한 카페 목록
+      items:
+        type: object
+        properties:
+          cafeId:
+            type: integer
+            example: 12
+            description: 카페 ID
+          name:
+            type: string
+            example: 카페 위니
+            description: 카페 이름
+          address:
+            type: string
+            example: 서울 서대문구 이화여대길 52
+          image:
+            type: string
+            example: https://cdn.loopy.com/cafes/12.jpg
+            description: 카페 대표 이미지 URL
+          region1DepthName:
+            type: string
+            example: 서울특별시
+            description: 시/도
+          region2DepthName:
+            type: string
+            example: 서대문구
+            description: 구/군
+          region3DepthName:
+            type: string
+            example: 이화동
+            description: 동/읍/면
+          distance:
+            type: number
+            example: 500
+            description: 거리 (단위: 미터, 위치 기반 계산)
 
 
   /api/v1/users/me/challenges:
