@@ -163,12 +163,20 @@ export const getMyCafeBusinessInfo = async (req, res, next) => {
   try {
     const userId = req.user.id;
     const businessInfo = await getCafeBusinessInfo(userId);
+
+    if (!businessInfo) {
+      return res.status(404).json({
+        errorCode: 'CAFE_NOT_FOUND',
+        reason: '해당 유저의 카페가 존재하지 않습니다.',
+        data: null
+      });
+    }
+
     return res.status(200).json(businessInfo);
   } catch (err) {
     next(err);
   }
 };
-
 export const updateCafe = async (req, res, next) => {
   try {
     const userId = req.user.id;
