@@ -52,7 +52,6 @@ router.get( "/me/preferred-area", getPreferredAreaController);
 
 // 북마크
 router.get('/me/bookmarks', getBookmarkedCafes);
-router.post('/me/bookmarks', addBookmark);
 router.delete('/me/bookmarks/:cafeId', removeBookmark);
 
 // 사용자별 QR코드
