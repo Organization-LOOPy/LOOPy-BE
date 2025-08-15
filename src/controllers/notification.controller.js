@@ -16,28 +16,20 @@ export const getUserNotifications = async (req, res) => {
       type: true,
       isRead: true,
       createdAt: true,
-      cafe: {
-        select: {
-          id: true,
-          name: true,
-        },
-      },
+      cafeId: true,           
     },
   });
 
   const formatted = notifications.map((n) => {
     let parsedContent = n.content;
-
     try {
       parsedContent = JSON.parse(n.content);
-    } catch (e) {
-      // content가 JSON이 아닐 경우 그대로 사용
-    }
+    } catch (e) {}
 
     return {
       notificationId: n.id,
-      cafeId: n.cafe?.id ?? null,
-      cafeName: n.cafe?.name ?? null,
+      cafeId: n.cafeId ?? null,  
+      cafeName: null,            
       title: n.title,
       content: parsedContent,
       type: n.type,
@@ -54,18 +46,16 @@ export const getUserNotifications = async (req, res) => {
 
 export const getNotificationById = async (req, res) => {
   const userId = req.user.id;
-  const notificationId = parseInt(req.params.notificationId);
+  const notificationId = parseInt(req.params.notificationId, 10);
 
   const notification = await prisma.notification.findUnique({
     where: { id: notificationId },
-    include: {
-      cafe: {
-        select: {
-          id: true,
-          name: true,
-          address: true,
-        },
-      },
+    select: {
+      id: true,
+      type: true,
+      createdAt: true,
+      isRead: true,
+      cafeId: true,              // ✅ 리레이션 대신 스칼라만
     },
   });
 
@@ -86,7 +76,7 @@ export const getNotificationById = async (req, res) => {
       notificationId: notification.id,
       type: notification.type,
       createdAt: notification.createdAt,
-      cafe: notification.cafe ?? null,
+      cafe: null,               
     },
   });
 };
