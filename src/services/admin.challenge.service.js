@@ -119,6 +119,7 @@ export const getChallengeDetailService = async (cafeId, challengeId) => {
     startDate: challenge.startDate.toISOString().split('T')[0],
     endDate: challenge.endDate.toISOString().split('T')[0],
     rewardDetail: challenge.goalDescription,
+    rewardPoint: challenge.rewardPoint,
     participantCount,
     completedCount
   };

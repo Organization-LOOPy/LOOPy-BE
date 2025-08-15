@@ -5350,6 +5350,8 @@ paths:
                         format: date
                       rewardDetail:
                         type: string
+                      rewardPoint:
+                        type: integer
                       participantCount:
                         type: integer
                       completedCount:
