@@ -4484,6 +4484,7 @@ paths:
                           type: string
                           example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
 
+
   /api/v1/owner/cafes/menus/{menuId}:
     delete:
       tags:
