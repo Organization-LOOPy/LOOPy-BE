@@ -101,6 +101,13 @@ export const cafeRepository = {
             },
           },
         },
+        userNotifications: {
+          where: { userId },
+          select: {
+            userId: true,
+            cafeId: true,
+          },
+        },
       },
     });
 

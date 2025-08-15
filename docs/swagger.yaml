@@ -2493,90 +2493,97 @@ paths:
 
   /api/v1/cafes/{cafeId}/challenges/{challengeId}/join:
     post:
+      tags:
+        - Challenge
       summary: 챌린지 참여
-      description: 해당 챌린지에 로그인 유저가 참여합니다. 참여 시 선택한 매장 ID를 함께 전달해야 합니다.
-      tags: [Challenge]
+      description: >
+        로그인한 사용자가 지정한 카페(cafeId)로 해당 챌린지에 참여합니다.
+        - 챌린지는 활성 상태(isActive)이고 기간 내여야 합니다.
+        - 이미 참여한 사용자는 다시 참여할 수 없습니다.
+        - cafeId는 해당 챌린지의 참여 가능 매장 목록에 포함되어야 합니다.
       security:
         - bearerAuth: []
       parameters:
-        - in: path
-          name: challengeId
+        - name: cafeId
+          in: path
           required: true
+          description: 참여할 매장 ID
           schema:
             type: integer
-          description: 참여할 챌린지의 ID
+            example: 12
+        - name: challengeId
+          in: path
+          required: true
+          description: 참여할 챌린지 ID
+          schema:
+            type: integer
+            example: 34
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - joinedCafeId
-              properties:
-                joinedCafeId:
-                  type: integer
-                  example: 12
-                  description: 유저가 선택한 참여 매장의 ID
+        required: false
       responses:
         '200':
-          description: 성공
+          description: 참여 성공
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  resultType:
+                  message:
                     type: string
-                    example: SUCCESS
-                  error:
+                    example: "챌린지 참여가 완료되었습니다."
+        '400':
+          description: 잘못된 요청(비활성/기간 외 챌린지 또는 참여 불가 매장)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
                     type: string
-                    nullable: true
-                    example: null
-                  success:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: 챌린지 참여가 완료되었습니다.
+                    example: "CHALLENGE_NOT_ACTIVE"
+                  reason:
+                    type: string
+                    example: "현재 참여할 수 없는 챌린지입니다."
+        '401':
+          description: 인증 필요(JWT)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: "UNAUTHORIZED"
+                  reason:
+                    type: string
+                    example: "유효한 인증 토큰이 필요합니다."
+        '404':
+          description: 챌린지 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: "CHALLENGE_NOT_FOUND"
+                  reason:
+                    type: string
+                    example: "존재하지 않는 챌린지입니다."
+        '409':
+          description: 이미 참여한 사용자
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: "ALREADY_PARTICIPATED"
+                  reason:
+                    type: string
+                    example: "이미 해당 챌린지에 참여했습니다."
 
-      success:
-      type: array
-      description: 참여 가능한 카페 목록
-      items:
-        type: object
-        properties:
-          cafeId:
-            type: integer
-            example: 12
-            description: 카페 ID
-          name:
-            type: string
-            example: 카페 위니
-            description: 카페 이름
-          address:
-            type: string
-            example: 서울 서대문구 이화여대길 52
-          image:
-            type: string
-            example: https://cdn.loopy.com/cafes/12.jpg
-            description: 카페 대표 이미지 URL
-          region1DepthName:
-            type: string
-            example: 서울특별시
-            description: 시/도
-          region2DepthName:
-            type: string
-            example: 서대문구
-            description: 구/군
-          region3DepthName:
-            type: string
-            example: 이화동
-            description: 동/읍/면
-          distance:
-            type: number
-            example: 500
-            description: 거리 (단위: 미터, 위치 기반 계산)
 
 
   /api/v1/users/me/challenges:
@@ -4483,6 +4490,7 @@ paths:
                         description:
                           type: string
                           example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
+
 
   /api/v1/owner/cafes/menus/{menuId}:
     delete:
