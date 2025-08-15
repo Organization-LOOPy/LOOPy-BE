@@ -57,6 +57,8 @@ LOOPY-BE/
 ```
 
 ## 📚 4. 프로젝트 아키텍처
+<img width="679" height="385" alt="스크린샷 2025-08-15 오후 11 57 51" src="https://github.com/user-attachments/assets/e4803bc6-0f38-41cd-9aad-ddd199736e63" />
+
 
 ---
 
