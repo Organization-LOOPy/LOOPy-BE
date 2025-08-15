@@ -105,7 +105,27 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
   let parsedHours = parseIfString(operationInfo.businessHours);
   const businessHourType = operationInfo.businessHourType;
 
-  if (parsedHours && !Array.isArray(parsedHours) && typeof parsedHours === "object") {
+
+  const validTypes = ["SAME_ALL_DAYS", "WEEKDAY_WEEKEND", "EACH_DAY_DIFFERENT"];
+  if (businessHourType && !validTypes.includes(businessHourType)) {
+    throw new InvalidBusinessHoursError("유효하지 않은 businessHourType입니다.");
+  }
+
+  if (businessHourType === "SAME_ALL_DAYS" && parsedHours && !Array.isArray(parsedHours) && typeof parsedHours === "object") {
+    if (parsedHours.open && parsedHours.close) {
+      parsedHours = [
+        { day: "MONDAY",    isClosed: false, openTime: parsedHours.open, closeTime: parsedHours.close },
+        { day: "TUESDAY",   isClosed: false, openTime: parsedHours.open, closeTime: parsedHours.close },
+        { day: "WEDNESDAY", isClosed: false, openTime: parsedHours.open, closeTime: parsedHours.close },
+        { day: "THURSDAY",  isClosed: false, openTime: parsedHours.open, closeTime: parsedHours.close },
+        { day: "FRIDAY",    isClosed: false, openTime: parsedHours.open, closeTime: parsedHours.close },
+        { day: "SATURDAY",  isClosed: false, openTime: parsedHours.open, closeTime: parsedHours.close },
+        { day: "SUNDAY",    isClosed: false, openTime: parsedHours.open, closeTime: parsedHours.close }
+      ];
+    } else {
+      throw new InvalidBusinessHoursError("SAME_ALL_DAYS는 open과 close 값이 필요합니다.");
+    }
+  } else if (businessHourType === "WEEKDAY_WEEKEND" && parsedHours && !Array.isArray(parsedHours) && typeof parsedHours === "object") {
     if (parsedHours.weekday && parsedHours.weekend) {
       parsedHours = [
         { day: "MONDAY",    isClosed: false, openTime: parsedHours.weekday.open, closeTime: parsedHours.weekday.close },
@@ -116,6 +136,8 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
         { day: "SATURDAY",  isClosed: false, openTime: parsedHours.weekend.open, closeTime: parsedHours.weekend.close },
         { day: "SUNDAY",    isClosed: false, openTime: parsedHours.weekend.open, closeTime: parsedHours.weekend.close }
       ];
+    } else {
+      throw new InvalidBusinessHoursError("WEEKDAY_WEEKEND는 weekday와 weekend 값이 필요합니다.");
     }
   }
 
@@ -139,32 +161,27 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
     }
   }
 
-  const validTypes = ["SAME_ALL_DAYS", "WEEKDAY_WEEKEND", "DIFFERENT_EACH_DAY"];
-  if (businessHourType && !validTypes.includes(businessHourType)) {
-    throw new InvalidBusinessHoursError("유효하지 않은 businessHourType입니다.");
-  }
-
   const cafe = await prisma.cafe.findFirst({
-    where: { ownerId: userId },
+    where: { ownerId: userId }
   });
 
   if (!cafe) {
-    throw new CafeNotExistError();
+    throw new CustomError('CAFE_NOT_FOUND', '해당 유저의 카페가 존재하지 않습니다.');
   }
 
-  return prisma.cafe.update({
+  const updatedCafe = await prisma.cafe.update({
     where: { id: cafe.id },
     data: {
-      businessHours: parsedHours,
       businessHourType,
-      breakTime: parseIfString(operationInfo.breakTime),
-      storeFilters: parseIfString(operationInfo.storeFilters),
-      takeOutFilters: parseIfString(operationInfo.takeOutFilters),
-      menuFilters: parseIfString(operationInfo.menuFilters),
-      keywords: parseIfString(operationInfo.keywords),
-    },
+      businessHours: parsedHours,
+      updatedAt: new Date()
+    }
   });
+
+  return updatedCafe;
 };
+
+
 
 export const addCafeMenu = async (userId, menuData, file) => {
   const requiredFields = ["name", "price"];
