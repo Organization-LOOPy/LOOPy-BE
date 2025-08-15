@@ -8,9 +8,10 @@ import {
   updateKakaoAlertService,
   updateFcmTokenService,
   savePhoneNumberAfterVerificationService,
-  saveUserAgreementsService,
+  makeOwnerCafe,
   deleteMyAccountService,
   getUserPreferencesService,
+  getPreferredAreaService 
 } from "../services/user.service.js";
 import { QRNotFoundError, NotFoundPhoneError } from "../errors/customErrors.js";
 import { verifyPhoneNumber } from "../services/firebase.service.js";
@@ -175,7 +176,9 @@ export const notifyPhoneVerification = async (req, res, next) => {
 
 export const saveUserAgreements = async (req, res, next) => {
   try {
-    const result = await saveUserAgreementsService(req.body.userId, req.body);
+console.log("🔥 req.user:", req.user);
+
+    const result = await makeOwnerCafe(req.user.id, req.body, req.user.role);
     return res.success(result);
   } catch (err) {
     next(err);
@@ -217,6 +220,20 @@ export const getUserPreferences = async (req, res, next) => {
     res.status(200).json({
       message: '선호 키워드 조회 성공',
       data: preferences
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getPreferredAreaController = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const preferredArea = await getPreferredAreaService(userId);
+
+    res.status(200).json({
+      message: "선호 지역 조회 성공",
+      data: { preferredArea },
     });
   } catch (error) {
     next(error);

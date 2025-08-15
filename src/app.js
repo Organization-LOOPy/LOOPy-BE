@@ -99,7 +99,7 @@ app.use('/api/v1/owner/cafes', adminChallengeRouter);
 app.use('/api/v1/owner', ownerRouter);
 app.use("/api/v1/owner/cafes", adminNotificationRouter);
 
-// 페이지GET
+// 페이지GET 
 app.use("/api/v1/pages", customerPageRouter);
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어

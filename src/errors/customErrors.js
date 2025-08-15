@@ -682,5 +682,14 @@ export class PreferenceNotFoundError extends CustomError {
   }
 }
 
+export class UserPreferenceNotFoundError extends Error {
+  constructor(userId) {
+    super(`User preference not found for userId=${userId}`);
+    this.name = "UserPreferenceNotFoundError";
+    this.statusCode = 404;
+  }
+}
+
+
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
