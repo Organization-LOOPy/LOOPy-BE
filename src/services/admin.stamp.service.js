@@ -241,7 +241,7 @@ export const getMyStampImagesService = async (userId) => {
   const images = await prisma.stampImage.findMany({
     where: { cafeId: cafe.id },
     orderBy: { createdAt: 'desc' },
-    select: { id: true, imageUrl: true, createdAt: true, updatedAt: true },
+    select: { id: true, imageUrl: true, createdAt: true},
   });
 
   return images; 

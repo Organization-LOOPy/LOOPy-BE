@@ -4673,7 +4673,7 @@ paths:
         '404':
           description: 카페를 찾을 수 없음
 
-  /api/v1/admin/stamps/stamp-images/{imageId}:
+  /api/v1/owner/stamps/stamp-images/{imageId}:
     delete:
       tags: [Admin Cafe]
       summary: 스탬프 이미지 삭제

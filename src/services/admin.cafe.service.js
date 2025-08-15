@@ -90,9 +90,41 @@ const parseIfString = (value) => {
   return value;
 };
 
-export const updateCafeOperationInfo = async (userId, operationInfo) => {
-  const parsedHours = parseIfString(operationInfo.businessHours);
+
+const dayMap = {
+  "월": "MONDAY",
+  "화": "TUESDAY",
+  "수": "WEDNESDAY",
+  "목": "THURSDAY",
+  "금": "FRIDAY",
+  "토": "SATURDAY",
+  "일": "SUNDAY"
+};
+
+export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
+  let parsedHours = parseIfString(operationInfo.businessHours);
   const businessHourType = operationInfo.businessHourType;
+
+  if (parsedHours && !Array.isArray(parsedHours) && typeof parsedHours === "object") {
+    if (parsedHours.weekday && parsedHours.weekend) {
+      parsedHours = [
+        { day: "MONDAY",    isClosed: false, openTime: parsedHours.weekday.open, closeTime: parsedHours.weekday.close },
+        { day: "TUESDAY",   isClosed: false, openTime: parsedHours.weekday.open, closeTime: parsedHours.weekday.close },
+        { day: "WEDNESDAY", isClosed: false, openTime: parsedHours.weekday.open, closeTime: parsedHours.weekday.close },
+        { day: "THURSDAY",  isClosed: false, openTime: parsedHours.weekday.open, closeTime: parsedHours.weekday.close },
+        { day: "FRIDAY",    isClosed: false, openTime: parsedHours.weekday.open, closeTime: parsedHours.weekday.close },
+        { day: "SATURDAY",  isClosed: false, openTime: parsedHours.weekend.open, closeTime: parsedHours.weekend.close },
+        { day: "SUNDAY",    isClosed: false, openTime: parsedHours.weekend.open, closeTime: parsedHours.weekend.close }
+      ];
+    }
+  }
+
+  if (Array.isArray(parsedHours)) {
+    parsedHours = parsedHours.map(entry => ({
+      ...entry,
+      day: dayMap[entry.day] || entry.day
+    }));
+  }
 
   if (!Array.isArray(parsedHours)) {
     throw new InvalidBusinessHoursError("businessHours는 배열이어야 합니다.");
@@ -100,22 +132,16 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
 
   for (const entry of parsedHours) {
     if (!entry.day || typeof entry.isClosed !== "boolean") {
-      throw new InvalidBusinessHoursError(
-        `잘못된 요일 항목: ${JSON.stringify(entry)}`
-      );
+      throw new InvalidBusinessHoursError(`잘못된 요일 항목: ${JSON.stringify(entry)}`);
     }
     if (!entry.isClosed && (!entry.openTime || !entry.closeTime)) {
-      throw new InvalidBusinessHoursError(
-        `운영 중인 요일에는 openTime과 closeTime이 필요합니다.`
-      );
+      throw new InvalidBusinessHoursError(`운영 중인 요일에는 openTime과 closeTime이 필요합니다.`);
     }
   }
 
   const validTypes = ["SAME_ALL_DAYS", "WEEKDAY_WEEKEND", "DIFFERENT_EACH_DAY"];
   if (businessHourType && !validTypes.includes(businessHourType)) {
-    throw new InvalidBusinessHoursError(
-      "유효하지 않은 businessHourType입니다."
-    );
+    throw new InvalidBusinessHoursError("유효하지 않은 businessHourType입니다.");
   }
 
   const cafe = await prisma.cafe.findFirst({
@@ -126,12 +152,12 @@ export const updateCafeOperationInfo = async (userId, operationInfo) => {
     throw new CafeNotExistError();
   }
 
-  return await prisma.cafe.update({
+  return prisma.cafe.update({
     where: { id: cafe.id },
     data: {
       businessHours: parsedHours,
-      businessHourType: businessHourType,
-      breakTime: operationInfo.breakTime,
+      businessHourType,
+      breakTime: parseIfString(operationInfo.breakTime),
       storeFilters: parseIfString(operationInfo.storeFilters),
       takeOutFilters: parseIfString(operationInfo.takeOutFilters),
       menuFilters: parseIfString(operationInfo.menuFilters),
