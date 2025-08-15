@@ -584,10 +584,16 @@ export const mapSearchService = {
     const refinedRegion2 = region2?.trim() || null;
     const refinedRegion3 = region3?.trim() || null;
 
-    // 대략적인 위경도 범위 계산 (DB 쿼리 최적화)
-    const latRange = zoomConfig.radius / 111000; // 1도 ≈ 111km
+    const safetyMargin = 2.0; // 2배 여유 공간
+    const minRadius = 200; // 최소 200m 보장
+    const effectiveRadius = Math.max(
+      zoomConfig.radius * safetyMargin,
+      minRadius
+    );
+
+    const latRange = effectiveRadius / 111000;
     const lonRange =
-      zoomConfig.radius / (111000 * Math.cos((refinedY * Math.PI) / 180));
+      effectiveRadius / (111000 * Math.cos((refinedY * Math.PI) / 180));
 
     // 검색 조건 구성
     const searchParams = {
