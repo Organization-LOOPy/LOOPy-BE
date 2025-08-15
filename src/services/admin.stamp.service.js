@@ -16,6 +16,11 @@ export const uploadStampImagesService = async (userId, files) => {
   }
   const MAX_TOTAL_IMAGES = 4;
 
+  const defaultStampImages = [
+    'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_1.png',
+    'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_2.png',
+  ];
+
   return await prisma.$transaction(async (tx) => {
     const cafe = await tx.cafe.findFirst({
       where: { ownerId: Number(userId) },
@@ -23,24 +28,33 @@ export const uploadStampImagesService = async (userId, files) => {
     });
     if (!cafe) throw new CafeNotFoundError();
 
+    // 내가 올린 것만 카운트
     const existingCount = await tx.stampImage.count({
-      where: { cafeId: cafe.id },
+      where: {
+        cafeId: cafe.id,
+        createdBy: Number(userId),
+        imageUrl: { notIn: defaultStampImages },
+      },
     });
 
-    const capacity = MAX_TOTAL_IMAGES - existingCount;
+    const capacity = MAX_TOTAL_IMAGES - defaultStampImages.length - existingCount;
 
     if (capacity <= 0) {
-      throw new StampImageLimitExceededError(); 
+      throw new StampImageLimitExceededError();
     }
     if (files.length > capacity) {
-      throw new StampImageLimitExceededError(); 
+      throw new StampImageLimitExceededError();
     }
 
     const results = [];
     for (const file of files) {
       const imageUrl = await uploadToS3(file, 'cafes/stamps');
       const saved = await tx.stampImage.create({
-        data: { cafeId: cafe.id, imageUrl },
+        data: {
+          cafeId: cafe.id,
+          imageUrl,
+          createdBy: Number(userId),
+        },
         select: { id: true, imageUrl: true },
       });
       results.push(saved);
@@ -227,7 +241,7 @@ export const getMyStampImagesService = async (userId) => {
   const images = await prisma.stampImage.findMany({
     where: { cafeId: cafe.id },
     orderBy: { createdAt: 'desc' },
-    select: { id: true, imageUrl: true, createdAt: true, updatedAt: true },
+    select: { id: true, imageUrl: true, createdAt: true},
   });
 
   return images; 
