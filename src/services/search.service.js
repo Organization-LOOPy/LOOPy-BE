@@ -584,7 +584,7 @@ export const mapSearchService = {
     const refinedRegion2 = region2?.trim() || null;
     const refinedRegion3 = region3?.trim() || null;
 
-    const safetyMargin = 2.0; // 2배 여유 공간
+    const safetyMargin = 2; // 1.5배 여유 공간
     const minRadius = 200; // 최소 200m 보장
     const effectiveRadius = Math.max(
       zoomConfig.radius * safetyMargin,
