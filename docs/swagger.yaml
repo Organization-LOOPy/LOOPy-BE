@@ -4348,6 +4348,159 @@ paths:
         '404':
           description: 카페가 존재하지 않습니다
 
+  /api/v1/owner/cafes/myCafe:
+    patch:
+      tags: [Admin Cafe]
+      summary: 내 카페 기본 정보 수정
+      description: 사장님의 카페 기본 정보를 수정합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                address:
+                  type: string
+                region1DepthName:
+                  type: string
+                region2DepthName:
+                  type: string
+                region3DepthName:
+                  type: string
+                latitude:
+                  type: number
+                  format: float
+                longitude:
+                  type: number
+                  format: float
+                ownerName:
+                  type: string
+                phone:
+                  type: string
+                websiteUrl:
+                  type: string
+                description:
+                  type: string
+                storeFilters:
+                  type: string
+                  description: 매장 관련 필터 (예: 넓은좌석)
+                takeOutFilters:
+                  type: string
+                  description: 테이크아웃 관련 필터 (예: 테이크아웃)
+                menuFilters:
+                  type: string
+                  description: 메뉴 관련 필터 (예: 카페라떼)
+                keywords:
+                  type: string
+                  description: 키워드
+              example:
+                name: "수정된 카페 이름"
+                address: "서울시 강남구 수정로 456"
+                region1DepthName: "서울특별시"
+                region2DepthName: "강남구"
+                region3DepthName: "역삼동"
+                latitude: 37.498095
+                longitude: 127.027610
+                ownerName: "김사장"
+                phone: "01098765432"
+                websiteUrl: "https://updatedcafe.example.com"
+                description: "수정된 카페 설명입니다."
+                storeFilters: "넓은좌석"
+                takeOutFilters: "테이크아웃"
+                menuFilters: "카페라떼"
+                keywords: "수정 키워드"
+      responses:
+        200:
+          description: 카페 기본 정보 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  address:
+                    type: string
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  ownerName:
+                    type: string
+                  businessHours:
+                    type: object
+                  phone:
+                    type: string
+                    nullable: true
+                  websiteUrl:
+                    type: string
+                    nullable: true
+                  description:
+                    type: string
+                    nullable: true
+                  storeFilters:
+                    type: string
+                  takeOutFilters:
+                    type: string
+                  menuFilters:
+                    type: string
+                  keywords:
+                    type: string
+                  status:
+                    type: string
+                    enum: [active, inactive]
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
+                  ownerId:
+                    type: integer
+                  region1DepthName:
+                    type: string
+                  region2DepthName:
+                    type: string
+                  region3DepthName:
+                    type: string
+                  breakTime:
+                    type: string
+                    nullable: true
+                  businessHourType:
+                    type: string
+                    enum: [SAME_ALL_DAYS, DIFFERENT_BY_DAY]
+              example:
+                id: 1
+                name: "수정된 카페 이름"
+                address: "서울시 강남구 수정로 456"
+                latitude: 37.498095
+                longitude: 127.027610
+                ownerName: "김사장"
+                businessHours: {}
+                phone: "01098765432"
+                websiteUrl: "https://updatedcafe.example.com"
+                description: "수정된 카페 설명입니다."
+                storeFilters: "넓은좌석"
+                takeOutFilters: "테이크아웃"
+                menuFilters: "카페라떼"
+                keywords: "수정 키워드"
+                status: "inactive"
+                createdAt: "2025-08-15T06:41:52.262Z"
+                updatedAt: "2025-08-15T08:42:18.318Z"
+                ownerId: 1
+                region1DepthName: "서울특별시"
+                region2DepthName: "강남구"
+                region3DepthName: "역삼동"
+                breakTime: null
+                businessHourType: "SAME_ALL_DAYS"
+
 
   /api/v1/owner/cafes/myCafe/menus:
     get:
@@ -7989,6 +8142,43 @@ components:
         expiredAt:
           type: string
           format: date-time
+    
+    StampPolicy:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        goalCount:
+          type: integer
+          example: 10
+        rewardDetail:
+          type: string
+          example: "무료 아메리카노"
+        selectedRewardType:
+          type: string
+          example: "FREE_DRINK"
+        selectedRewardMeta:
+          type: object
+          example: { size: "large" }
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          example: INVALID_REQUEST
+        reason:
+          type: string
+          example: 요청 파라미터가 유효하지 않습니다.
+        data:
+          type: object
+          nullable: true
 
     UseAllPointsResult:
       type: object
