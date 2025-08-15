@@ -246,6 +246,7 @@ export const addStampToUser = async (req, res, next) => {
           stampBookId: book.id,
           stampedAt: now,
           source: 'owner',
+          rewardDetail,
           method: 'MANUAL',
         },
       });
