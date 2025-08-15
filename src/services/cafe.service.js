@@ -106,6 +106,9 @@ export const cafeService = {
       bookmark: {
         isBookmarked: (cafe.bookmarkedBy?.length ?? 0) > 0,
       },
+      alram: {
+        isAlramSet: (cafe.userNotifications?.length ?? 0) > 0,
+      },
     };
 
     return cafeDetails;

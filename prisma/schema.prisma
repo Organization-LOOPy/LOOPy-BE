@@ -409,13 +409,11 @@ model UserCafeNotification {
   userId    Int @map("user_id")
   cafeId    Int @map("cafe_id")
   
-  // 복합 기본키 (코드에서 userId_cafeId로 찾고 있으니)
   @@id([userId, cafeId])
   
   createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime @updatedAt @map("updated_at")
-  
-  // 관계 설정
+  updatedAt DateTime? @updatedAt @map("updated_at")
+
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
 
