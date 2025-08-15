@@ -11,53 +11,6 @@ import { BadRequestError} from "../errors/customErrors.js";
 const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
-// 챌린지 목록 조회
-export const getChallengeList = async (req, res, next) => {
-  try {
-    const today = new Date();
-    const userId = req.user?.id || null;
-
-    const challenges = await prisma.challenge.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: today },
-        endDate: { gte: today },
-      },
-      orderBy: {
-        endDate: "asc",
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        thumbnailUrl: true,
-        startDate: true,
-        endDate: true,
-        participants: userId
-          ? {
-              where: { userId },
-              select: { id: true },
-            }
-          : false,
-      },
-    });
-
-    const response = challenges.map((challenge) => ({
-      id: challenge.id,
-      title: challenge.title,
-      description: challenge.description,
-      thumbnailUrl: challenge.thumbnailUrl,
-      startDate: challenge.startDate,
-      endDate: challenge.endDate,
-      isParticipated: userId ? challenge.participants.length > 0 : false,
-    }));
-
-    return res.success(response);
-  } catch (err) {
-    logger.error(`챌린지 목록 조회 실패: ${err.message}`);
-    next(err);
-  }
-};
 
 // 챌린지 상세 조회
 export const getChallengeDetail = async (req, res, next) => {
@@ -394,3 +347,51 @@ export const completeChallenge = async (req, res, next) => {
 
 
 // 서버빌딩...
+
+// 챌린지 목록 조회
+export const getChallengeList = async (req, res, next) => {
+  try {
+    const today = new Date();
+    const userId = req.user?.id || null;
+
+    const challenges = await prisma.challenge.findMany({
+      where: {
+        isActive: true,
+        startDate: { lte: today },
+        endDate: { gte: today },
+      },
+      orderBy: {
+        endDate: "asc",
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        thumbnailUrl: true,
+        startDate: true,
+        endDate: true,
+        participants: userId
+          ? {
+              where: { userId },
+              select: { id: true },
+            }
+          : false,
+      },
+    });
+
+    const response = challenges.map((challenge) => ({
+      id: challenge.id,
+      title: challenge.title,
+      description: challenge.description,
+      thumbnailUrl: challenge.thumbnailUrl,
+      startDate: challenge.startDate,
+      endDate: challenge.endDate,
+      isParticipated: userId ? challenge.participants.length > 0 : false,
+    }));
+
+    return res.success(response);
+  } catch (err) {
+    logger.error(`챌린지 목록 조회 실패: ${err.message}`);
+    next(err);
+  }
+};
