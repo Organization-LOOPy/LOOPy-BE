@@ -1,8 +1,6 @@
 // coupon.service.js
 import prisma from '../../prisma/client.js';
-import pkg from '@prisma/client';
-const { Prisma } = pkg;
-const { CouponStatus } = Prisma;
+import { CouponStatus } from '@prisma/client';
 
 import {
   CouponMissingDiscountValueError,
@@ -73,10 +71,10 @@ export const getOwnerCouponListService = async (cafeId, type) => {
     FREE_DRINK: 'FREE_DRINK',
     SIZE_UP: 'SIZE_UP'
   };
-  
+
   const where = {
     cafeId,
-    ...(type && { discountType: type }),
+    ...(type && { discountType: typeMap[type] || type }),
   };
 
   const coupons = await prisma.couponTemplate.findMany({
