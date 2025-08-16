@@ -12,6 +12,7 @@ import {
   deleteCafeMenuService,
   getCafeMenus,
   getFirstCafePhotoByOwner,
+  getOwnerCafeInfo, 
 } from "../services/admin.cafe.service.js";
 import { uploadToS3 } from "../utils/s3.js";
 
@@ -264,6 +265,20 @@ export const deleteCafeMenu = async (req, res, next) => {
     return res.status(200).json({
       message: "카페 메뉴가 삭제되었습니다.",
       data: { menuId: deletedId },
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getOwnerCafe = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const result = await getOwnerCafeInfo(userId);
+
+    res.status(200).json({
+      message: '사장님의 카페 정보 조회 성공',
+      data: result,
     });
   } catch (error) {
     next(error);

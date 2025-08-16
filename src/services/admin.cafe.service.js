@@ -460,3 +460,21 @@ export const getFirstCafePhotoByOwner = async (ownerId) => {
 
   return photo;
 };
+
+export const getOwnerCafeInfo = async (userId) => {
+  const cafe = await prisma.cafe.findFirst({
+    where: { ownerId: userId },
+    select: {
+      id: true,
+    },
+  });
+
+  if (!cafe) {
+    throw new CafeNotExistError();
+  }
+
+  return {
+    userId,
+    cafeId: cafe.id,
+  };
+};
