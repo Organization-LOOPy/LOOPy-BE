@@ -538,45 +538,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-  /api/v1/users/me/agreements:
-    post:
-      summary: 약관 동의 저장
-      description: 인증된 사용자의 약관 동의 상태를 저장
-      tags:
-        - Users
-      security:
-        - bearerAuth: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/UserAgreementRequest'
-      responses:
-        '200':
-          description: 약관 동의 저장 성공
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  message:
-                    type: string
-                    example: 약관 동의 저장 완료
-                  agreement:
-                    $ref: '#/components/schemas/UserAgreementResponse'
-        '400':
-          description: 필수 항목 누락 또는 잘못된 값
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: 인증 실패
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/users/me/preferences:
     patch:
@@ -728,6 +689,41 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+    
+    get:
+      tags:
+        - Users
+      summary: 선호 지역 조회
+      description: 사용자의 선호 지역(preferredArea)을 조회합니다.
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: 선호 지역 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 선호 지역 조회 성공
+                  data:
+                    type: object
+                    properties:
+                      preferredArea:
+                        type: string
+                        example: 서울특별시 강남구
+        "404":
+          description: 선호 지역이 설정되지 않은 경우
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: User preference not found for userId=1
 
   /api/v1/users/me/kakao-alert:
     patch:
@@ -2288,7 +2284,7 @@ paths:
                     type: "null"
                     example: null
 
-  /api/v1/owner/cafes/{cafeId}/challenges/available:
+  /api/v1/cafes/{cafeId}/challenges/available:
     get:
       summary: 챌린지 목록 조회
       description: 현재 유효한 챌린지 목록을 조회합니다. (종료일 오름차순 정렬)
@@ -2342,7 +2338,7 @@ paths:
                           type: boolean
                           example: true
 
-  /api/v1/owner/cafes/{cafeId}/challenges/{challengeId}:
+  /api/v1/cafes/{cafeId}/challenges/{challengeId}:
     get:
       summary: 챌린지 상세 조회
       description: 챌린지 ID로 상세 정보를 조회합니다.
@@ -2456,92 +2452,99 @@ paths:
                               example: 이화동
 
 
-  /api/v1/owner/cafes/{cafeId}/challenges/{challengeId}/join:
+  /api/v1/cafes/{cafeId}/challenges/{challengeId}/join:
     post:
+      tags:
+        - Challenge
       summary: 챌린지 참여
-      description: 해당 챌린지에 로그인 유저가 참여합니다. 참여 시 선택한 매장 ID를 함께 전달해야 합니다.
-      tags: [Challenge]
+      description: >
+        로그인한 사용자가 지정한 카페(cafeId)로 해당 챌린지에 참여합니다.
+        - 챌린지는 활성 상태(isActive)이고 기간 내여야 합니다.
+        - 이미 참여한 사용자는 다시 참여할 수 없습니다.
+        - cafeId는 해당 챌린지의 참여 가능 매장 목록에 포함되어야 합니다.
       security:
         - bearerAuth: []
       parameters:
-        - in: path
-          name: challengeId
+        - name: cafeId
+          in: path
           required: true
+          description: 참여할 매장 ID
           schema:
             type: integer
-          description: 참여할 챌린지의 ID
+            example: 12
+        - name: challengeId
+          in: path
+          required: true
+          description: 참여할 챌린지 ID
+          schema:
+            type: integer
+            example: 34
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - joinedCafeId
-              properties:
-                joinedCafeId:
-                  type: integer
-                  example: 12
-                  description: 유저가 선택한 참여 매장의 ID
+        required: false
       responses:
         '200':
-          description: 성공
+          description: 참여 성공
           content:
             application/json:
               schema:
                 type: object
                 properties:
-                  resultType:
+                  message:
                     type: string
-                    example: SUCCESS
-                  error:
+                    example: "챌린지 참여가 완료되었습니다."
+        '400':
+          description: 잘못된 요청(비활성/기간 외 챌린지 또는 참여 불가 매장)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
                     type: string
-                    nullable: true
-                    example: null
-                  success:
-                    type: object
-                    properties:
-                      message:
-                        type: string
-                        example: 챌린지 참여가 완료되었습니다.
+                    example: "CHALLENGE_NOT_ACTIVE"
+                  reason:
+                    type: string
+                    example: "현재 참여할 수 없는 챌린지입니다."
+        '401':
+          description: 인증 필요(JWT)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: "UNAUTHORIZED"
+                  reason:
+                    type: string
+                    example: "유효한 인증 토큰이 필요합니다."
+        '404':
+          description: 챌린지 없음
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: "CHALLENGE_NOT_FOUND"
+                  reason:
+                    type: string
+                    example: "존재하지 않는 챌린지입니다."
+        '409':
+          description: 이미 참여한 사용자
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: "ALREADY_PARTICIPATED"
+                  reason:
+                    type: string
+                    example: "이미 해당 챌린지에 참여했습니다."
 
-  success:
-  type: array
-  description: 참여 가능한 카페 목록
-  items:
-    type: object
-    properties:
-      cafeId:
-        type: integer
-        example: 12
-        description: 카페 ID
-      name:
-        type: string
-        example: 카페 위니
-        description: 카페 이름
-      address:
-        type: string
-        example: 서울 서대문구 이화여대길 52
-      image:
-        type: string
-        example: https://cdn.loopy.com/cafes/12.jpg
-        description: 카페 대표 이미지 URL
-      region1DepthName:
-        type: string
-        example: 서울특별시
-        description: 시/도
-      region2DepthName:
-        type: string
-        example: 서대문구
-        description: 구/군
-      region3DepthName:
-        type: string
-        example: 이화동
-        description: 동/읍/면
-      distance:
-        type: number
-        example: 500
-        description: 거리 (단위: 미터, 위치 기반 계산)
 
 
   /api/v1/users/me/challenges:
@@ -3619,67 +3622,58 @@ paths:
         '500':
           description: 서버 오류
 
-  /api/v1/owner/cafes/basic-info:
+  /api/v1/users/owner-cafe:
     post:
-      tags: [Admin Cafe]
-      summary: 카페 기본 정보 등록
+      tags:
+        - Users
+      summary: 카페 생성
+      description: |
+        사용자의 역할이 `OWNER`이면 기본 카페 정보를 생성하고 해당 `cafeId`를 반환합니다.
       security:
         - bearerAuth: []
       requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              required:
-                - name
-                - address
-                - region1DepthName
-                - region2DepthName
-                - region3DepthName
-                - latitude
-                - longitude
-                - ownerName
-              properties:
-                name:
-                  type: string
-                address:
-                  type: string
-                region1DepthName:
-                  type: string
-                region2DepthName:
-                  type: string
-                region3DepthName:
-                  type: string
-                latitude:
-                  type: number
-                  format: float
-                longitude:
-                  type: number
-                  format: float
-                ownerName:
-                  type: string
-                phone:
-                  type: string
-                websiteUrl:
-                  type: string
-                description:
-                  type: string
-            example:
-              name: "테스트카페"
-              address: "서울시 마포구 테스트로 123"
-              region1DepthName: "서울특별시"
-              region2DepthName: "마포구"
-              region3DepthName: "서교동"
-              latitude: 37.567167
-              longitude: 126.946347
-              ownerName: "홍길동"
-              phone: "01012345678"
-              websiteUrl: "https://testcafe.example.com"
-              description: "테스트용 카페입니다."
+        description: 요청 바디 없음
+        required: false
+        content: {}
       responses:
-        201:
-          description: 카페 기본 정보 등록 성공
+        '200':
+          description: (OWNER인 경우) 카페 생성 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: string
+                    nullable: true
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      cafeId:
+                        type: integer
+                        nullable: true
+                        example: 4
+        '401':
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: FAIL
+                  error:
+                    type: string
+                    example: Unauthorized
+                  message:
+                    type: string
+                    example: 인증된 사용자 정보가 없습니다.
+
 
   /api/v1/owner/cafes/operation:
     patch:
@@ -3701,7 +3695,7 @@ paths:
                 businessHourType:
                   type: string
                   description: 운영 시간 입력 방식 선택값
-                  enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
+                  enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, EACH_DAY_DIFFERENT]
                   example: SAME_ALL_DAYS
                 businessHours:
                   description: 요일별 또는 구분별 운영 시간 정보
@@ -3813,7 +3807,7 @@ paths:
               differentEachDay:
                 summary: 요일별 각각 다름
                 value:
-                  businessHourType: DIFFERENT_EACH_DAY
+                  businessHourType: EACH_DAY_DIFFERENT
                   businessHours:
                     - day: "월"
                       isClosed: false
@@ -4197,7 +4191,7 @@ paths:
                       businessHourType:
                         type: string
                         description: 운영 시간 입력 방식
-                        enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, DIFFERENT_EACH_DAY]
+                        enum: [SAME_ALL_DAYS, WEEKDAY_WEEKEND, EACH_DAY_DIFFERENT]
                         example: SAME_ALL_DAYS
                       businessHours:
                         description: 운영 시간 값(선택한 타입에 따라 형태 상이)
@@ -4233,7 +4227,7 @@ paths:
                                     type: string
                                     example: "17:00"
                           - type: array
-                            description: 요일별 각각 다름 (DIFFERENT_EACH_DAY)
+                            description: 요일별 각각 다름 (EACH_DAY_DIFFERENT)
                             items:
                               type: object
                               properties:
@@ -4318,7 +4312,7 @@ paths:
                     message: 내 카페 운영 정보 조회 성공
                     data:
                       id: 3
-                      businessHourType: DIFFERENT_EACH_DAY
+                      businessHourType: EACH_DAY_DIFFERENT
                       businessHours:
                         - day: "월"
                           isClosed: false
@@ -4353,6 +4347,159 @@ paths:
           description: 인증 실패
         '404':
           description: 카페가 존재하지 않습니다
+
+  /api/v1/owner/cafes/myCafe:
+    patch:
+      tags: [Admin Cafe]
+      summary: 내 카페 기본 정보 수정
+      description: 사장님의 카페 기본 정보를 수정합니다.
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                address:
+                  type: string
+                region1DepthName:
+                  type: string
+                region2DepthName:
+                  type: string
+                region3DepthName:
+                  type: string
+                latitude:
+                  type: number
+                  format: float
+                longitude:
+                  type: number
+                  format: float
+                ownerName:
+                  type: string
+                phone:
+                  type: string
+                websiteUrl:
+                  type: string
+                description:
+                  type: string
+                storeFilters:
+                  type: string
+                  description: 매장 관련 필터 (예: 넓은좌석)
+                takeOutFilters:
+                  type: string
+                  description: 테이크아웃 관련 필터 (예: 테이크아웃)
+                menuFilters:
+                  type: string
+                  description: 메뉴 관련 필터 (예: 카페라떼)
+                keywords:
+                  type: string
+                  description: 키워드
+              example:
+                name: "수정된 카페 이름"
+                address: "서울시 강남구 수정로 456"
+                region1DepthName: "서울특별시"
+                region2DepthName: "강남구"
+                region3DepthName: "역삼동"
+                latitude: 37.498095
+                longitude: 127.027610
+                ownerName: "김사장"
+                phone: "01098765432"
+                websiteUrl: "https://updatedcafe.example.com"
+                description: "수정된 카페 설명입니다."
+                storeFilters: "넓은좌석"
+                takeOutFilters: "테이크아웃"
+                menuFilters: "카페라떼"
+                keywords: "수정 키워드"
+      responses:
+        200:
+          description: 카페 기본 정보 수정 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  address:
+                    type: string
+                  latitude:
+                    type: number
+                  longitude:
+                    type: number
+                  ownerName:
+                    type: string
+                  businessHours:
+                    type: object
+                  phone:
+                    type: string
+                    nullable: true
+                  websiteUrl:
+                    type: string
+                    nullable: true
+                  description:
+                    type: string
+                    nullable: true
+                  storeFilters:
+                    type: string
+                  takeOutFilters:
+                    type: string
+                  menuFilters:
+                    type: string
+                  keywords:
+                    type: string
+                  status:
+                    type: string
+                    enum: [active, inactive]
+                  createdAt:
+                    type: string
+                    format: date-time
+                  updatedAt:
+                    type: string
+                    format: date-time
+                  ownerId:
+                    type: integer
+                  region1DepthName:
+                    type: string
+                  region2DepthName:
+                    type: string
+                  region3DepthName:
+                    type: string
+                  breakTime:
+                    type: string
+                    nullable: true
+                  businessHourType:
+                    type: string
+                    enum: [SAME_ALL_DAYS, DIFFERENT_BY_DAY]
+              example:
+                id: 1
+                name: "수정된 카페 이름"
+                address: "서울시 강남구 수정로 456"
+                latitude: 37.498095
+                longitude: 127.027610
+                ownerName: "김사장"
+                businessHours: {}
+                phone: "01098765432"
+                websiteUrl: "https://updatedcafe.example.com"
+                description: "수정된 카페 설명입니다."
+                storeFilters: "넓은좌석"
+                takeOutFilters: "테이크아웃"
+                menuFilters: "카페라떼"
+                keywords: "수정 키워드"
+                status: "inactive"
+                createdAt: "2025-08-15T06:41:52.262Z"
+                updatedAt: "2025-08-15T08:42:18.318Z"
+                ownerId: 1
+                region1DepthName: "서울특별시"
+                region2DepthName: "강남구"
+                region3DepthName: "역삼동"
+                breakTime: null
+                businessHourType: "SAME_ALL_DAYS"
 
 
   /api/v1/owner/cafes/myCafe/menus:
@@ -4395,6 +4542,7 @@ paths:
                         description:
                           type: string
                           example: "산미가 좋은 에티오피아 원두를 사용한 커피입니다."
+
 
   /api/v1/owner/cafes/menus/{menuId}:
     delete:
@@ -4577,7 +4725,7 @@ paths:
         '404':
           description: 카페를 찾을 수 없음
 
-  /api/v1/admin/stamps/stamp-images/{imageId}:
+  /api/v1/owner/stamps/stamp-images/{imageId}:
     delete:
       tags: [Admin Cafe]
       summary: 스탬프 이미지 삭제
@@ -5350,6 +5498,8 @@ paths:
                         format: date
                       rewardDetail:
                         type: string
+                      rewardPoint:
+                        type: integer
                       participantCount:
                         type: integer
                       completedCount:
@@ -7994,6 +8144,43 @@ components:
         expiredAt:
           type: string
           format: date-time
+    
+    StampPolicy:
+      type: object
+      properties:
+        id:
+          type: integer
+          example: 1
+        goalCount:
+          type: integer
+          example: 10
+        rewardDetail:
+          type: string
+          example: "무료 아메리카노"
+        selectedRewardType:
+          type: string
+          example: "FREE_DRINK"
+        selectedRewardMeta:
+          type: object
+          example: { size: "large" }
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    Error:
+      type: object
+      properties:
+        errorCode:
+          type: string
+          example: INVALID_REQUEST
+        reason:
+          type: string
+          example: 요청 파라미터가 유효하지 않습니다.
+        data:
+          type: object
+          nullable: true
 
     UseAllPointsResult:
       type: object

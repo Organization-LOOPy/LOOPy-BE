@@ -48,7 +48,7 @@ export const getNotification = async (req, res, next) => {
     next(err);
   }
 };
-export const issueCafeCouponToUser = async (req, res) => {
+export const issueCafeCouponToUser = async (req, res, next) => {
   try {
     const couponInfo = req.couponInfo;
     const userId = req.user.id;

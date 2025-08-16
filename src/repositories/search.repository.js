@@ -101,9 +101,6 @@ export const cafeSearchRepository = {
             }
           : false,
       },
-      orderBy: {
-        createdAt: "asc",
-      },
     });
   },
 };

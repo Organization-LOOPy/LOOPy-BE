@@ -21,14 +21,14 @@ services:
       retries: 3
       start_period: 40s
 
-nginx:
-  image: nginx:alpine
-  ports:
-    - "80:80"
-    - "443:443"
-  volumes:
-    - ./nginx.conf:/etc/nginx/loopyxyz.conf
-    - ./ssl:/etc/nginx/ssl # SSL 인증서
-  depends_on:
-    - app
-  restart: unless-stopped
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/loopyxyz.conf
+      - ./ssl:/etc/nginx/ssl # SSL 인증서
+    depends_on:
+      - app
+    restart: unless-stopped

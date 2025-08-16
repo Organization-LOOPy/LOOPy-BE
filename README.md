@@ -6,36 +6,59 @@
 | 이름 | 역할 |
 |------|------|
 | **장현서** | 고객: 챌린지 & 스탬프 / 사장: 고객 조회, 스탬프 적립, 혜택 사용 |
-| **김건희** | 고객: 챌린지 & 스탬프 / 사장: 고객 조회, 스탬프 적립, 혜택 사용 |
-| **궁유진** | 고객: 챌린지 & 스탬프 / 사장: 고객 조회, 스탬프 적립, 혜택 사용 |
+| **김건희** | 고객: 카페 & 탐색  |
+| **궁유진** | 고객: 인증, 고객정보 관리, 홈화면 / 사장: 카페 정보 관리, 지표 분석 인사이트 제공 & 통계 대시보드 |
 | **이나경** | 고객: 챌린지 & 스탬프 / 사장: 고객 조회, 스탬프 적립, 혜택 사용 |
 
 ## 📌 2. 기술 스택 (Tech Stack)
 
-- **언어**: Node.js
+- **언어**: Node.js, python
 - **프레임워크**: Express.js
 - **DB ORM**: Prisma
-- **데이터베이스**: MySQL
+- **데이터베이스**: MySQL, Qdrant
 - **인증**: JWT, Kakao OAuth
-- **기타**: 환경 변수 관리 (`dotenv`, `cross-env`)
-
+- **기타**: 환경 변수 관리 (`dotenv`, `cross-env`), openAI
+- **클라우드**: AWS Ec2, S3, CloudFront, Lambda, EventBridge, Athena
+- **AI/데이터**: OpenAI API, Perplexity API, LangGraph
 ---
 
 ## 📂 3. 프로젝트 구조
 
 ```
- 📦 src/
-┣ 📂controllers/         # 요청 처리 (req/res)
-┣ 📂services/            # 비즈니스 로직
-┣ 📂repositories/        # DB 모델 접근
-┣ 📂routes/              # 라우터 정의 (REST API endpoint 분기)
-┣ 📂middlewares/         # 인증, 에러 핸들링, 로깅 등
-┣ 📂utils/               # 공통 함수, 헬퍼
-┣ 📂config/              # 환경 설정 (DB, dotenv 등)
-┗ 📜app.js               # 앱 초기화 (Express 세팅)
+LOOPY-BE/
+├── 📁 .github/              # GitHub 설정 파일
+├── 📁 docs/                 # 프로젝트 문서
+├── 📁 logs/                 # 로그 파일
+├── 📁 node_modules/         # npm 의존성 패키지
+├── 📁 prisma/               # Prisma ORM 설정 및 스키마
+├── 📁 scripts/              # 빌드/배포 스크립트
+├── 📁 src/                  # 소스 코드 메인 디렉토리
+│   ├── 📁 config/           # 설정 파일
+│   ├── 📁 controllers/      # API 컨트롤러
+│   ├── 📁 credentials/      # 인증 관련 파일
+│   ├── 📁 errors/           # 에러 처리
+│   ├── 📁 middlewares/      # Express 미들웨어
+│   ├── 📁 repositories/     # 데이터 액세스 레이어
+│   ├── 📁 routes/           # API 라우트 정의
+│   ├── 📁 services/         # 비즈니스 로직
+│   ├── 📁 utils/            # 유틸리티 함수
+│   └── 📄 app.js           # Express 앱 설정
+├── 📄 .dockerignore        # Docker 빌드 시 제외 파일
+├── 📄 .env                 # 환경 변수 (개발용)
+├── 📄 .gitignore           # Git 추적 제외 파일
+├── 📄 docker-compose.yml   # Docker Compose 설정
+├── 📄 Dockerfile           # Docker 이미지 빌드 설정
+├── 📄 nodemon.json         # Nodemon 개발 서버 설정
+├── 📄 package.json         # npm 패키지 정보 및 스크립트
+├── 📄 pnpm-lock.yaml       # PNPM 잠금 파일
+├── 📄 README.md            # 프로젝트 설명서
+├── 📄 requirements.txt     # Python 의존성 (필요시)
+└── 📄 server.js            # 서버 진입점
 ```
 
 ## 📚 4. 프로젝트 아키텍처
+<img width="679" height="385" alt="스크린샷 2025-08-15 오후 11 57 51" src="https://github.com/user-attachments/assets/e4803bc6-0f38-41cd-9aad-ddd199736e63" />
+
 
 ---
 

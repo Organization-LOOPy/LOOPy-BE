@@ -74,7 +74,6 @@ export const stampBookService = {
       },
     });
 
-    // ✅ 새로운 스탬프북 자동 생성
     const newStampBook = await prisma.stampBook.create({
       data: {
         userId,
@@ -83,11 +82,8 @@ export const stampBookService = {
         goalCount: 10,
         status: "active",
         startedAt: now,
-        rewardDetail: stampPolicy.rewardDescription || "스탬프 리워드 쿠폰",
-        expiredAt: stampPolicy.hasExpiry
-          ? stampPolicy.rewardExpiresAt
-          : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000),
-        expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+        rewardDetail: "스탬프 리워드 쿠폰", // 기본 문구
+        expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000), // 30일 만료
       },
     });
     

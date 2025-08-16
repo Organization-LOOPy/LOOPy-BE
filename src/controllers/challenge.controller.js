@@ -11,53 +11,6 @@ import { BadRequestError} from "../errors/customErrors.js";
 const { PrismaClient } = pkg;
 const prisma = new PrismaClient();
 
-// 챌린지 목록 조회
-export const getChallengeList = async (req, res, next) => {
-  try {
-    const today = new Date();
-    const userId = req.user?.id || null;
-
-    const challenges = await prisma.challenge.findMany({
-      where: {
-        isActive: true,
-        startDate: { lte: today },
-        endDate: { gte: today },
-      },
-      orderBy: {
-        endDate: "asc",
-      },
-      select: {
-        id: true,
-        title: true,
-        description: true,
-        thumbnailUrl: true,
-        startDate: true,
-        endDate: true,
-        participants: userId
-          ? {
-              where: { userId },
-              select: { id: true },
-            }
-          : false,
-      },
-    });
-
-    const response = challenges.map((challenge) => ({
-      id: challenge.id,
-      title: challenge.title,
-      description: challenge.description,
-      thumbnailUrl: challenge.thumbnailUrl,
-      startDate: challenge.startDate,
-      endDate: challenge.endDate,
-      isParticipated: userId ? challenge.participants.length > 0 : false,
-    }));
-
-    return res.success(response);
-  } catch (err) {
-    logger.error(`챌린지 목록 조회 실패: ${err.message}`);
-    next(err);
-  }
-};
 
 // 챌린지 상세 조회
 export const getChallengeDetail = async (req, res, next) => {
@@ -161,9 +114,9 @@ export const getChallengeDetail = async (req, res, next) => {
 
 
 // 챌린지 참여
+// controllers/challenge.controller.js
 export const participateInChallenge = async (req, res, next) => {
-  const { challengeId } = req.params;
-  const { joinedCafeId } = req.body;
+  const { cafeId, challengeId } = req.params;
   const userId = req.user.id;
 
   try {
@@ -172,11 +125,9 @@ export const participateInChallenge = async (req, res, next) => {
     const challenge = await prisma.challenge.findUnique({
       where: { id: Number(challengeId) },
     });
-
     if (!challenge || !challenge.isActive) {
       throw new ChallengeNotFoundError();
     }
-
     if (challenge.startDate > now || challenge.endDate < now) {
       throw new ChallengeNotActiveError();
     }
@@ -189,27 +140,22 @@ export const participateInChallenge = async (req, res, next) => {
         },
       },
     });
+    if (existing) throw new AlreadyParticipatedError();
 
-    if (existing) {
-      throw new AlreadyParticipatedError();
-    }
-
+    // cafeId가 해당 챌린지의 참여 가능 매장인지 검증
     const isValidCafe = await prisma.challengeAvailableCafe.findFirst({
       where: {
         challengeId: Number(challengeId),
-        cafeId: joinedCafeId,
+        cafeId: Number(cafeId),
       },
     });
-
-    if (!isValidCafe) {
-      throw new InvalidCafeParticipationError();
-    }
+    if (!isValidCafe) throw new InvalidCafeParticipationError();
 
     await prisma.challengeParticipant.create({
       data: {
         userId,
         challengeId: Number(challengeId),
-        joinedCafeId,
+        joinedCafeId: Number(cafeId),
         joinedAt: now,
       },
     });
@@ -219,6 +165,7 @@ export const participateInChallenge = async (req, res, next) => {
     next(err);
   }
 };
+
 
 // 챌린지 참여 가능 매장 목록 조회
 import { getDistanceInMeters } from "../utils/geo.js";
@@ -387,6 +334,58 @@ export const completeChallenge = async (req, res, next) => {
     });
   } catch (err) {
     logger.error(`챌린지 완료 처리 실패: ${err.message}`);
+    next(err);
+  }
+};
+
+
+
+// 서버빌딩...
+
+// 챌린지 목록 조회
+export const getChallengeList = async (req, res, next) => {
+  try {
+    const today = new Date();
+    const userId = req.user?.id || null;
+
+    const challenges = await prisma.challenge.findMany({
+      where: {
+        isActive: true,
+        startDate: { lte: today },
+        endDate: { gte: today },
+      },
+      orderBy: {
+        endDate: "asc",
+      },
+      select: {
+        id: true,
+        title: true,
+        description: true,
+        thumbnailUrl: true,
+        startDate: true,
+        endDate: true,
+        participants: userId
+          ? {
+              where: { userId },
+              select: { id: true },
+            }
+          : false,
+      },
+    });
+
+    const response = challenges.map((challenge) => ({
+      id: challenge.id,
+      title: challenge.title,
+      description: challenge.description,
+      thumbnailUrl: challenge.thumbnailUrl,
+      startDate: challenge.startDate,
+      endDate: challenge.endDate,
+      isParticipated: userId ? challenge.participants.length > 0 : false,
+    }));
+
+    return res.success(response);
+  } catch (err) {
+    logger.error(`챌린지 목록 조회 실패: ${err.message}`);
     next(err);
   }
 };
