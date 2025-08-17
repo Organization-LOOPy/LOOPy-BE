@@ -466,15 +466,21 @@ export const getOwnerCafeInfo = async (userId) => {
     where: { ownerId: userId },
     select: {
       id: true,
+      status: true,
     },
   });
 
   if (!cafe) {
-    throw new CafeNotExistError();
+    return {
+      userId,
+      cafeId: null,
+      cafeStatus: null,
+    };
   }
 
   return {
     userId,
     cafeId: cafe.id,
+    cafeStatus: cafe.status,
   };
 };
