@@ -3677,13 +3677,13 @@ paths:
   /api/v1/owner/cafes/myCafe/info:
     get:
       tags: [Admin Cafe]
-      summary: 사장의 userId와 cafeId 조회
-      description: 로그인한 사장의 userId와 해당 사장이 가진 cafeId를 조회
+      summary: 사장의 userId, cafeId, cafeStatus 조회
+      description: 로그인한 사장의 userId와 해당 사장이 가진 cafeId, cafeStatus를 조회
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 사장의 userId와 cafeId 조회 성공
+          description: 사장의 userId, cafeId, cafeStatus 조회 성공  
           content:
             application/json:
               schema:
@@ -3700,22 +3700,13 @@ paths:
                         example: 1
                       cafeId:
                         type: integer
+                        nullable: true
                         example: 12
-        '404':
-          description: 사장이 카페를 보유하지 않은 경우
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  errorCode:
-                    type: string
-                    example: NOT_FOUND
-                  reason:
-                    type: string
-                    example: 해당 사장의 카페가 존재하지 않습니다.
-
-
+                      cafeStatus:
+                        type: string
+                        nullable: true
+                        example: ACTIVE
+                        
   /api/v1/owner/cafes/operation:
     patch:
       tags: [Admin Cafe]
