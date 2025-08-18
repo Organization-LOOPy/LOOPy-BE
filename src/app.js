@@ -81,7 +81,7 @@ app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1", reviewRouter);
 app.use("/api/v1/search", searchRouter);
-app.use("/api/v1/cafes", cafeRouter);
+app.use("/api/v1/cafes/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
 
