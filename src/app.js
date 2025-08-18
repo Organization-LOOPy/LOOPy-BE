@@ -29,6 +29,8 @@ import DashboardRouter from "./routes/dashboard.routes.js";
 import adminChallengeRouter from './routes/admin.challenge.routes.js';
 import adminNotificationRouter from './routes/admin.notification.routes.js';
 
+import metricsRouter from "./routes/metrics.route.js";
+
 const app = express();
 
 setupSwagger(app);
@@ -54,6 +56,7 @@ app.use(cors(corsOptions));
 app.use(express.json());
 
 app.use(passport.initialize());
+app.use("/metrics", metricsRouter);
 
 app.get("/", (req, res) =>
   res.send("루피 백엔드 작동 중!, cicd파이프라인 확인")
