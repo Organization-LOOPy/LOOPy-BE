@@ -32,7 +32,7 @@ export const cafeSearch = async (req, res, next) => {
     );
 
     if (searchQuery) {
-      searchCounter.inc({ keyword: searchQuery }); 
+      searchCounter.inc({ keyword: searchQuery });
     }
 
     logger.debug(`카페 검색 완료: ${JSON.stringify(results)}`);
@@ -82,8 +82,14 @@ export const cafeDetail = async (req, res, next) => {
   try {
     const cafe = req.cafe;
     const { x, y } = req.query;
+    const userId = req.user.id;
 
-    const cafeDetails = await cafeSearchService.getCafeDetails(cafe, x, y);
+    const cafeDetails = await cafeSearchService.getCafeDetails(
+      cafe,
+      userId,
+      x,
+      y
+    );
 
     logger.debug(`카페 검색 정보 조회 성공: ${cafeDetails.name}`);
     res.success(cafeDetails);

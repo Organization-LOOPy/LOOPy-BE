@@ -130,6 +130,19 @@ export const cafeRepository = {
     return photos;
   },
 
+  async isBookmarked(cafeId, userId) {
+    const bookmark = await prisma.userBookmark.findUnique({
+      where: {
+        userId_cafeId: {
+          userId,
+          cafeId,
+        },
+      },
+    });
+
+    return bookmark !== null;
+  },
+
   async findMenu(cafeId) {
     const menu = await prisma.CafeMenu.findMany({
       where: { cafeId },
