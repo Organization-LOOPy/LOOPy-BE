@@ -40,10 +40,10 @@ jobs:
             docker rm loopy-app || true
             
             echo "Building new image with latest code..."
-            docker build --no-cache -t loopy-be:${GITHUB_SHA} .
+            docker build --no-cache -t loopy-be:${{ github.sha }} .
             
             echo "Starting new container..."
-            docker run -d -p 3000:3000 --name loopy-app --env-file .env loopy-be:${GITHUB_SHA}
+            docker run -d -p 3000:3000 --name loopy-app --env-file .env loopy-be:${{ github.sha }}
             
             echo "Waiting for container to start..."
             sleep 15
@@ -61,7 +61,8 @@ jobs:
             echo "Starting health check..."
             
             for i in {1..6}; do
-              if curl -f -s http://localhost:3000 > /dev/null 2>&1; then
+              if curl -f -s http://localhost:3000/swagger.json | grep -q 'openapi'; then
+                echo 'Swagger JSON served correctly!'  
                 echo "Server is responding normally!"
                 echo "Deployment completed successfully!"
                 exit 0

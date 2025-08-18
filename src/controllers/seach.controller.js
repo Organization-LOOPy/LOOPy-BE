@@ -4,6 +4,7 @@ import {
   cafeSearchService,
   mapSearchService,
 } from "../services/search.service.js";
+import { searchCounter } from "../utils/metrics.js";
 
 export const cafeSearch = async (req, res, next) => {
   try {
@@ -29,6 +30,10 @@ export const cafeSearch = async (req, res, next) => {
       addressInfo?.region_3depth_name,
       userId
     );
+
+    if (searchQuery) {
+      searchCounter.inc({ keyword: searchQuery }); 
+    }
 
     logger.debug(`카페 검색 완료: ${JSON.stringify(results)}`);
     res.success(results);
