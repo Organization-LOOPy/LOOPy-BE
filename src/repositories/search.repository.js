@@ -185,6 +185,12 @@ export const cafeMapRepository = {
           },
           select: { id: true },
         },
+        bookmarkedBy: userId
+          ? {
+              where: { userId: userId },
+              select: { id: true },
+            }
+          : false,
       },
     });
 

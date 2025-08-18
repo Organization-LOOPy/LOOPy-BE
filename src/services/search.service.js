@@ -471,8 +471,9 @@ export const cafeSearchService = {
     };
   },
 
-  async getCafeDetails(cafe, x, y) {
+  async getCafeDetails(cafe, userId, x, y) {
     const photos = await cafeRepository.findPhotos(cafe.id);
+    const bookmark = await cafeRepository.isBookmarked(cafe.id, userId);
     const cafeDetails = {
       id: cafe.id.toString(),
       name: cafe.name,
@@ -483,6 +484,7 @@ export const cafeSearchService = {
         url: photo.photoUrl,
         displayOrder: photo.displayOrder,
       })),
+      isBookmarked: bookmark,
     };
 
     // x, y가 모두 제공된 경우에만 거리 계산
