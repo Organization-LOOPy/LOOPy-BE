@@ -309,3 +309,26 @@ export const getPreferredAreaService = async (userId) => {
 
   return preference.preferredArea;
 };
+
+export const checkDummyPhoneService = async (userId) => {
+  if (!userId) {
+    throw new Error("userId가 토큰에서 추출되지 않았습니다.");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: Number(userId) },
+    select: { phoneNumber: true },
+  });
+
+  if (!user) {
+    return { isDummy: null, message: "사용자가 존재하지 않습니다." };
+  }
+
+  const isDummy = user.phoneNumber?.startsWith("000") ?? false;
+
+  return {
+    userId: Number(userId),
+    phoneNumber: user.phoneNumber,
+    isDummy,
+  };
+};

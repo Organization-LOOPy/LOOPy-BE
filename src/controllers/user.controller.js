@@ -11,7 +11,8 @@ import {
   makeOwnerCafe,
   deleteMyAccountService,
   getUserPreferencesService,
-  getPreferredAreaService 
+  getPreferredAreaService,
+  checkDummyPhoneService 
 } from "../services/user.service.js";
 import { QRNotFoundError, NotFoundPhoneError } from "../errors/customErrors.js";
 import { verifyPhoneNumber } from "../services/firebase.service.js";
@@ -237,5 +238,15 @@ export const getPreferredAreaController = async (req, res, next) => {
     });
   } catch (error) {
     next(error);
+  }
+};
+export const checkDummyPhoneController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId ?? req.user.id;
+
+    const result = await checkDummyPhoneService(userId);
+    res.json(result);
+  } catch (err) {
+    next(err);
   }
 };
