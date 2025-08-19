@@ -14,3 +14,7 @@ src/credentials/*.json
 *.dist-info/
 __pycache__/
 *.pyc
+
+.pnpm-store/
+
+*.bak

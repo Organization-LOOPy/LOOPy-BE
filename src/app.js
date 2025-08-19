@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
 import YAML from "yamljs";
-import client from 'prom-client';
+import client from "prom-client";
 import { morganMiddleware } from "./utils/logger.js";
 import { responseHandler } from "./middlewares/responseHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
@@ -19,15 +19,15 @@ import usercouponRoutes from "./routes/user.coupon.routes.js";
 
 import notificationRouter from "./routes/notification.routes.js";
 import stampbookRouter from "./routes/stampbook.routes.js";
-import ownerRouter from './routes/admin.user.routes.js';
+import ownerRouter from "./routes/admin.user.routes.js";
 
 import adminCafeRouter from "./routes/admin.cafe.routes.js";
 import adminStampRouter from "./routes/admin.stamp.routes.js";
-import couponRouter from './routes/coupon.routes.js';
+import couponRouter from "./routes/coupon.routes.js";
 import customerPageRouter from "./routes/customer.page.routes.js";
 import DashboardRouter from "./routes/dashboard.routes.js";
-import adminChallengeRouter from './routes/admin.challenge.routes.js';
-import adminNotificationRouter from './routes/admin.notification.routes.js';
+import adminChallengeRouter from "./routes/admin.challenge.routes.js";
+import adminNotificationRouter from "./routes/admin.notification.routes.js";
 
 import metricsRouter from "./routes/metrics.route.js";
 
@@ -66,16 +66,14 @@ app.get("/health", (req, res) => {
 });
 
 // Prometheus metrics
-app.get('/metrics', async (req, res) => {
+app.get("/metrics", async (req, res) => {
   try {
-    res.set('Content-Type', register.contentType);
+    res.set("Content-Type", register.contentType);
     res.end(await register.metrics());
   } catch (err) {
     res.status(500).end(err);
   }
 });
-
-
 
 // 고객용
 
@@ -98,11 +96,11 @@ app.use("/api/v1/owner/cafes", adminCafeRouter);
 app.use("/api/v1/owner/stamps", adminStampRouter);
 app.use("/api/v1/owner/cafes", couponRouter);
 app.use("/api/v1/owner/dashboard", DashboardRouter);
-app.use('/api/v1/owner/cafes', adminChallengeRouter);
-app.use('/api/v1/owner', ownerRouter);
+app.use("/api/v1/owner/cafes", adminChallengeRouter);
+app.use("/api/v1/owner", ownerRouter);
 app.use("/api/v1/owner/cafes", adminNotificationRouter);
 
-// 페이지GET 
+// 페이지GET
 app.use("/api/v1/pages", customerPageRouter);
 
 app.use(errorHandler); // 전역 예외 처리 미들웨어

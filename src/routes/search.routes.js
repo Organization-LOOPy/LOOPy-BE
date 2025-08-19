@@ -10,6 +10,7 @@ import {
 const router = express.Router();
 
 router.use(authenticateJWT);
+//router.use(test);
 
 router.post("/list", cafeSearch); // 검색 + 카테고리필터
 

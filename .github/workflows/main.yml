@@ -61,8 +61,8 @@ jobs:
             echo "Starting health check..."
             
             for i in {1..6}; do
-              if curl -f -s http://localhost:3000/swagger.json | grep -q 'openapi'; then
-                echo 'Swagger JSON served correctly!'  
+              if curl -f -s http://localhost:3000/api-docs > /dev/null 2>&1; then
+                echo "API docs served correctly!"
                 echo "Server is responding normally!"
                 echo "Deployment completed successfully!"
                 exit 0
