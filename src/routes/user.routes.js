@@ -15,7 +15,9 @@ import {
   getUserQrCode,
   deleteMyAccount,
   getUserPreferences,
-  getPreferredAreaController 
+  getPreferredAreaController,
+  checkDummyPhoneController,
+  savePhoneNumberAfterVerificationController 
 } from '../controllers/user.controller.js';
 
 import {
@@ -37,6 +39,8 @@ router.patch('/me/inactive', deactivateUser);
 router.patch('/me/activate', reactivateUser);
 router.get('/me', getMyInfo);
 router.patch('/me/nickname', updateNickname);
+router.get("/isDummyPhone", checkDummyPhoneController);
+router.patch("/me/save-phone", savePhoneNumberAfterVerificationController);
 
 
 // 약관 동의

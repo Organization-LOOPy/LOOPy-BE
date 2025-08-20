@@ -11,7 +11,8 @@ import {
   makeOwnerCafe,
   deleteMyAccountService,
   getUserPreferencesService,
-  getPreferredAreaService 
+  getPreferredAreaService,
+  checkDummyPhoneService 
 } from "../services/user.service.js";
 import { QRNotFoundError, NotFoundPhoneError } from "../errors/customErrors.js";
 import { verifyPhoneNumber } from "../services/firebase.service.js";
@@ -235,6 +236,32 @@ export const getPreferredAreaController = async (req, res, next) => {
       message: "선호 지역 조회 성공",
       data: { preferredArea },
     });
+  } catch (error) {
+    next(error);
+  }
+};
+export const checkDummyPhoneController = async (req, res, next) => {
+  try {
+    const userId = req.user.userId ?? req.user.id;
+
+    const result = await checkDummyPhoneService(userId);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const savePhoneNumberAfterVerificationController = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { phoneNumber } = req.body;
+    console.log("[BODY]", req.body);
+console.log("[USER]", req.user);
+
+
+    const result = await savePhoneNumberAfterVerificationService(userId, phoneNumber);
+
+    res.status(200).json(result);
   } catch (error) {
     next(error);
   }

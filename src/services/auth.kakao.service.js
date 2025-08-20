@@ -96,7 +96,7 @@ export const handleKakaoRedirectService = async (code, tokenFromQuery) => {
 
 let dummyPhone, duplicate;
 do {
-  dummyPhone = 'kakao_' + Math.floor(Math.random() * 1e10).toString().padStart(10, '0');
+  dummyPhone = '000' + Math.floor(Math.random() * 1e8).toString().padStart(8, '0');
   duplicate = await prisma.user.findUnique({ where: { phoneNumber: dummyPhone } });
 } while (duplicate);
 
