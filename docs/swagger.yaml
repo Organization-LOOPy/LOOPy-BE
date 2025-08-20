@@ -313,6 +313,89 @@ paths:
                     nullable: true
                     example: null
 
+  /api/v1/users/me/save-phone:
+    patch:
+      tags:
+        - Users
+      summary: "SMS 인증 완료 후 전화번호 저장/수정"
+      description: "JWT 토큰을 통해 인증된 사용자가 본인의 전화번호를 저장하거나 수정합니다."
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phoneNumber
+              properties:
+                phoneNumber:
+                  type: string
+                  example: "01012349876"
+      responses:
+        "200":
+          description: 전화번호 저장 완료
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 전화번호 등록 완료
+                  userId:
+                    type: string
+                    example: "7"
+                  phoneNumber:
+                    type: string
+                    example: "01031179511"
+        "400":
+          description: 잘못된 요청 (userId 또는 phoneNumber 누락)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: BAD_REQUEST
+                  reason:
+                    type: string
+                    example: userId 또는 phoneNumber가 누락되었습니다.
+                  data:
+                    type: "null"
+        "401":
+          description: JWT 인증 실패
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: UNAUTHORIZED
+                  reason:
+                    type: string
+                    example: 유효하지 않은 JWT 토큰입니다.
+                  data:
+                    type: "null"
+        "409":
+          description: 중복된 전화번호 (다른 사용자에게 이미 등록됨)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errorCode:
+                    type: string
+                    example: DUPLICATE_USER
+                  reason:
+                    type: string
+                    example: 해당 전화번호는 이미 다른 사용자에게 등록되어 있습니다.
+                  data:
+                    type: "null"
+
 
   /api/v1/users/me/qrcode:
     get:

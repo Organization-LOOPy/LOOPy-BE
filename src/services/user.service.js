@@ -201,34 +201,31 @@ export const updateFcmTokenService = async (userId, fcmToken) => {
 
 // 전화번호 인증 토큰 확인 후 저장 
 export const savePhoneNumberAfterVerificationService = async (userId, phoneNumber) => {
-  if (!userId || !phoneNumber) {
-    throw new BadRequestError();
+  const parsedUserId = Number(userId);
+  if (!parsedUserId || !phoneNumber) {
+    throw new BadRequestError("userId 또는 phoneNumber가 누락되었습니다.");
   }
 
-  const parsedUserId = Number(userId);
-
-   // 전화번호가 이미 있는지 확인
   const existing = await prisma.user.findUnique({
     where: { phoneNumber },
   });
 
-  //  다른 사용자면 에러
   if (existing && existing.id !== parsedUserId) {
     throw new DuplicateUserError({ phoneNumber });
   }
 
-  // 동일한 사용자라면 가능하게
   const updatedUser = await prisma.user.update({
     where: { id: parsedUserId },
     data: { phoneNumber },
   });
 
   return {
-    message: '전화번호 등록 완료',
+    message: "전화번호 등록 완료",
     userId: updatedUser.id.toString(),
     phoneNumber: updatedUser.phoneNumber,
   };
 };
+
 
 // 사장 카페 임시 생성  
 export const makeOwnerCafe = async (userId, agreementData, role) => {
