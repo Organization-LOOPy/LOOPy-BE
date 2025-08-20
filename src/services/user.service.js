@@ -8,6 +8,7 @@ import {
   QRCodeError,
   InvalidExitRoleError,
   PreferenceNotFoundError,
+  DuplicateUserError,
   UserPreferenceNotFoundError 
 } from '../errors/customErrors.js';
 import QRCode from 'qrcode';
