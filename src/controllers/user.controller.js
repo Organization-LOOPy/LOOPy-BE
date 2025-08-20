@@ -250,3 +250,19 @@ export const checkDummyPhoneController = async (req, res, next) => {
     next(err);
   }
 };
+
+export const savePhoneNumberAfterVerificationController = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { phoneNumber } = req.body;
+    console.log("[BODY]", req.body);
+console.log("[USER]", req.user);
+
+
+    const result = await savePhoneNumberAfterVerificationService(userId, phoneNumber);
+
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
