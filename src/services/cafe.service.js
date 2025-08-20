@@ -88,6 +88,7 @@ export const cafeService = {
         discountType: c.discountType,
         discountValue: c.discountValue,
         applicableMenu: c.applicableMenu,
+        usageCondition: c.usageCondition,
         createdAt: c.createdAt,
         expiredAt: c.expiredAt,
         userCoupons: c.userCoupons,
