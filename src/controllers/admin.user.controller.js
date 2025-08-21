@@ -15,7 +15,7 @@ const formatPhoneDisplay = (digits) => {
 
 export const getUserByPhone = async (req, res, next) => {
   try {
-    // 1) 카페 ID 확보 (OWNER일 때 fallback)
+    // 1) 카페 ID 확보 (OWNER fallback)
     let cafeId = req.user.cafeId;
     if (!cafeId && req.user.roles?.includes('OWNER')) {
       const ownerCafe = await prisma.cafe.findFirst({
@@ -31,83 +31,114 @@ export const getUserByPhone = async (req, res, next) => {
 
     const phone = normalizePhone(rawPhone);
 
-    // 2) 유저 조회
-    const user = await prisma.user.findFirst({
-      where: { phoneNumber: phone },
-      select: { id: true, nickname: true, phoneNumber: true },
-    });
-    if (!user) return res.error({ reason: '해당 전화번호의 고객을 찾을 수 없습니다.' });
+    // 2) 트랜잭션: 유저 upsert + 진행중 스탬프북 존재 확인 후 조건부 생성
+    const { user, sb } = await prisma.$transaction(async (tx) => {
+      // 2-0) (선택) 경합 방지용 잠금: 동일 전화번호 행을 잠깐 락
+      // MySQL에서 효율적으로 하려면 users 테이블의 phone_number에 UNIQUE가 있어야 함
+      await tx.$executeRawUnsafe(
+        `SELECT id FROM users WHERE phone_number = ? FOR UPDATE`,
+        phone
+      );
 
-    // 3) 진행중 스탬프북 조회
-    let sb = await prisma.stampBook.findFirst({
-      where: {
-        userId: user.id,
-        cafeId,
-        convertedAt: null,
-        expiredAt: null,
-        isCompleted: false,
-      },
-      orderBy: { createdAt: 'desc' },
-      select: { id: true, currentCount: true, goalCount: true, expiresAt: true },
-    });
-
-    // 4) 없으면 생성(✅ rewardDetail 필수 채우기; 정책이 있으면 정책 기반)
-    if (!sb) {
-      const policy = await prisma.stampPolicy.findUnique({
-        where: { cafeId },
-        include: { menu: { select: { name: true } } },
+      // 2-1) 고객 자동 생성/획득
+      const user = await tx.user.upsert({
+        where: { phoneNumber: phone },
+        update: {}, // 기존 유저면 변경 없음
+        create: {
+          phoneNumber: phone,
+          nickname: `손님-${phone.slice(-4)}`,
+          status: 'active',
+        },
+        select: { id: true, nickname: true, phoneNumber: true },
       });
 
-      // goalCount: 정책(개수 기반)이 있으면 그 값을, 없으면 기본값
-      let goalCount = 10;
-      if (policy?.conditionType === 'COUNT' && policy?.stampPerCount) {
-        goalCount = policy.stampPerCount;
-      }
-
-      // rewardDetail: 사람 읽기 좋은 문구 생성
-      let rewardDetail = '리워드 미정';
-      if (policy) {
-        switch (policy.rewardType) {
-          case 'DISCOUNT':
-            rewardDetail = policy.discountAmount ? `${policy.discountAmount}원 할인` : '할인 리워드';
-            break;
-          case 'SIZE_UP':
-            rewardDetail = '사이즈 업 1회';
-            break;
-          case 'FREE_DRINK':
-            rewardDetail = '무료 음료 1잔';
-            break;
-          default:
-            rewardDetail = '리워드 제공';
-        }
-      }
-
-      const now = new Date();
-      const expiresAt = new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000); // 30일
-
-      sb = await prisma.stampBook.create({
-        data: {
+      // 2-2) 해당 카페의 "진행중" 스탬프북 조회
+      let sb = await tx.stampBook.findFirst({
+        where: {
           userId: user.id,
           cafeId,
-          currentCount: 0,
-          goalCount,
-          rewardDetail,                               // ✅ NOT NULL 채움
-          selectedRewardType: policy?.rewardType ?? null,
-          selectedRewardMeta: policy
-            ? { conditionType: policy.conditionType, menuId: policy.menuId ?? null }
-            : null,
-          startedAt: now,
-          expiresAt,
-          status: 'active',
+          convertedAt: null,
+          expiredAt: null,
           isCompleted: false,
-          isConverted: false,
-          round: 1,
+          status: 'active',
         },
+        orderBy: { createdAt: 'desc' },
         select: { id: true, currentCount: true, goalCount: true, expiresAt: true },
       });
-    }
 
-    // 5) 유저 전체 스탬프/포인트 집계
+      // 2-3) 없으면 정책 기반으로 1개 생성
+      if (!sb) {
+        const policy = await tx.stampPolicy.findUnique({
+          where: { cafeId },
+          include: { menu: { select: { name: true } } },
+        });
+
+        // 목표 개수: COUNT 정책이면 정책값, 아니면 기본 10
+        let goalCount = 10;
+        if (policy?.conditionType === 'COUNT' && policy?.stampPerCount) {
+          goalCount = policy.stampPerCount;
+        }
+
+        // 리워드 표기: NOT NULL 안전값
+        let rewardDetail = '리워드 미정';
+        if (policy) {
+          switch (policy.rewardType) {
+            case 'DISCOUNT':
+              rewardDetail = policy.discountAmount ? `${policy.discountAmount}원 할인` : '할인 리워드';
+              break;
+            case 'SIZE_UP':
+              rewardDetail = '사이즈 업 1회';
+              break;
+            case 'FREE_DRINK':
+              rewardDetail = '무료 음료 1잔';
+              break;
+            default:
+              rewardDetail = '리워드 제공';
+          }
+        }
+
+        // 만료일: hasExpiry=true면 30일, 아니면 장기(5년)
+        const now = new Date();
+        const DEFAULT_DAYS = 30;
+        const LONG_TERM_DAYS = 365 * 5;
+        const expiresAt = new Date(
+          now.getTime() + 24 * 60 * 60 * 1000 * (policy?.hasExpiry ? DEFAULT_DAYS : LONG_TERM_DAYS)
+        );
+
+        // 라운드: 기존 최대 라운드 + 1
+        const lastRound = await tx.stampBook.findFirst({
+          where: { userId: user.id, cafeId },
+          orderBy: { round: 'desc' },
+          select: { round: true },
+        });
+        const nextRound = (lastRound?.round ?? 0) + 1;
+
+        sb = await tx.stampBook.create({
+          data: {
+            userId: user.id,
+            cafeId,
+            currentCount: 0,
+            goalCount,
+            rewardDetail,
+            selectedRewardType: policy?.rewardType ?? null,
+            selectedRewardMeta: policy
+              ? { conditionType: policy.conditionType, menuId: policy.menuId ?? null }
+              : null,
+            startedAt: now,
+            expiresAt,
+            status: 'active',
+            isCompleted: false,
+            isConverted: false,
+            round: nextRound, // @@unique([userId, cafeId, round]) 충돌 방지
+          },
+          select: { id: true, currentCount: true, goalCount: true, expiresAt: true },
+        });
+      }
+
+      return { user, sb };
+    });
+
+    // 3) 유저 전체 스탬프/포인트 집계
     const totalStampCount = await prisma.stamp.count({
       where: { stampBook: { userId: user.id } },
     });
@@ -123,14 +154,14 @@ export const getUserByPhone = async (req, res, next) => {
       (refundedAgg._sum.point ?? 0) -
       (spentAgg._sum.point ?? 0);
 
-    // 6) 진행률/남은 일수 계산
+    // 4) 진행률/남은 일수 계산
     const progressRate = Math.floor((sb.currentCount / sb.goalCount) * 100);
     const daysLeft = Math.max(
       0,
       Math.ceil((new Date(sb.expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24))
     );
 
-    // 7) 액션 토큰
+    // 5) 액션 토큰
     const actionToken = signActionToken({
       userId: user.id,
       cafeId,
@@ -138,6 +169,7 @@ export const getUserByPhone = async (req, res, next) => {
       ttlSec: 120,
     });
 
+    // 6) 응답
     return res.success({
       userId: user.id,
       nickname: user.nickname,
@@ -157,7 +189,6 @@ export const getUserByPhone = async (req, res, next) => {
       actionToken,
     });
   } catch (err) {
-    // 서버 표준 에러 포맷 유지
     return res.error({
       errorCode: err?.code || 'UNKNOWN',
       reason: err?.message || '알 수 없는 오류가 발생했습니다.',
