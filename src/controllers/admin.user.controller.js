@@ -33,17 +33,16 @@ export const getUserByPhone = async (req, res, next) => {
 
     // 2) 트랜잭션: 유저 upsert + 진행중 스탬프북 존재 확인 후 조건부 생성
     const { user, sb } = await prisma.$transaction(async (tx) => {
-      // 2-0) (선택) 경합 방지용 잠금: 동일 전화번호 행을 잠깐 락
-      // MySQL에서 효율적으로 하려면 users 테이블의 phone_number에 UNIQUE가 있어야 함
+      // (선택) 경합 방지 락
       await tx.$executeRawUnsafe(
         `SELECT id FROM users WHERE phone_number = ? FOR UPDATE`,
         phone
       );
 
-      // 2-1) 고객 자동 생성/획득
+      // 기존 유저면 닉네임 그대로, 신규면 기본 닉네임
       const user = await tx.user.upsert({
         where: { phoneNumber: phone },
-        update: {}, // 기존 유저면 변경 없음
+        update: {},
         create: {
           phoneNumber: phone,
           nickname: `손님-${phone.slice(-4)}`,
@@ -52,7 +51,7 @@ export const getUserByPhone = async (req, res, next) => {
         select: { id: true, nickname: true, phoneNumber: true },
       });
 
-      // 2-2) 해당 카페의 "진행중" 스탬프북 조회
+      // 이 카페의 진행중 스탬프북
       let sb = await tx.stampBook.findFirst({
         where: {
           userId: user.id,
@@ -66,20 +65,18 @@ export const getUserByPhone = async (req, res, next) => {
         select: { id: true, currentCount: true, goalCount: true, expiresAt: true },
       });
 
-      // 2-3) 없으면 정책 기반으로 1개 생성
+      // 없으면 정책 기반으로 1개 생성
       if (!sb) {
         const policy = await tx.stampPolicy.findUnique({
           where: { cafeId },
           include: { menu: { select: { name: true } } },
         });
 
-        // 목표 개수: COUNT 정책이면 정책값, 아니면 기본 10
         let goalCount = 10;
         if (policy?.conditionType === 'COUNT' && policy?.stampPerCount) {
           goalCount = policy.stampPerCount;
         }
 
-        // 리워드 표기: NOT NULL 안전값
         let rewardDetail = '리워드 미정';
         if (policy) {
           switch (policy.rewardType) {
@@ -97,7 +94,6 @@ export const getUserByPhone = async (req, res, next) => {
           }
         }
 
-        // 만료일: hasExpiry=true면 30일, 아니면 장기(5년)
         const now = new Date();
         const DEFAULT_DAYS = 30;
         const LONG_TERM_DAYS = 365 * 5;
@@ -105,7 +101,7 @@ export const getUserByPhone = async (req, res, next) => {
           now.getTime() + 24 * 60 * 60 * 1000 * (policy?.hasExpiry ? DEFAULT_DAYS : LONG_TERM_DAYS)
         );
 
-        // 라운드: 기존 최대 라운드 + 1
+        // 라운드 = 이 카페에서의 최대 라운드 + 1
         const lastRound = await tx.stampBook.findFirst({
           where: { userId: user.id, cafeId },
           orderBy: { round: 'desc' },
@@ -129,7 +125,7 @@ export const getUserByPhone = async (req, res, next) => {
             status: 'active',
             isCompleted: false,
             isConverted: false,
-            round: nextRound, // @@unique([userId, cafeId, round]) 충돌 방지
+            round: nextRound,
           },
           select: { id: true, currentCount: true, goalCount: true, expiresAt: true },
         });
@@ -138,11 +134,16 @@ export const getUserByPhone = async (req, res, next) => {
       return { user, sb };
     });
 
-    // 3) 유저 전체 스탬프/포인트 집계
-    const totalStampCount = await prisma.stamp.count({
-      where: { stampBook: { userId: user.id } },
+    // 3) (카페 기준) 스탬프/스탬프북 집계
+    const cafeStampCount = await prisma.stamp.count({
+      where: { stampBook: { userId: user.id, cafeId } }, // ✅ 이 카페에서 찍은 스탬프 수
     });
 
+    const cafeStampBookCount = await prisma.stampBook.count({
+      where: { userId: user.id, cafeId }, // ✅ 이 카페에서 생성된 스탬프북(라운드) 개수
+    });
+
+    // 포인트: 전 카페 통합 기준(원하면 cafeId 기준으로 제한 가능)
     const [earnedAgg, spentAgg, refundedAgg] = await Promise.all([
       prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'earned' },   _sum: { point: true } }),
       prisma.pointTransaction.aggregate({ where: { userId: user.id, type: 'spent' },    _sum: { point: true } }),
@@ -154,7 +155,7 @@ export const getUserByPhone = async (req, res, next) => {
       (refundedAgg._sum.point ?? 0) -
       (spentAgg._sum.point ?? 0);
 
-    // 4) 진행률/남은 일수 계산
+    // 4) 진행률/남은 일수
     const progressRate = Math.floor((sb.currentCount / sb.goalCount) * 100);
     const daysLeft = Math.max(
       0,
@@ -172,10 +173,11 @@ export const getUserByPhone = async (req, res, next) => {
     // 6) 응답
     return res.success({
       userId: user.id,
-      nickname: user.nickname,
+      nickname: user.nickname, // ✅ 기존 고객이면 DB 닉네임
       phone: formatPhoneDisplay(normalizePhone(user.phoneNumber || phone)),
       stamp: {
-        totalCount: totalStampCount,
+        totalCount: cafeStampCount,        // ✅ 이 카페에서 누적 찍은 스탬프 수
+        stampBookCount: cafeStampBookCount, // ✅ 이 카페에서 생성된 스탬프북(라운드) 개수
         currentStampBook: {
           stampBookId: sb.id,
           currentCount: sb.currentCount,
@@ -196,6 +198,7 @@ export const getUserByPhone = async (req, res, next) => {
     });
   }
 };
+
 
 // 스탬프 적립
 export const addStampToUser = async (req, res, next) => {
