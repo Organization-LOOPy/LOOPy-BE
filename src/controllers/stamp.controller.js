@@ -431,10 +431,10 @@ export const getConvertedStampbooks = async (req, res, next) => {
       group.items.push({
         stampBookId: b.id,
         round: b.round,
-        status: b.status,                             // 'converted' | 'completed'
-        isConverted: b.status === 'converted',        // ✅ 스웨거에 맞춰 추가
-        completedAt: b.completedAt,                   // 모두 모은 날
-        convertedAt: b.convertedAt,                   // 환전 완료일(없을 수 있음)
+        status: b.status,                      // 'converted' | 'completed'
+        isConverted: b.status === 'converted', // ✅ 스웨거에 맞춰 추가
+        completedAt: b.completedAt,            // 모두 모은 날
+        convertedAt: b.convertedAt,            // 환전 완료일(없을 수 있음)
         displayText:
           b.status === 'converted'
             ? `스탬프지 ${b.round}장 환전 완료`
@@ -453,19 +453,18 @@ export const getConvertedStampbooks = async (req, res, next) => {
       return g;
     });
 
-    return (
-      res.success?.('히스토리(완료+환전) 조회 성공', result) ??
-      res.status(200).json({
-        status: 'SUCCESS',
-        code: 200,
-        message: '히스토리(완료+환전) 조회 성공',
-        data: result,
-      })
-    );
+    // ✅ 항상 스웨거 포맷으로 반환
+    return res.status(200).json({
+      status: 'SUCCESS',
+      code: 200,
+      message: '히스토리(완료+환전) 조회 성공',
+      data: result,
+    });
   } catch (err) {
     next(err);
   }
 };
+
 
 
 
