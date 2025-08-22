@@ -3899,38 +3899,22 @@ paths:
                         weekday:
                           type: object
                           properties:
-                            open:
-                              type: string
-                              example: "09:00"
-                            close:
-                              type: string
-                              example: "18:00"
+                            open: { type: string, example: "09:00" }
+                            close: { type: string, example: "18:00" }
                         weekend:
                           type: object
                           properties:
-                            open:
-                              type: string
-                              example: "11:00"
-                            close:
-                              type: string
-                              example: "17:00"
+                            open: { type: string, example: "11:00" }
+                            close: { type: string, example: "17:00" }
                     - type: array
                       description: 요일별 각각 다름
                       items:
                         type: object
                         properties:
-                          day:
-                            type: string
-                            example: "월"
-                          isClosed:
-                            type: boolean
-                            example: false
-                          openTime:
-                            type: string
-                            example: "09:00"
-                          closeTime:
-                            type: string
-                            example: "18:00"
+                          day: { type: string, example: "월" }
+                          isClosed: { type: boolean, example: false }
+                          openTime: { type: string, example: "09:00" }
+                          closeTime: { type: string, example: "18:00" }
                 breakTime:
                   type: string
                   description: 전체 브레이크 타임 (호환용, 현재 미사용 가능)
@@ -3943,85 +3927,22 @@ paths:
                     example: "루프탑"
                 storeFilters:
                   type: array
-                  description: 매장 관련 키워드
+                  description: 매장 관련 키워드 (선택된 키워드만 전송)
                   items:
                     type: string
                     example: "노트북"
                 takeOutFilters:
                   type: array
-                  description: 테이크아웃 관련 키워드
+                  description: 테이크아웃 관련 키워드 (선택된 키워드만 전송)
                   items:
                     type: string
                     example: "텀블러 할인"
                 menuFilters:
                   type: array
-                  description: 메뉴 관련 키워드
+                  description: 메뉴 관련 키워드 (선택된 키워드만 전송)
                   items:
                     type: string
                     example: "디카페인"
-            examples:
-              sameAllDays:
-                summary: 모든 날 동일
-                value:
-                  businessHourType: SAME_ALL_DAYS
-                  businessHours:
-                    open: "10:00"
-                    close: "20:00"
-                  breakTime: "14:00~15:00"
-                  keywords: ["루프탑", "브런치"]
-                  storeFilters: ["노트북", "단체석"]
-                  takeOutFilters: ["텀블러 할인"]
-                  menuFilters: ["비건", "디카페인"]
-              weekdayWeekend:
-                summary: 평일/주말 다름
-                value:
-                  businessHourType: WEEKDAY_WEEKEND
-                  businessHours:
-                    weekday:
-                      open: "09:00"
-                      close: "18:00"
-                    weekend:
-                      open: "11:00"
-                      close: "17:00"
-                  breakTime: "14:00~15:00"
-                  keywords: ["한옥카페", "디저트"]
-                  storeFilters: ["주차 가능"]
-                  takeOutFilters: ["포장 할인"]
-                  menuFilters: ["저당"]
-              differentEachDay:
-                summary: 요일별 각각 다름
-                value:
-                  businessHourType: EACH_DAY_DIFFERENT
-                  businessHours:
-                    - day: "월"
-                      isClosed: false
-                      openTime: "09:00"
-                      closeTime: "18:00"
-                    - day: "화"
-                      isClosed: false
-                      openTime: "09:00"
-                      closeTime: "18:00"
-                    - day: "수"
-                      isClosed: false
-                      openTime: "10:00"
-                      closeTime: "19:00"
-                    - day: "목"
-                      isClosed: false
-                      openTime: "10:00"
-                      closeTime: "19:00"
-                    - day: "금"
-                      isClosed: false
-                      openTime: "11:00"
-                      closeTime: "20:00"
-                    - day: "토"
-                      isClosed: true
-                    - day: "일"
-                      isClosed: true
-                  breakTime: "14:00~15:00"
-                  keywords: ["루프탑", "야경"]
-                  storeFilters: ["애견 동반"]
-                  takeOutFilters: ["텀블러 할인"]
-                  menuFilters: ["디카페인"]
       responses:
         200:
           description: 운영 정보 수정 성공
@@ -4040,52 +3961,44 @@ paths:
                   businessHours:
                     oneOf:
                       - type: object
-                        example:
-                          open: "10:00"
-                          close: "20:00"
+                        example: { open: "10:00", close: "20:00" }
                       - type: object
                         example:
-                          weekday:
-                            open: "09:00"
-                            close: "18:00"
-                          weekend:
-                            open: "11:00"
-                            close: "17:00"
+                          weekday: { open: "09:00", close: "18:00" }
+                          weekend: { open: "11:00", close: "17:00" }
                       - type: array
                         example:
-                          - day: "월"
-                            isClosed: false
-                            openTime: "09:00"
-                            closeTime: "18:00"
-                          - day: "화"
-                            isClosed: false
-                            openTime: "09:00"
-                            closeTime: "18:00"
-                          - day: "수"
-                            isClosed: false
-                            openTime: "10:00"
-                            closeTime: "19:00"
+                          - { day: "월", isClosed: false, openTime: "09:00", closeTime: "18:00" }
+                          - { day: "화", isClosed: false, openTime: "09:00", closeTime: "18:00" }
                   storeFilters:
-                    type: array
-                    items:
-                      type: string
-                    example: ["노트북", "단체석"]
+                    type: object
+                    additionalProperties:
+                      type: boolean
+                    example:
+                      노트북: true
+                      1인석: false
+                      주차 가능: false
                   takeOutFilters:
-                    type: array
-                    items:
-                      type: string
-                    example: ["텀블러 할인"]
+                    type: object
+                    additionalProperties:
+                      type: boolean
+                    example:
+                      텀블러 할인: true
+                      포장 할인: false
                   menuFilters:
-                    type: array
-                    items:
-                      type: string
-                    example: ["디카페인"]
+                    type: object
+                    additionalProperties:
+                      type: boolean
+                    example:
+                      비건: false
+                      디카페인: true
+                      글루텐프리: false
+                      저당/무가당: false
                   keywords:
                     type: array
                     items:
                       type: string
                     example: ["루프탑", "브런치"]
-
 
 
   /api/v1/owner/cafes/menus:
@@ -4383,50 +4296,30 @@ paths:
                           - type: object
                             description: 모든 날 동일 (SAME_ALL_DAYS)
                             properties:
-                              open:
-                                type: string
-                                example: "10:00"
-                              close:
-                                type: string
-                                example: "20:00"
+                              open: { type: string, example: "10:00" }
+                              close: { type: string, example: "20:00" }
                           - type: object
                             description: 평일/주말 구분 (WEEKDAY_WEEKEND)
                             properties:
                               weekday:
                                 type: object
                                 properties:
-                                  open:
-                                    type: string
-                                    example: "09:00"
-                                  close:
-                                    type: string
-                                    example: "18:00"
+                                  open: { type: string, example: "09:00" }
+                                  close: { type: string, example: "18:00" }
                               weekend:
                                 type: object
                                 properties:
-                                  open:
-                                    type: string
-                                    example: "11:00"
-                                  close:
-                                    type: string
-                                    example: "17:00"
+                                  open: { type: string, example: "11:00" }
+                                  close: { type: string, example: "17:00" }
                           - type: array
                             description: 요일별 각각 다름 (EACH_DAY_DIFFERENT)
                             items:
                               type: object
                               properties:
-                                day:
-                                  type: string
-                                  example: "월"
-                                isClosed:
-                                  type: boolean
-                                  example: false
-                                openTime:
-                                  type: string
-                                  example: "09:00"
-                                closeTime:
-                                  type: string
-                                  example: "18:00"
+                                day: { type: string, example: "월" }
+                                isClosed: { type: boolean, example: false }
+                                openTime: { type: string, example: "09:00" }
+                                closeTime: { type: string, example: "18:00" }
                       breakTime:
                         type: string
                         description: 전체 브레이크 타임 (호환용, 미사용 가능)
@@ -4438,23 +4331,37 @@ paths:
                           type: string
                         example: ["루프탑", "브런치"]
                       storeFilters:
-                        type: array
-                        description: 매장 관련 키워드(버튼 선택 상태)
-                        items:
-                          type: string
-                        example: ["노트북", "단체석"]
+                        type: object
+                        description: 매장 관련 키워드(버튼 선택 상태, 전체 키워드 포함)
+                        additionalProperties:
+                          type: boolean
+                        example:
+                          노트북: true
+                          1인석: false
+                          단체석: false
+                          주차 가능: false
+                          예약 가능: false
+                          와이파이 제공: true
+                          애견 동반: false
+                          24시간 운영: false
                       takeOutFilters:
-                        type: array
-                        description: 테이크아웃 관련 키워드(버튼 선택 상태)
-                        items:
-                          type: string
-                        example: ["텀블러 할인"]
+                        type: object
+                        description: 테이크아웃 관련 키워드(버튼 선택 상태, 전체 키워드 포함)
+                        additionalProperties:
+                          type: boolean
+                        example:
+                          텀블러 할인: true
+                          포장 할인: false
                       menuFilters:
-                        type: array
-                        description: 메뉴 관련 키워드(버튼 선택 상태)
-                        items:
-                          type: string
-                        example: ["디카페인", "비건"]
+                        type: object
+                        description: 메뉴 관련 키워드(버튼 선택 상태, 전체 키워드 포함)
+                        additionalProperties:
+                          type: boolean
+                        example:
+                          비건: false
+                          저당/무가당: false
+                          글루텐프리: false
+                          디카페인: true
               examples:
                 sameAllDays:
                   summary: 모든 날 동일
@@ -4468,9 +4375,23 @@ paths:
                         close: "20:00"
                       breakTime: "14:00~15:00"
                       keywords: ["루프탑", "브런치"]
-                      storeFilters: ["노트북", "단체석"]
-                      takeOutFilters: ["텀블러 할인"]
-                      menuFilters: ["디카페인"]
+                      storeFilters:
+                        노트북: true
+                        단체석: true
+                        주차 가능: false
+                        예약 가능: false
+                        와이파이 제공: false
+                        애견 동반: false
+                        24시간 운영: false
+                        1인석: false
+                      takeOutFilters:
+                        텀블러 할인: true
+                        포장 할인: false
+                      menuFilters:
+                        디카페인: true
+                        비건: false
+                        글루텐프리: false
+                        저당/무가당: false
                 weekdayWeekend:
                   summary: 평일/주말 다름
                   value:
@@ -4479,58 +4400,21 @@ paths:
                       id: 3
                       businessHourType: WEEKDAY_WEEKEND
                       businessHours:
-                        weekday:
-                          open: "09:00"
-                          close: "18:00"
-                        weekend:
-                          open: "11:00"
-                          close: "17:00"
+                        weekday: { open: "09:00", close: "18:00" }
+                        weekend: { open: "11:00", close: "17:00" }
                       breakTime: "14:00~15:00"
                       keywords: ["한옥카페", "디저트"]
-                      storeFilters: ["주차 가능"]
-                      takeOutFilters: ["포장 할인"]
-                      menuFilters: ["저당"]
-                differentEachDay:
-                  summary: 요일별 각각 다름
-                  value:
-                    message: 내 카페 운영 정보 조회 성공
-                    data:
-                      id: 3
-                      businessHourType: EACH_DAY_DIFFERENT
-                      businessHours:
-                        - day: "월"
-                          isClosed: false
-                          openTime: "09:00"
-                          closeTime: "18:00"
-                        - day: "화"
-                          isClosed: false
-                          openTime: "09:00"
-                          closeTime: "18:00"
-                        - day: "수"
-                          isClosed: false
-                          openTime: "10:00"
-                          closeTime: "19:00"
-                        - day: "목"
-                          isClosed: false
-                          openTime: "10:00"
-                          closeTime: "19:00"
-                        - day: "금"
-                          isClosed: false
-                          openTime: "11:00"
-                          closeTime: "20:00"
-                        - day: "토"
-                          isClosed: true
-                        - day: "일"
-                          isClosed: true
-                      breakTime: "14:00~15:00"
-                      keywords: ["루프탑", "야경"]
-                      storeFilters: ["애견 동반"]
-                      takeOutFilters: ["텀블러 할인"]
-                      menuFilters: ["디카페인"]
-        '401':
-          description: 인증 실패
-        '404':
-          description: 카페가 존재하지 않습니다
+                      storeFilters:
+                        주차 가능: true
+                        노트북: false
+                        단체석: false
+                        와이파이 제공: false
+                        1인석: false
+                        애견 동반: false
+                        예약 가능: false
+                        24시간 운영: false
+                      takeOutFilters:
+
 
   /api/v1/owner/cafes/myCafe:
     patch:
