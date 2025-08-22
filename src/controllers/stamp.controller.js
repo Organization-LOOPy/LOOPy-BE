@@ -303,15 +303,19 @@ export const getExpiringStampBooks = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
+    // KST 기준 00:00로 정규화 → DB 비교는 UTC로
     const startOfDayKST = (d) => {
       const t = new Date(d);
       const utc = t.getTime() + t.getTimezoneOffset() * 60000;
       const kst = new Date(utc + 9 * 3600000);
-      kst.setHours(0,0,0,0);
+      kst.setHours(0, 0, 0, 0);
+      // 다시 UTC로 환산해 반환 (DB는 UTC 저장 가정)
       return new Date(kst.getTime() - 9 * 3600000);
     };
+
     const today0 = startOfDayKST(new Date());
-    const oneWeekLater0 = new Date(today0); oneWeekLater0.setDate(oneWeekLater0.getDate() + 7);
+    const oneWeekLater0 = new Date(today0);
+    oneWeekLater0.setDate(oneWeekLater0.getDate() + 7);
 
     const expiringBooks = await prisma.stampBook.findMany({
       where: {
@@ -322,7 +326,9 @@ export const getExpiringStampBooks = async (req, res, next) => {
       include: {
         cafe: {
           select: {
-            id: true, name: true, address: true,
+            id: true,
+            name: true,
+            address: true,
             photos: { orderBy: { displayOrder: 'asc' }, take: 1, select: { photoUrl: true } },
           },
         },
@@ -331,18 +337,21 @@ export const getExpiringStampBooks = async (req, res, next) => {
     });
 
     const data = expiringBooks.map((b) => {
-      const goalCount = b.goalCount;
-      const currentCount = b.currentCount;
-      const progressPercent = Math.min(100, Math.round((currentCount / goalCount) * 100));
+      const goalCount = b.goalCount ?? 0;
+      const currentCount = b.currentCount ?? 0;
+      const progressPercent = goalCount > 0 ? Math.min(100, Math.round((currentCount / goalCount) * 100)) : 0;
 
       const expiry0 = b.expiresAt ? startOfDayKST(b.expiresAt) : null;
       const diffMs = expiry0 ? (expiry0 - today0) : null;
       const daysUntilExpiration = diffMs !== null ? Math.floor(diffMs / 86400000) : null;
-      const isExpired = diffMs !== null ? diffMs < 0 : false;
       const isExpiringSoon = diffMs !== null ? (diffMs >= 0 && daysUntilExpiration <= 3) : false;
 
       const remain = Math.max(0, goalCount - currentCount);
-      const canExtend = !b.isCompleted && daysUntilExpiration !== null && daysUntilExpiration > 0 && daysUntilExpiration <= 7;
+      const canExtend =
+        !b.isCompleted &&
+        daysUntilExpiration !== null &&
+        daysUntilExpiration > 0 &&
+        daysUntilExpiration <= 7;
 
       return {
         id: b.id,
@@ -352,14 +361,14 @@ export const getExpiringStampBooks = async (req, res, next) => {
           address: b.cafe.address,
           image: b.cafe.photos?.[0]?.photoUrl ?? null,
         },
-        round: b.round,                
-        rewardDetail: b.rewardDetail,
+        round: b.round,
+        rewardDetail: b.rewardDetail ?? null,
         goalCount,
         currentCount,
         progressPercent,
         status: b.status,
-        isCompleted: b.isCompleted,
-        expiresAt: b.expiresAt,
+        isCompleted: !!b.isCompleted,
+        expiresAt: b.expiresAt,               // ISO 그대로
         daysUntilExpiration,
         isExpiringSoon,
         previewRewardText: `${remain}회 후 포인트로 자동 환전돼요!`,
@@ -367,11 +376,18 @@ export const getExpiringStampBooks = async (req, res, next) => {
       };
     });
 
-    return res.success('소멸 임박 스탬프북 조회 성공', data);
+    // ✅ 스웨거 포맷으로 고정 반환
+    return res.status(200).json({
+      status: 'SUCCESS',
+      code: 200,
+      message: '소멸 임박 스탬프북 조회 성공',
+      data,
+    });
   } catch (err) {
     next(err);
   }
 };
+
 
 // 스탬프 히스토리 조회 (환전 완료된 스탬프북)
 export const getConvertedStampbooks = async (req, res, next) => {
