@@ -35,7 +35,7 @@ export const createCouponTemplateService = async (cafeId, data) => {
     });
   
     if (!menu) {
-      throw new CafeMenuNotExistError(applicableMenuId);
+      throw new CafeMenuNotExistError();
     }
 
     let name = '';

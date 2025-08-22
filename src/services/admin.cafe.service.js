@@ -100,18 +100,54 @@ const dayMap = {
   "토": "SATURDAY",
   "일": "SUNDAY"
 };
+const storeFilterList = [
+  "노트북",
+  "1인석",
+  "단체석",
+  "주차 가능",
+  "예약 가능",
+  "와이파이 제공",
+  "애견 동반",
+  "24시간 운영",
+];
+const extractSelected = (filterObj = {}) => {
+  return Object.entries(filterObj)
+    .filter(([_, value]) => value === true)
+    .map(([key]) => key);
+};
 
+const takeOutFilterList = ["텀블러 할인", "포장 할인"];
+const menuFilterList = ["비건", "저당/무가당", "글루텐프리", "디카페인"];
+const normalizeFilters = (allOptions, given) => {
+  const result = {};
+  allOptions.forEach((opt) => {
+    result[opt] = given?.[opt] ?? false;
+  });
+  return result;
+};
+
+const normalizeFilters2 = (allOptions, selectedArray = []) => {
+  const result = {};
+  allOptions.forEach((opt) => {
+    result[opt] = selectedArray.includes(opt); 
+  });
+  return result;
+};
 export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
   let parsedHours = parseIfString(operationInfo.businessHours);
   const businessHourType = operationInfo.businessHourType;
-
 
   const validTypes = ["SAME_ALL_DAYS", "WEEKDAY_WEEKEND", "EACH_DAY_DIFFERENT"];
   if (businessHourType && !validTypes.includes(businessHourType)) {
     throw new InvalidBusinessHoursError("유효하지 않은 businessHourType입니다.");
   }
 
-  if (businessHourType === "SAME_ALL_DAYS" && parsedHours && !Array.isArray(parsedHours) && typeof parsedHours === "object") {
+  if (
+    businessHourType === "SAME_ALL_DAYS" &&
+    parsedHours &&
+    !Array.isArray(parsedHours) &&
+    typeof parsedHours === "object"
+  ) {
     if (parsedHours.open && parsedHours.close) {
       parsedHours = [
         { day: "MONDAY",    isClosed: false, openTime: parsedHours.open, closeTime: parsedHours.close },
@@ -125,7 +161,12 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
     } else {
       throw new InvalidBusinessHoursError("SAME_ALL_DAYS는 open과 close 값이 필요합니다.");
     }
-  } else if (businessHourType === "WEEKDAY_WEEKEND" && parsedHours && !Array.isArray(parsedHours) && typeof parsedHours === "object") {
+  } else if (
+    businessHourType === "WEEKDAY_WEEKEND" &&
+    parsedHours &&
+    !Array.isArray(parsedHours) &&
+    typeof parsedHours === "object"
+  ) {
     if (parsedHours.weekday && parsedHours.weekend) {
       parsedHours = [
         { day: "MONDAY",    isClosed: false, openTime: parsedHours.weekday.open, closeTime: parsedHours.weekday.close },
@@ -142,9 +183,9 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
   }
 
   if (Array.isArray(parsedHours)) {
-    parsedHours = parsedHours.map(entry => ({
+    parsedHours = parsedHours.map((entry) => ({
       ...entry,
-      day: dayMap[entry.day] || entry.day
+      day: dayMap[entry.day] || entry.day,
     }));
   }
 
@@ -154,35 +195,53 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
 
   for (const entry of parsedHours) {
     if (!entry.day || typeof entry.isClosed !== "boolean") {
-      throw new InvalidBusinessHoursError(`잘못된 요일 항목: ${JSON.stringify(entry)}`);
+      throw new InvalidBusinessHoursError(
+        `잘못된 요일 항목: ${JSON.stringify(entry)}`
+      );
     }
     if (!entry.isClosed && (!entry.openTime || !entry.closeTime)) {
-      throw new InvalidBusinessHoursError(`운영 중인 요일에는 openTime과 closeTime이 필요합니다.`);
+      throw new InvalidBusinessHoursError(
+        `운영 중인 요일에는 openTime과 closeTime이 필요합니다.`
+      );
     }
   }
 
   const cafe = await prisma.cafe.findFirst({
-    where: { ownerId: userId }
+    where: { ownerId: userId },
   });
 
   if (!cafe) {
-    throw new CustomError('CAFE_NOT_FOUND', '해당 유저의 카페가 존재하지 않습니다.');
+    throw new CustomError(
+      "CAFE_NOT_FOUND",
+      "해당 유저의 카페가 존재하지 않습니다."
+    );
   }
 
-  const updatedCafe = await prisma.cafe.update({
+ const updatedCafe = await prisma.cafe.update({
     where: { id: cafe.id },
     data: {
       businessHourType,
       businessHours: parsedHours,
-      updatedAt: new Date()
-    }
+      breakTime: operationInfo.breakTime ?? null,
+      keywords: operationInfo.keywords ?? [],
+      storeFilters: normalizeFilters2(storeFilterList, operationInfo.storeFilters ?? []),
+      takeOutFilters: normalizeFilters2(takeOutFilterList, operationInfo.takeOutFilters ?? []),
+      menuFilters: normalizeFilters2(menuFilterList, operationInfo.menuFilters ?? []),
+      updatedAt: new Date(),
+    },
   });
 
-  return updatedCafe;
+  return {
+    id: updatedCafe.id,
+    businessHourType: updatedCafe.businessHourType,
+    businessHours: updatedCafe.businessHours,
+    breakTime: updatedCafe.breakTime,
+    keywords: updatedCafe.keywords,
+    storeFilters: extractSelected(updatedCafe.storeFilters),
+    takeOutFilters: extractSelected(updatedCafe.takeOutFilters),
+    menuFilters: extractSelected(updatedCafe.menuFilters),
+  };
 };
-
-
-
 export const addCafeMenu = async (userId, menuData, file) => {
   const requiredFields = ["name", "price"];
   const missing = requiredFields.filter((field) => !menuData[field]);
@@ -331,13 +390,11 @@ export const deleteCafeMenuService = async (userId, menuId) => {
   return menuId;
 };
 
-
 export const getCafeBusinessInfo = async (userId) => {
   const cafe = await prisma.cafe.findFirst({
-    where: {
-      ownerId: userId,
-    },
+    where: { ownerId: userId },
     select: {
+      id: true,
       businessHours: true,
       businessHourType: true,
       breakTime: true,
@@ -351,17 +408,14 @@ export const getCafeBusinessInfo = async (userId) => {
   if (!cafe) throw new CafeNotExistError();
 
   return {
+    id: cafe.id,
     businessHourType: cafe.businessHourType ?? "DIFFERENT_EACH_DAY",
     businessHours: cafe.businessHours ?? [],
-    hasNoHoliday: cafe.businessHours
-      ? cafe.businessHours.every((day) => day.isClosed === false)
-      : false,
+    breakTime: cafe.breakTime ?? null,
     keywords: cafe.keywords ?? [],
-    selectedKeywords: {
-      storeFilters: cafe.storeFilters ?? [],
-      takeOutFilters: cafe.takeOutFilters ?? [],
-      menuFilters: cafe.menuFilters ?? [],
-    },
+    storeFilters: extractSelected(cafe.storeFilters),
+    takeOutFilters: extractSelected(cafe.takeOutFilters),
+    menuFilters: extractSelected(cafe.menuFilters),
   };
 };
 
