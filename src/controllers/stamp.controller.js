@@ -378,13 +378,24 @@ export const getConvertedStampbooks = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
+    // converted + completed 모두 포함
     const books = await prisma.stampBook.findMany({
-      where: { userId, status: 'converted' },
-      orderBy: { convertedAt: 'desc' }, // 최신 환전 순
+      where: {
+        userId,
+        OR: [{ status: 'converted' }, { status: 'completed' }],
+      },
+      // 환전된 건 convertedAt DESC, 그 외(완료)는 completedAt DESC
+      orderBy: [
+        { convertedAt: 'desc' },   // NULL(완료건)은 자동으로 뒤로 밀림
+        { completedAt: 'desc' },
+        { id: 'desc' },
+      ],
       include: {
         cafe: {
           select: {
-            id: true, name: true, address: true,
+            id: true,
+            name: true,
+            address: true,
             photos: { orderBy: { displayOrder: 'asc' }, take: 1, select: { photoUrl: true } },
           },
         },
@@ -401,24 +412,33 @@ export const getConvertedStampbooks = async (req, res, next) => {
           cafeName: b.cafe.name,
           cafeAddress: b.cafe.address,
           cafeImageUrl: b.cafe.photos?.[0]?.photoUrl ?? null,
+          totalCount: 0,
+          convertedCount: 0,
           completedCount: 0,
-          items: []
+          items: [],
         });
       }
       const group = map.get(cafeId);
-      group.completedCount += 1;
+      group.totalCount += 1;
+      if (b.status === 'converted') group.convertedCount += 1;
+      if (b.status === 'completed') group.completedCount += 1;
+
       group.items.push({
         stampBookId: b.id,
         round: b.round,
-        completedAt: b.completedAt, // “모두 모았어요” 날짜
-        convertedAt: b.convertedAt, // 환전 완료일
-        displayText: `스탬프지 ${b.round}장 완료`,
+        status: b.status,                // 'converted' | 'completed'
+        completedAt: b.completedAt,      // 모두 모은 날
+        convertedAt: b.convertedAt,      // 환전 완료일(없을 수 있음)
+        displayText:
+          b.status === 'converted'
+            ? `스탬프지 ${b.round}장 환전 완료`
+            : `스탬프지 ${b.round}장 완료`,
       });
     }
 
-    // 배열로 변환
     const result = Array.from(map.values());
-    return res.success('환전 히스토리(카페별) 조회 성공', result);
+    return res.success?.('히스토리(완료+환전) 조회 성공', result)
+      ?? res.status(200).json({ status: 'SUCCESS', code: 200, message: '히스토리(완료+환전) 조회 성공', data: result });
   } catch (err) {
     next(err);
   }
