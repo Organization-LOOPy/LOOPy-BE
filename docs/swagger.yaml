@@ -5163,7 +5163,7 @@ paths:
               properties:
                 discountType:
                   type: string
-                  enum: [DISCOUNT, FREE_DRINK, SIZE_UP]
+                  enum: [DISCOUNT, FREE_ITEM, SIZE_UP]
                   example: DISCOUNT
                   description: 쿠폰 유형
                 discountValue:
