@@ -239,6 +239,7 @@ export const cafeCouponRepository = {
             name: true,
             discountType: true,
             discountValue: true,
+            usageCondition: true,
             applicableMenu: {
               select: {
                 name: true,
