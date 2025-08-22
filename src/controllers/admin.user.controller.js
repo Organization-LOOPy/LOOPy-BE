@@ -6,7 +6,6 @@ const prisma = new PrismaClient();
 import { signActionToken, markJtiUsed } from '../utils/actionToken.js';
 
 // 전화번호 고객 조회
-import { signActionToken } from '../utils/actionToken.js';
 
 const normalizePhone = (v = '') => v.replace(/\D/g, '');
 const formatPhoneDisplay = (digits) => {
