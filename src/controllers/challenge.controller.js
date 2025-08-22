@@ -342,10 +342,6 @@ export const completeChallenge = async (req, res, next) => {
   }
 };
 
-
-
-// 서버빌딩...
-
 // 챌린지 목록 조회
 export const getChallengeList = async (req, res, next) => {
   try {
@@ -371,7 +367,7 @@ export const getChallengeList = async (req, res, next) => {
         participants: userId
           ? {
               where: { userId },
-              select: { id: true },
+              select: { status: true }, // ✅ status도 가져오기
             }
           : false,
       },
@@ -384,7 +380,10 @@ export const getChallengeList = async (req, res, next) => {
       thumbnailUrl: challenge.thumbnailUrl,
       startDate: challenge.startDate,
       endDate: challenge.endDate,
-      isParticipated: userId ? challenge.participants.length > 0 : false,
+      // ✅ in_progress 상태일 때만 true
+      isParticipated: userId
+        ? challenge.participants.some((p) => p.status === "in_progress")
+        : false,
     }));
 
     return res.success(response);
