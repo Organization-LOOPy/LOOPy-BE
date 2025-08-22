@@ -83,9 +83,7 @@ export const getOwnerCouponListService = async (cafeId, type) => {
       applicableMenu: true,
       userCoupons: true,
     },
-    orderBy: {
-      createdAt: 'desc',
-    },
+    orderBy: { createdAt: 'desc' },
   });
 
   const result = await Promise.all(
@@ -93,38 +91,37 @@ export const getOwnerCouponListService = async (cafeId, type) => {
       const menuName = coupon.applicableMenu?.name || "";
       let baseName = "";
 
-    if (coupon.discountType === 'DISCOUNT') {
-      baseName = `${menuName} ${coupon.discountValue}원 할인`;
-    } else if (coupon.discountType === 'SIZE_UP') {
-      baseName = `${menuName} 사이즈업`;
-    } else if (coupon.discountType === 'FREE_DRINK') {
-      baseName = `${menuName} 무료`;
-    }
+      if (coupon.discountType === 'DISCOUNT') {
+        baseName = `${menuName} ${coupon.discountValue}원 할인`;
+      } else if (coupon.discountType === 'SIZE_UP') {
+        baseName = `${menuName} 사이즈업`;
+      } else if (coupon.discountType === 'FREE_DRINK' || coupon.discountType === 'FREE_ITEM') {
+        baseName = `${menuName} 무료`;
+      }
 
-    const nameWithCondition = coupon.usageCondition
-      ? `${baseName} (${coupon.usageCondition})`
-      : baseName;
+      const nameWithCondition = coupon.usageCondition
+        ? `${baseName} (${coupon.usageCondition})`
+        : baseName;
 
-    const usedCount = await prisma.userCoupon.count({
-      where: {
-        couponTemplateId: coupon.id,
-        status: CouponStatus.USED,
-      },
-    });
+      const usedCount = await prisma.userCoupon.count({
+        where: {
+          couponTemplateId: coupon.id,
+          status: CouponStatus.USED,
+        },
+      });
 
-    return {
-      id: coupon.id,
-      name: nameWithCondition,
-      status: coupon.isActive ? '발행 중' : '종료됨',
-      usedCount,
-      startDate: coupon.startDate ? coupon.startDate.toISOString().split('T')[0] : null,
-      endDate: coupon.endDate ? coupon.endDate.toISOString().split('T')[0] : null,
-      discountType: coupon.discountType,
-    };
-  })
-  );
-  return result;
-};
+      return {
+        id: coupon.id,
+        name: nameWithCondition,
+        status: coupon.isActive ? '발행 중' : '종료됨',
+        startDate: coupon.startDate ? coupon.startDate.toISOString().split('T')[0] : null,
+        endDate: coupon.endDate ? coupon.endDate.toISOString().split('T')[0] : null,
+        discountType: coupon.discountType,
+      };
+    })
+    );
+    return result;
+  };
 
 // 쿠폰 종료 서비스
 export const terminateCouponService = async (cafeId, couponId) => {
