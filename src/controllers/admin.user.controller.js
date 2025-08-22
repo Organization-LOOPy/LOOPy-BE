@@ -6,6 +6,7 @@ const prisma = new PrismaClient();
 import { signActionToken, markJtiUsed } from '../utils/actionToken.js';
 
 // 전화번호 고객 조회
+import { signActionToken } from '../utils/actionToken.js';
 
 const normalizePhone = (v = '') => v.replace(/\D/g, '');
 const formatPhoneDisplay = (digits) => {
@@ -32,20 +33,32 @@ export const getUserByPhone = async (req, res, next) => {
     if (!rawPhone) return res.error({ reason: '전화번호 입력 누락' });
     if (!cafeId)  return res.error({ reason: '카페 ID 정보가 없습니다.' });
 
-    const digits = normalizePhone(rawPhone);
-    const alt82  = to82Variant(digits);
+    const digits = normalizePhone(rawPhone);        // "01052636970"
+    const alt82  = to82Variant(digits);            // "821052636970"
 
-    // 2) 트랜잭션: 기존 회원 조회(느슨 매칭) → 카페 진행중 스탬프북 확인/생성
+    // 2) 트랜잭션: 기존 회원 조회(정규화 매칭) → 카페 진행중 스탬프북 확인/생성
     const { user, sb } = await prisma.$transaction(async (tx) => {
-      // 2-1) 기존 회원 조회 (하이픈/국가코드 보정)
-      const user = await tx.user.findFirst({
-        where: { OR: [{ phoneNumber: digits }, { phoneNumber: alt82 }] },
-        select: { id: true, nickname: true, phoneNumber: true },
-      });
+
+      // 2-1) 기존 회원 조회
+      // phone_number에서 "-", " ", "+" 제거 후 숫자만 비교 (MySQL 5.7/8.0 모두 동작)
+      const rows = await tx.$queryRawUnsafe(
+        `
+        SELECT id, nickname, phone_number AS phoneNumber, created_at
+        FROM users
+        WHERE REPLACE(REPLACE(REPLACE(phone_number, '-', ''), ' ', ''), '+', '') IN (?, ?)
+        ORDER BY
+          CASE WHEN nickname LIKE '손님-____' THEN 1 ELSE 0 END ASC,  -- 게스트 닉네임 후순위
+          created_at ASC
+        LIMIT 1
+        `,
+        digits, alt82
+      );
+
+      const user = Array.isArray(rows) && rows[0] ? rows[0] : null;
       if (!user) {
         return Promise.reject({
           code: 'USER_NOT_FOUND',
-          message: '해당 번호의 회원을 찾을 수 없습니다.', // 가입되어 있어야 한다는 정책
+          message: '해당 번호의 회원을 찾을 수 없습니다.',
         });
       }
 
@@ -126,11 +139,11 @@ export const getUserByPhone = async (req, res, next) => {
               status: 'active',
               isCompleted: false,
               isConverted: false,
-              round: nextRound, // @@unique([userId, cafeId, round]) 충돌 방지
+              round: nextRound,
             },
             select: { id: true, currentCount: true, goalCount: true, expiresAt: true },
           });
-        } catch (e) {
+        } catch {
           // 동시성으로 유니크 충돌 시 방어: 방금 생성된 진행중 북 재조회
           sb = await tx.stampBook.findFirst({
             where: {
@@ -216,12 +229,12 @@ export const getUserByPhone = async (req, res, next) => {
       ttlSec: 120,
     });
 
-    // 8) 응답 (닉네임은 DB 값 그대로, 새 닉네임 생성/반환 없음)
+    // 8) 응답 (닉네임은 DB 값 그대로)
     const displayPhone = formatPhoneDisplay(toLocalKR(normalizePhone(user.phoneNumber || digits)));
 
     return res.success({
       userId: user.id,
-      nickname: user.nickname, // ✅ 항상 DB 저장값
+      nickname: user.nickname,
       phone: displayPhone,
       stamp: {
         totalCount: cafeStampCount,
