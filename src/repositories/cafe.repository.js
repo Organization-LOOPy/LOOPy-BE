@@ -43,6 +43,7 @@ export const cafeRepository = {
             discountType: true,
             discountValue: true,
             applicableMenu: true,
+            usageCondition: true,
             createdAt: true,
             expiredAt: true,
             userCoupons: {
@@ -238,6 +239,7 @@ export const cafeCouponRepository = {
             name: true,
             discountType: true,
             discountValue: true,
+            usageCondition: true,
             applicableMenu: {
               select: {
                 name: true,
