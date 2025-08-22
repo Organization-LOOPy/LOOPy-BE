@@ -110,6 +110,12 @@ const storeFilterList = [
   "애견 동반",
   "24시간 운영",
 ];
+const extractSelected = (filterObj = {}) => {
+  return Object.entries(filterObj)
+    .filter(([_, value]) => value === true)
+    .map(([key]) => key);
+};
+
 const takeOutFilterList = ["텀블러 할인", "포장 할인"];
 const menuFilterList = ["비건", "저당/무가당", "글루텐프리", "디카페인"];
 const normalizeFilters = (allOptions, given) => {
@@ -120,26 +126,13 @@ const normalizeFilters = (allOptions, given) => {
   return result;
 };
 
-const normalizeFilters2 = (allOptions, given) => {
+const normalizeFilters2 = (allOptions, selectedArray = []) => {
   const result = {};
-
-  if (Array.isArray(given)) {
-    allOptions.forEach((opt) => {
-      result[opt] = given.includes(opt);
-    });
-  } else if (typeof given === "object" && given !== null) {
-    allOptions.forEach((opt) => {
-      result[opt] = given[opt] ?? false;
-    });
-  } else {
-    allOptions.forEach((opt) => {
-      result[opt] = false;
-    });
-  }
-
+  allOptions.forEach((opt) => {
+    result[opt] = selectedArray.includes(opt); 
+  });
   return result;
 };
-
 export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
   let parsedHours = parseIfString(operationInfo.businessHours);
   const businessHourType = operationInfo.businessHourType;
@@ -224,26 +217,31 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
     );
   }
 
-  const updatedCafe = await prisma.cafe.update({
+ const updatedCafe = await prisma.cafe.update({
     where: { id: cafe.id },
     data: {
       businessHourType,
       businessHours: parsedHours,
       breakTime: operationInfo.breakTime ?? null,
       keywords: operationInfo.keywords ?? [],
-
-      storeFilters: normalizeFilters2(storeFilterList, operationInfo.storeFilters),
-      takeOutFilters: normalizeFilters2(takeOutFilterList, operationInfo.takeOutFilters),
-      menuFilters: normalizeFilters2(menuFilterList, operationInfo.menuFilters),
-
+      storeFilters: normalizeFilters2(storeFilterList, operationInfo.storeFilters ?? []),
+      takeOutFilters: normalizeFilters2(takeOutFilterList, operationInfo.takeOutFilters ?? []),
+      menuFilters: normalizeFilters2(menuFilterList, operationInfo.menuFilters ?? []),
       updatedAt: new Date(),
     },
   });
 
-  return updatedCafe;
+  return {
+    id: updatedCafe.id,
+    businessHourType: updatedCafe.businessHourType,
+    businessHours: updatedCafe.businessHours,
+    breakTime: updatedCafe.breakTime,
+    keywords: updatedCafe.keywords,
+    storeFilters: extractSelected(updatedCafe.storeFilters),
+    takeOutFilters: extractSelected(updatedCafe.takeOutFilters),
+    menuFilters: extractSelected(updatedCafe.menuFilters),
+  };
 };
-
-
 export const addCafeMenu = async (userId, menuData, file) => {
   const requiredFields = ["name", "price"];
   const missing = requiredFields.filter((field) => !menuData[field]);
@@ -394,44 +392,30 @@ export const deleteCafeMenuService = async (userId, menuId) => {
 
 export const getCafeBusinessInfo = async (userId) => {
   const cafe = await prisma.cafe.findFirst({
-    where: {
-      ownerId: userId,
-    },
+    where: { ownerId: userId },
     select: {
+      id: true,
       businessHours: true,
       businessHourType: true,
       breakTime: true,
-      keywords: true,     
-      storeFilters: true,   
-      takeOutFilters: true, 
-      menuFilters: true,    
+      keywords: true,
+      storeFilters: true,
+      takeOutFilters: true,
+      menuFilters: true,
     },
   });
 
   if (!cafe) throw new CafeNotExistError();
 
-  const mapSelections = (allOptions, selectedObj) => {
-    const result = {};
-    allOptions.forEach((opt) => {
-      result[opt] = selectedObj?.[opt] ?? false; 
-    });
-    return result;
-  };
-
   return {
+    id: cafe.id,
     businessHourType: cafe.businessHourType ?? "DIFFERENT_EACH_DAY",
     businessHours: cafe.businessHours ?? [],
-    hasNoHoliday: cafe.businessHours
-      ? cafe.businessHours.every((day) => day.isClosed === false)
-      : false,
-
+    breakTime: cafe.breakTime ?? null,
     keywords: cafe.keywords ?? [],
-
-    selectedKeywords: {
-      storeFilters: mapSelections(storeFilterList, cafe.storeFilters),
-      takeOutFilters: mapSelections(takeOutFilterList, cafe.takeOutFilters),
-      menuFilters: mapSelections(menuFilterList, cafe.menuFilters),
-    },
+    storeFilters: extractSelected(cafe.storeFilters),
+    takeOutFilters: extractSelected(cafe.takeOutFilters),
+    menuFilters: extractSelected(cafe.menuFilters),
   };
 };
 
