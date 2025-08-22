@@ -6,6 +6,7 @@ import {
   CouponMissingDiscountValueError,
   CouponMissingMenuIdError,
   CouponNotFoundError,
+  CafeMenuNotExistError
 } from '../errors/customErrors.js';
 
 // 쿠폰 템플릿 생성 서비스
@@ -17,6 +18,7 @@ export const createCouponTemplateService = async (cafeId, data) => {
       usageCondition,
       startDate,
       endDate,
+      validDays,
     } = data;
   
     // 필수 조건 검사
@@ -34,7 +36,7 @@ export const createCouponTemplateService = async (cafeId, data) => {
     });
   
     if (!menu) {
-      throw new CustomError('해당 메뉴를 찾을 수 없습니다.', 'MENU_NOT_FOUND', 404);
+      throw new CafeMenuNotExistError();
     }
 
     let name = '';
@@ -56,6 +58,7 @@ export const createCouponTemplateService = async (cafeId, data) => {
         usageCondition,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
+        validDays,
       }
     });
     return newCoupon;

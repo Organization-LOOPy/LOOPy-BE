@@ -33,7 +33,7 @@ export const createReview = async (req, res, next) => {
     let imageUrls = [];
     if (files && files.length > 0) {
       imageUrls = await Promise.all(
-        files.map((file) => uploadToS3(file)) // S3에 업로드
+        files.map((file) => uploadToS3(file, "reviews")) // S3에 업로드
       );
     }
 
@@ -47,12 +47,14 @@ export const createReview = async (req, res, next) => {
 
     const review = await prisma.review.create({
       data: {
-        title: cafe.name,
         content,
         cafeId: parseInt(cafeId),
         userId,
         images: imageUrls,
       },
+      include: {
+        cafe: true, // 카페 정보 포함
+      }
     });
 
     return res.success({
@@ -61,7 +63,7 @@ export const createReview = async (req, res, next) => {
         reviewId: review.id,
         cafeId: review.cafeId,
         userId: review.userId,
-        title: review.title,
+        title: review.cafe.name,
         content: review.content,
         images: review.images || [],
         createdAt: review.createdAt,
