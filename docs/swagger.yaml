@@ -3031,14 +3031,14 @@ paths:
 
   /api/v1/users/me/stampbooks/converted:
     get:
-      summary: 환전 완료된 스탬프북 히스토리(카페별 그룹)
-      description: 사용자가 환전한 스탬프북을 **카페별로 그룹핑**하여 최근 환전 순으로 반환합니다.
+      summary: 완료/환전 스탬프북 히스토리(카페별 그룹)
+      description: 사용자가 **완료(completed)** 또는 **환전(converted)** 한 스탬프북을 카페별로 그룹핑하여 최근 순(환전은 convertedAt, 완료는 completedAt)으로 반환합니다.
       tags: [Stamp]
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: 환전 히스토리(카페별) 조회 성공
+          description: 히스토리(완료+환전) 조회 성공
           content:
             application/json:
               schema:
@@ -3046,24 +3046,30 @@ paths:
               example:
                 status: SUCCESS
                 code: 200
-                message: 환전 히스토리(카페별) 조회 성공
+                message: 히스토리(완료+환전) 조회 성공
                 data:
-                  - cafeId: 7
-                    cafeName: 블루보틀 연남점
-                    cafeAddress: 서울특별시 마포구 연남동 123-45
+                  - cafeId: 65
+                    cafeName: 카페 루피
+                    cafeAddress: 서울특별시 어딘가 1-2
                     cafeImageUrl: https://example.com/photo.jpg
-                    completedCount: 2
+                    totalCount: 5
+                    convertedCount: 5
+                    completedCount: 0
                     items:
-                      - stampBookId: 15
-                        round: 3
-                        completedAt: "2025-07-30T09:00:00.000Z"
-                        convertedAt: "2025-07-31T13:45:00.000Z"
-                        displayText: 스탬프지 3장 완료
-                      - stampBookId: 11
-                        round: 2
-                        completedAt: "2025-06-10T10:00:00.000Z"
-                        convertedAt: "2025-06-10T12:00:00.000Z"
-                        displayText: 스탬프지 2장 완료
+                      - stampBookId: 43
+                        round: 5
+                        status: converted
+                        isConverted: true
+                        completedAt: "2025-08-07T14:48:40.000Z"
+                        convertedAt: "2025-08-07T14:48:40.000Z"
+                        displayText: 스탬프지 5장 환전 완료
+                      - stampBookId: 42
+                        round: 4
+                        status: converted
+                        isConverted: true
+                        completedAt: "2025-08-02T14:48:40.000Z"
+                        convertedAt: "2025-08-02T14:48:40.000Z"
+                        displayText: 스탬프지 4장 환전 완료
         '500':
           description: 서버 오류
           content:
@@ -3071,12 +3077,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
-          '500':
-            description: 서버 오류
-            content:
-              application/json:
-                schema:
-                  $ref: '#/components/schemas/ErrorResponse'
 
 
 
@@ -7819,7 +7819,7 @@ components:
       properties:
         status: { type: string, example: SUCCESS }
         code: { type: integer, example: 200 }
-        message: { type: string, example: 환전 히스토리(카페별) 조회 성공 }
+        message: { type: string, example: 히스토리(완료+환전) 조회 성공 }
         data:
           type: array
           description: 카페별 그룹 목록
@@ -7832,28 +7832,40 @@ components:
         cafeId:
           type: integer
           description: 카페 ID
-          example: 7
+          example: 65
         cafeName:
           type: string
           description: 카페 이름
-          example: 블루보틀 연남점
+          example: 카페 루피
         cafeAddress:
           type: string
           description: 카페 주소
-          example: 서울특별시 마포구 연남동 123-45
+          example: 서울특별시 어딘가 1-2
         cafeImageUrl:
           type: string
           format: uri
           nullable: true
           description: 카페 썸네일 이미지 URL
           example: https://example.com/photo.jpg
+        # 아래 3개는 최신 코드에서 함께 내려줌 (선택 필드로 정의)
+        totalCount:
+          type: integer
+          description: 해당 카페의 완료/환전 히스토리 총 개수
+          example: 5
+          nullable: true
+        convertedCount:
+          type: integer
+          description: 해당 카페에서 환전(converted)된 스탬프북 개수
+          example: 5
+          nullable: true
         completedCount:
           type: integer
-          description: 해당 카페에서 환전 완료된 스탬프북 개수
-          example: 2
+          description: 해당 카페에서 완료(completed)된 스탬프북 개수
+          example: 0
+          nullable: true
         items:
           type: array
-          description: 해당 카페의 환전 완료 스탬프북 목록
+          description: 해당 카페의 완료/환전 스탬프북 목록
           items:
             $ref: '#/components/schemas/ConvertedStampBookHistoryItem'
 
@@ -7863,26 +7875,39 @@ components:
         stampBookId:
           type: integer
           description: 스탬프북 ID
-          example: 15
+          example: 43
         round:
           type: integer
           description: 해당 카페에서 몇 번째 스탬프북인지(회차)
-          example: 3
+          example: 5
+        status:
+          type: string
+          description: 스탬프북 히스토리 상태
+          enum: [completed, converted]
+          example: converted
+          nullable: true
+        isConverted:
+          type: boolean
+          description: 환전 완료 여부(프론트 단순 분기용)
+          example: true
+          nullable: true
         completedAt:
           type: string
           format: date-time
           nullable: true
           description: 목표 달성 시각(모두 모았어요)
-          example: "2025-07-30T09:00:00.000Z"
+          example: "2025-08-07T14:48:40.000Z"
         convertedAt:
           type: string
           format: date-time
+          nullable: true
           description: 환전 완료 시각
-          example: "2025-07-31T13:45:00.000Z"
+          example: "2025-08-07T14:48:40.000Z"
         displayText:
           type: string
           description: 리스트 보조 문구
-          example: 스탬프지 3장 완료
+          example: 스탬프지 5장 환전 완료
+
 
       
     TotalStampCountResult:
