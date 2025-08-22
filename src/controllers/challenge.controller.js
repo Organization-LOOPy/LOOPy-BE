@@ -56,7 +56,10 @@ export const getChallengeDetail = async (req, res, next) => {
       },
     });
 
-    const isParticipated = !!participation;
+    // ✅ in_progress일 때만 true
+    const isParticipated =
+      participation?.status === "in_progress";
+
     const joinedCafe = participation?.joinedCafe
       ? { id: participation.joinedCafe.id, name: participation.joinedCafe.name }
       : null;
@@ -91,14 +94,14 @@ export const getChallengeDetail = async (req, res, next) => {
       goalDescription: challenge.goalDescription,
       goalCount: challenge.goalCount,
       rewardPoint: challenge.rewardPoint,
-      isParticipated,
+      isParticipated, // ✅ 수정된 값
       joinedCafe,
-      joinedCount, 
+      joinedCount,
       availableCafes: challenge.availableCafes.map((entry) => ({
         id: entry.cafe.id,
         name: entry.cafe.name,
         address: entry.cafe.address,
-        image: entry.cafe.photos?.[0]?.photoUrl ?? null, 
+        image: entry.cafe.photos?.[0]?.photoUrl ?? null,
         region1DepthName: entry.cafe.region1DepthName,
         region2DepthName: entry.cafe.region2DepthName,
         region3DepthName: entry.cafe.region3DepthName,
@@ -111,6 +114,7 @@ export const getChallengeDetail = async (req, res, next) => {
     next(err);
   }
 };
+
 
 
 // 챌린지 참여
