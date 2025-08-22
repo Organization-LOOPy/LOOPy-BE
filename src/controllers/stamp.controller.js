@@ -373,26 +373,20 @@ export const getExpiringStampBooks = async (req, res, next) => {
   }
 };
 
-// 스탬프 히스토리 조회 (환전/완료)
+// 스탬프 히스토리 조회 (환전 완료된 스탬프북)
 export const getConvertedStampbooks = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
-    // 상태 불일치/레거시를 흡수하기 위해 날짜/플래그도 함께 고려
+    // converted + completed 모두 포함
     const books = await prisma.stampBook.findMany({
       where: {
         userId,
-        OR: [
-          { status: 'converted' },
-          { status: 'completed' },
-          { convertedAt: { not: null } },
-          { isConverted: true },
-          // 완료인데 completedAt만 찍혀 있고 status가 active로 남은 레거시
-          { AND: [{ status: 'active' }, { completedAt: { not: null } }] },
-        ],
+        OR: [{ status: 'converted' }, { status: 'completed' }],
       },
+      // 환전된 건 convertedAt DESC, 그 외(완료)는 completedAt DESC
       orderBy: [
-        { convertedAt: 'desc' },
+        { convertedAt: 'desc' },   // NULL(완료건)은 자동으로 뒤로 밀림
         { completedAt: 'desc' },
         { id: 'desc' },
       ],
@@ -416,7 +410,6 @@ export const getConvertedStampbooks = async (req, res, next) => {
     const map = new Map();
     for (const b of books) {
       const cafeId = b.cafe.id;
-
       if (!map.has(cafeId)) {
         map.set(cafeId, {
           cafeId,
@@ -429,67 +422,51 @@ export const getConvertedStampbooks = async (req, res, next) => {
           items: [],
         });
       }
-
-      // 상태 보정 (레거시 호환)
-      const isConverted =
-        !!b.convertedAt || !!b.isConverted || b.status === 'converted';
-      const isCompletedOnly =
-        !isConverted && (!!b.completedAt || b.status === 'completed');
-
-      const normalizedStatus = isConverted
-        ? 'converted'
-        : isCompletedOnly
-        ? 'completed'
-        : b.status; // 혹시 모를 기타 값
-
       const group = map.get(cafeId);
+
       group.totalCount += 1;
-      if (normalizedStatus === 'converted') group.convertedCount += 1;
-      if (normalizedStatus === 'completed') group.completedCount += 1;
+      if (b.status === 'converted') group.convertedCount += 1;
+      if (b.status === 'completed') group.completedCount += 1;
 
       group.items.push({
         stampBookId: b.id,
         round: b.round,
-        status: normalizedStatus,     // 'converted' | 'completed'
-        isConverted,                  // 🔴 스웨거에 맞춰 추가
-        completedAt: b.completedAt ?? null,
-        convertedAt: b.convertedAt ?? null,
-        displayText: isConverted
-          ? `스탬프지 ${b.round}장 환전 완료`
-          : `스탬프지 ${b.round}장 완료`,
-        // 정렬 키(내부용) – 나중에 정렬 후 삭제 가능
-        _sortAt: b.convertedAt ?? b.completedAt ?? new Date(0),
+        status: b.status,                             // 'converted' | 'completed'
+        isConverted: b.status === 'converted',        // ✅ 스웨거에 맞춰 추가
+        completedAt: b.completedAt,                   // 모두 모은 날
+        convertedAt: b.convertedAt,                   // 환전 완료일(없을 수 있음)
+        displayText:
+          b.status === 'converted'
+            ? `스탬프지 ${b.round}장 환전 완료`
+            : `스탬프지 ${b.round}장 완료`,
       });
     }
 
-    // 그룹 내 최신순 정렬 (convertedAt 우선, 없으면 completedAt)
+    // 그룹 내 최신순 정렬 (convertedAt 우선, 없으면 completedAt, 동일하면 id 내림차순)
     const result = Array.from(map.values()).map((g) => {
       g.items.sort((a, b) => {
-        const ta = new Date(a._sortAt).getTime();
-        const tb = new Date(b._sortAt).getTime();
+        const ta = new Date(a.convertedAt ?? a.completedAt ?? 0).getTime();
+        const tb = new Date(b.convertedAt ?? b.completedAt ?? 0).getTime();
         if (tb !== ta) return tb - ta;
         return b.stampBookId - a.stampBookId;
       });
-      // 내부용 키 제거
-      g.items = g.items.map(({ _sortAt, ...rest }) => rest);
       return g;
     });
 
     return (
       res.success?.('히스토리(완료+환전) 조회 성공', result) ??
-      res
-        .status(200)
-        .json({
-          status: 'SUCCESS',
-          code: 200,
-          message: '히스토리(완료+환전) 조회 성공',
-          data: result,
-        })
+      res.status(200).json({
+        status: 'SUCCESS',
+        code: 200,
+        message: '히스토리(완료+환전) 조회 성공',
+        data: result,
+      })
     );
   } catch (err) {
     next(err);
   }
 };
+
 
 
 
