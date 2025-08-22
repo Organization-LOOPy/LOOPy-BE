@@ -33,7 +33,7 @@ export const createReview = async (req, res, next) => {
     let imageUrls = [];
     if (files && files.length > 0) {
       imageUrls = await Promise.all(
-        files.map((file) => uploadToS3(file)) // S3에 업로드
+        files.map((file) => uploadToS3(file, "reviews")) // S3에 업로드
       );
     }
 
