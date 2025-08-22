@@ -37,7 +37,7 @@ export const getBookmarkedCafesService = async (userId) => {
       status: bookmark.cafe.status,
       createdAt: bookmark.cafe.createdAt,
       updatedAt: bookmark.cafe.updatedAt,
-      photoUrl: bookmark.cafe.photos[0]?.url || null, 
+      photoUrl: bookmark.cafe.photos[0]?.photoUrl || null, 
     }));
   } catch (err) {
     throw new InternalServerError('북마크한 카페 조회 실패', err);
