@@ -963,6 +963,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+
   /api/v1/users/me/bookmarks:
     patch:
       summary: 북마크 추가
@@ -6552,41 +6553,51 @@ components:
           example: "1"
         name:
           type: string
-          example: 테스트카페
+          example: 스타벅스 홍대점
         address:
           type: string
-          example: 서울시 마포구 양화로 123
+          example: 서울 마포구 와우산로 123
         region:
-          type: string
-          example: 마포구
+          type: object
+          properties:
+            depth1:
+              type: string
+              example: 서울특별시
+            depth2:
+              type: string
+              example: 마포구
+            depth3:
+              type: string
+              example: 서교동
         latitude:
           type: number
-          example: 37.5509
+          example: 37.5512
         longitude:
           type: number
-          example: 126.9143
+          example: 126.9245
         description:
           type: string
-          nullable: true
-          example: null
+          example: "홍대 중심가에 위치한 스타벅스 매장"
         keywords:
           type: array
-          nullable: true
           items:
             type: string
-          example: null
+          example: ["노트북", "조용한", "주차 가능"]
         status:
           type: string
-          enum: [active, inactive, deleted]
           example: active
         createdAt:
           type: string
           format: date-time
-          example: "2025-07-19T09:21:39.933Z"
+          example: "2025-08-23T07:12:34.000Z"
         updatedAt:
           type: string
           format: date-time
-          example: "2025-07-19T09:20:09.040Z"
+          example: "2025-08-23T07:12:34.000Z"
+        photoUrl: 
+          type: string
+          nullable: true
+          example: "https://cdn.cafes.com/photos/1.jpg"
     
     CafeSearchResponse:
       type: object
