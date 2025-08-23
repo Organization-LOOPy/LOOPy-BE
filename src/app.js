@@ -50,8 +50,7 @@ const corsOptions = {
   exposedHeaders: ["x-access-token", "Content-Encoding"],
 };
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions)); // 프리플라이트 빠른 응답
-
+app.options(/.*/, cors(corsOptions));
 // Swagger & 공통 미들웨어
 setupSwagger(app);
 app.use(morganMiddleware);
