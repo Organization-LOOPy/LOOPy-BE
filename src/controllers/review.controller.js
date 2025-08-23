@@ -1,5 +1,5 @@
 import prisma from "../../prisma/client.js";
-import { uploadToS3 } from "../utils/s3.js";
+import { uploadToS3, deleteFromS3 } from "../utils/s3.js";
 import {
   TooManyImagesError,
   InvalidImageTypeError,
@@ -108,11 +108,13 @@ export const updateReview = async (req, res, next) => {
     const updatedReview = await prisma.review.update({
       where: { id: parseInt(reviewId) },
       data: {
-        title,
         content,
         images: finalImages, // 최종 이미지 배열
         updatedAt: new Date(),
       },
+      include: {
+        cafe: true, // 카페 정보 포함
+      }
     });
 
     return res.success({
@@ -183,7 +185,7 @@ export const getMyReviews = async (req, res, next) => {
       userId: review.userId,
       cafeId: review.cafe.id,
       cafeName: review.cafe.name,
-      title: review.title,
+      title: review.cafe.name,
       content: review.content,
       images: review.images || [],
       createdAt: review.createdAt
