@@ -192,30 +192,68 @@ export const addStampToUser = async (req, res, next) => {
 
     // 0) 액션 토큰 필수 + 일치성 검증
     const t = req.actionToken;
-    if (!t) return res.error({ errorCode: 'ACTION_TOKEN_REQUIRED', reason: 'x-action-token 이 필요합니다.', data: null }, 401);
-    if (t.scope !== 'ADD_STAMP') {
-      return res.error({ errorCode: 'ACTION_TOKEN_SCOPE_INVALID', reason: '허용되지 않은 스코프입니다.', data: null }, 403);
+    if (!t) {
+      return res.error(
+        { errorCode: 'ACTION_TOKEN_REQUIRED', reason: 'x-action-token 이 필요합니다.', data: null },
+        401
+      );
     }
-    if (!Number.isInteger(userId) || String(t.sub) !== String(userId)) {
-      return res.error({ errorCode: 'ACTION_TOKEN_USER_MISMATCH', reason: '토큰 사용자와 요청 사용자가 다릅니다.', data: null }, 403);
+    if (t.scope !== 'ADD_STAMP') {
+      return res.error(
+        { errorCode: 'ACTION_TOKEN_SCOPE_INVALID', reason: '허용되지 않은 스코프입니다.', data: null },
+        403
+      );
+    }
+
+    // 하위호환: 과거 토큰(userId)도 허용
+    const tokenUserId = Number(t?.sub ?? t?.userId);
+    if (!Number.isInteger(userId) || !Number.isInteger(tokenUserId) || tokenUserId !== userId) {
+      console.warn('[ADD_STAMP] user mismatch', { tokenUserId, pathUserId: userId, jti: t?.jti });
+      return res.error(
+        {
+          errorCode: 'ACTION_TOKEN_USER_MISMATCH',
+          reason: `토큰 user=${t?.sub ?? t?.userId}, 요청 user=${userId} 불일치`,
+          data: null,
+        },
+        403
+      );
     }
 
     // 1) 카페 ID 확보 (OWNER fallback)
     let cafeId = Number(req.user?.cafeId);
     if (!cafeId && req.user.roles?.includes('OWNER')) {
-      const ownerCafe = await prisma.cafe.findFirst({ where: { ownerId: req.user.id }, select: { id: true } });
+      const ownerCafe = await prisma.cafe.findFirst({
+        where: { ownerId: req.user.id },
+        select: { id: true },
+      });
       cafeId = ownerCafe?.id;
     }
     if (!cafeId) {
-      return res.error({ errorCode: "CAFE_REQUIRED", reason: "사장님 토큰에 카페 정보가 없습니다.", data: null }, 403);
+      return res.error(
+        { errorCode: 'CAFE_REQUIRED', reason: '사장님 토큰에 카페 정보가 없습니다.', data: null },
+        403
+      );
     }
     if (Number(t.cafeId) !== Number(cafeId)) {
-      return res.error({ errorCode: 'ACTION_TOKEN_CAFE_MISMATCH', reason: '토큰 카페와 사장님 카페가 다릅니다.', data: null }, 403);
+      console.warn('[ADD_STAMP] cafe mismatch', { tokenCafeId: Number(t.cafeId), cafeId });
+      return res.error(
+        {
+          errorCode: 'ACTION_TOKEN_CAFE_MISMATCH',
+          reason: `토큰 cafeId=${t.cafeId}, 요청 cafeId=${cafeId} 불일치`,
+          data: null,
+        },
+        403
+      );
     }
 
     // 2) 사용자 존재 확인
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
-    if (!user) return res.error({ errorCode: "USER_NOT_FOUND", reason: "존재하지 않는 사용자입니다.", data: null }, 404);
+    if (!user) {
+      return res.error(
+        { errorCode: 'USER_NOT_FOUND', reason: '존재하지 않는 사용자입니다.', data: null },
+        404
+      );
+    }
 
     // 3) 트랜잭션
     const EXPIRE_DAYS = 30;
@@ -224,11 +262,18 @@ export const addStampToUser = async (req, res, next) => {
     await prisma.$transaction(async (tx) => {
       // (1) 진행중 스탬프북
       let book = await tx.stampBook.findFirst({
-        where: { userId, cafeId, convertedAt: null, expiredAt: null, isCompleted: false, status: 'active' },
+        where: {
+          userId,
+          cafeId,
+          convertedAt: null,
+          expiredAt: null,
+          isCompleted: false,
+          status: 'active',
+        },
         orderBy: { createdAt: 'desc' },
       });
 
-      // (2) 없으면 생성 (✅ goal=10 고정, 만료 30일 고정)
+      // (2) 없으면 생성 (goal=10, 만료 30일 고정)
       if (!book) {
         const policy = await tx.stampPolicy.findUnique({
           where: { cafeId },
@@ -236,26 +281,36 @@ export const addStampToUser = async (req, res, next) => {
         });
 
         const DEFAULT_BOOK_GOAL = 10;
-        const goalCount = DEFAULT_BOOK_GOAL; // ✅ 정책과 무관하게 10
+        const goalCount = DEFAULT_BOOK_GOAL;
 
         let rewardDetail = '리워드 제공';
         if (policy) {
           switch (policy.rewardType) {
-            case 'DISCOUNT':   rewardDetail = policy.discountAmount ? `${policy.discountAmount}원 할인` : '할인 리워드'; break;
-            case 'SIZE_UP':    rewardDetail = '사이즈 업 1회'; break;
-            case 'FREE_DRINK': rewardDetail = '무료 음료 1잔'; break;
+            case 'DISCOUNT':
+              rewardDetail = policy.discountAmount ? `${policy.discountAmount}원 할인` : '할인 리워드';
+              break;
+            case 'SIZE_UP':
+              rewardDetail = '사이즈 업 1회';
+              break;
+            case 'FREE_DRINK':
+              rewardDetail = '무료 음료 1잔';
+              break;
           }
         }
 
         const now = new Date();
         const expiresAt = new Date(now.getTime() + EXPIRE_DAYS * 24 * 60 * 60 * 1000);
 
-        const max = await tx.stampBook.aggregate({ where: { userId, cafeId }, _max: { round: true } });
+        const max = await tx.stampBook.aggregate({
+          where: { userId, cafeId },
+          _max: { round: true },
+        });
         const nextRound = (max._max.round ?? 0) + 1;
 
         book = await tx.stampBook.create({
           data: {
-            userId, cafeId,
+            userId,
+            cafeId,
             currentCount: 0,
             goalCount,
             isCompleted: false,
@@ -265,7 +320,9 @@ export const addStampToUser = async (req, res, next) => {
             expiresAt,
             rewardDetail,
             selectedRewardType: policy?.rewardType ?? null,
-            selectedRewardMeta: policy ? { conditionType: policy.conditionType, menuId: policy.menuId ?? null } : null,
+            selectedRewardMeta: policy
+              ? { conditionType: policy.conditionType, menuId: policy.menuId ?? null }
+              : null,
             round: nextRound,
           },
         });
@@ -275,11 +332,16 @@ export const addStampToUser = async (req, res, next) => {
 
       // (3) 목표 미만일 때만 증가(동시성 안전)
       const inc = await tx.stampBook.updateMany({
-        where: { id: book.id, isCompleted: false, status: 'active', currentCount: { lt: book.goalCount } },
+        where: {
+          id: book.id,
+          isCompleted: false,
+          status: 'active',
+          currentCount: { lt: book.goalCount },
+        },
         data: { currentCount: { increment: 1 }, lastVisitedAt: now },
       });
       if (inc.count === 0) {
-        throw Object.assign(new Error("GOAL_EXCEEDED"), { code: "GOAL_EXCEEDED" });
+        throw Object.assign(new Error('GOAL_EXCEEDED'), { code: 'GOAL_EXCEEDED' });
       }
 
       // (4) 스탬프 레코드 생성
@@ -315,8 +377,15 @@ export const addStampToUser = async (req, res, next) => {
       isCompleted: updatedBook.isCompleted,
     });
   } catch (err) {
-    if (err?.code === "GOAL_EXCEEDED") {
-      return res.error({ errorCode: "STAMPBOOK_ALREADY_COMPLETED", reason: "이미 목표를 달성한 스탬프북입니다.", data: null }, 409);
+    if (err?.code === 'GOAL_EXCEEDED') {
+      return res.error(
+        {
+          errorCode: 'STAMPBOOK_ALREADY_COMPLETED',
+          reason: '이미 목표를 달성한 스탬프북입니다.',
+          data: null,
+        },
+        409
+      );
     }
     next(err);
   }
