@@ -77,7 +77,7 @@ export const createReview = async (req, res, next) => {
 export const updateReview = async (req, res, next) => {
   try {
     const { reviewId } = req.params;
-    const { title, content } = req.body;
+    const { title, content, imagesToKeep, imagesToDelete } = req.body;
     const userId = parseInt(req.user.id);
 
     const review = await prisma.review.findUnique({
@@ -92,11 +92,25 @@ export const updateReview = async (req, res, next) => {
       return next(new ForbiddenReviewAccessError(userId, review.userId));
     }
 
+    let finalImages = imagesToKeep ? JSON.parse(imagesToKeep) : [];
+    if (req.files && req.files.length > 0) {
+      const uploaded = await Promise.all(
+        req.files.map(file => uploadToS3(file, "reviews"))
+      );
+      finalImages = [...finalImages, ...uploaded];
+    }
+
+    if (imagesToDelete) {
+      const deleteTargets = JSON.parse(imagesToDelete);
+      await Promise.all(deleteTargets.map(url => deleteFromS3(url)));
+    }
+
     const updatedReview = await prisma.review.update({
       where: { id: parseInt(reviewId) },
       data: {
         title,
         content,
+        images: finalImages, // 최종 이미지 배열
         updatedAt: new Date(),
       },
     });

@@ -18,7 +18,7 @@ export const createCouponTemplateService = async (cafeId, data) => {
       usageCondition,
       startDate,
       endDate,
-      valiDays,
+      validDays,
     } = data;
   
     // 필수 조건 검사
@@ -58,7 +58,7 @@ export const createCouponTemplateService = async (cafeId, data) => {
         usageCondition,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
-        valiDays,
+        validDays,
       }
     });
     return newCoupon;

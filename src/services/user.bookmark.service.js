@@ -12,7 +12,16 @@ export const getBookmarkedCafesService = async (userId) => {
   try {
     const bookmarks = await prisma.userBookmark.findMany({
       where: { userId: Number(userId) },
-      include: { cafe: true },
+      include: { 
+        cafe: {
+          include: {
+            photos: {       
+              take: 1,
+              orderBy: { createdAt: 'asc' },
+            },
+          },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -28,6 +37,7 @@ export const getBookmarkedCafesService = async (userId) => {
       status: bookmark.cafe.status,
       createdAt: bookmark.cafe.createdAt,
       updatedAt: bookmark.cafe.updatedAt,
+      photoUrl: bookmark.cafe.photos[0]?.photoUrl || null, 
     }));
   } catch (err) {
     throw new InternalServerError('북마크한 카페 조회 실패', err);

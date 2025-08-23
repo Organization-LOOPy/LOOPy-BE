@@ -19,7 +19,7 @@ router.use(authenticateJWT);
 router.post("/cafe/:cafeId/review", upload.array("images", 5), validateReview, verifyStamp, createReview);
 
 // 리뷰 수정
-router.patch("/reviews/:reviewId", validateReview, updateReview);
+router.patch("/reviews/:reviewId", upload.array("images",5), validateReview, updateReview);
 
 // 리뷰 삭제
 router.delete("/reviews/:reviewId", deleteReview);

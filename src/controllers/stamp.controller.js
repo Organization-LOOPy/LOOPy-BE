@@ -303,15 +303,19 @@ export const getExpiringStampBooks = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
+    // KST 기준 00:00로 정규화 → DB 비교는 UTC로
     const startOfDayKST = (d) => {
       const t = new Date(d);
       const utc = t.getTime() + t.getTimezoneOffset() * 60000;
       const kst = new Date(utc + 9 * 3600000);
-      kst.setHours(0,0,0,0);
+      kst.setHours(0, 0, 0, 0);
+      // 다시 UTC로 환산해 반환 (DB는 UTC 저장 가정)
       return new Date(kst.getTime() - 9 * 3600000);
     };
+
     const today0 = startOfDayKST(new Date());
-    const oneWeekLater0 = new Date(today0); oneWeekLater0.setDate(oneWeekLater0.getDate() + 7);
+    const oneWeekLater0 = new Date(today0);
+    oneWeekLater0.setDate(oneWeekLater0.getDate() + 7);
 
     const expiringBooks = await prisma.stampBook.findMany({
       where: {
@@ -322,7 +326,9 @@ export const getExpiringStampBooks = async (req, res, next) => {
       include: {
         cafe: {
           select: {
-            id: true, name: true, address: true,
+            id: true,
+            name: true,
+            address: true,
             photos: { orderBy: { displayOrder: 'asc' }, take: 1, select: { photoUrl: true } },
           },
         },
@@ -331,18 +337,21 @@ export const getExpiringStampBooks = async (req, res, next) => {
     });
 
     const data = expiringBooks.map((b) => {
-      const goalCount = b.goalCount;
-      const currentCount = b.currentCount;
-      const progressPercent = Math.min(100, Math.round((currentCount / goalCount) * 100));
+      const goalCount = b.goalCount ?? 0;
+      const currentCount = b.currentCount ?? 0;
+      const progressPercent = goalCount > 0 ? Math.min(100, Math.round((currentCount / goalCount) * 100)) : 0;
 
       const expiry0 = b.expiresAt ? startOfDayKST(b.expiresAt) : null;
       const diffMs = expiry0 ? (expiry0 - today0) : null;
       const daysUntilExpiration = diffMs !== null ? Math.floor(diffMs / 86400000) : null;
-      const isExpired = diffMs !== null ? diffMs < 0 : false;
       const isExpiringSoon = diffMs !== null ? (diffMs >= 0 && daysUntilExpiration <= 3) : false;
 
       const remain = Math.max(0, goalCount - currentCount);
-      const canExtend = !b.isCompleted && daysUntilExpiration !== null && daysUntilExpiration > 0 && daysUntilExpiration <= 7;
+      const canExtend =
+        !b.isCompleted &&
+        daysUntilExpiration !== null &&
+        daysUntilExpiration > 0 &&
+        daysUntilExpiration <= 7;
 
       return {
         id: b.id,
@@ -352,14 +361,14 @@ export const getExpiringStampBooks = async (req, res, next) => {
           address: b.cafe.address,
           image: b.cafe.photos?.[0]?.photoUrl ?? null,
         },
-        round: b.round,                
-        rewardDetail: b.rewardDetail,
+        round: b.round,
+        rewardDetail: b.rewardDetail ?? null,
         goalCount,
         currentCount,
         progressPercent,
         status: b.status,
-        isCompleted: b.isCompleted,
-        expiresAt: b.expiresAt,
+        isCompleted: !!b.isCompleted,
+        expiresAt: b.expiresAt,               // ISO 그대로
         daysUntilExpiration,
         isExpiringSoon,
         previewRewardText: `${remain}회 후 포인트로 자동 환전돼요!`,
@@ -367,25 +376,47 @@ export const getExpiringStampBooks = async (req, res, next) => {
       };
     });
 
-    return res.success('소멸 임박 스탬프북 조회 성공', data);
+    // ✅ 스웨거 포맷으로 고정 반환
+    return res.status(200).json({
+      status: 'SUCCESS',
+      code: 200,
+      message: '소멸 임박 스탬프북 조회 성공',
+      data,
+    });
   } catch (err) {
     next(err);
   }
 };
+
 
 // 스탬프 히스토리 조회 (환전 완료된 스탬프북)
 export const getConvertedStampbooks = async (req, res, next) => {
   try {
     const userId = req.user.id;
 
+    // converted + completed 모두 포함
     const books = await prisma.stampBook.findMany({
-      where: { userId, status: 'converted' },
-      orderBy: { convertedAt: 'desc' }, // 최신 환전 순
+      where: {
+        userId,
+        OR: [{ status: 'converted' }, { status: 'completed' }],
+      },
+      // 환전된 건 convertedAt DESC, 그 외(완료)는 completedAt DESC
+      orderBy: [
+        { convertedAt: 'desc' },   // NULL(완료건)은 자동으로 뒤로 밀림
+        { completedAt: 'desc' },
+        { id: 'desc' },
+      ],
       include: {
         cafe: {
           select: {
-            id: true, name: true, address: true,
-            photos: { orderBy: { displayOrder: 'asc' }, take: 1, select: { photoUrl: true } },
+            id: true,
+            name: true,
+            address: true,
+            photos: {
+              orderBy: { displayOrder: 'asc' },
+              take: 1,
+              select: { photoUrl: true },
+            },
           },
         },
       },
@@ -401,28 +432,57 @@ export const getConvertedStampbooks = async (req, res, next) => {
           cafeName: b.cafe.name,
           cafeAddress: b.cafe.address,
           cafeImageUrl: b.cafe.photos?.[0]?.photoUrl ?? null,
+          totalCount: 0,
+          convertedCount: 0,
           completedCount: 0,
-          items: []
+          items: [],
         });
       }
       const group = map.get(cafeId);
-      group.completedCount += 1;
+
+      group.totalCount += 1;
+      if (b.status === 'converted') group.convertedCount += 1;
+      if (b.status === 'completed') group.completedCount += 1;
+
       group.items.push({
         stampBookId: b.id,
         round: b.round,
-        completedAt: b.completedAt, // “모두 모았어요” 날짜
-        convertedAt: b.convertedAt, // 환전 완료일
-        displayText: `스탬프지 ${b.round}장 완료`,
+        status: b.status,                      // 'converted' | 'completed'
+        isConverted: b.status === 'converted', // ✅ 스웨거에 맞춰 추가
+        completedAt: b.completedAt,            // 모두 모은 날
+        convertedAt: b.convertedAt,            // 환전 완료일(없을 수 있음)
+        displayText:
+          b.status === 'converted'
+            ? `스탬프지 ${b.round}장 환전 완료`
+            : `스탬프지 ${b.round}장 완료`,
       });
     }
 
-    // 배열로 변환
-    const result = Array.from(map.values());
-    return res.success('환전 히스토리(카페별) 조회 성공', result);
+    // 그룹 내 최신순 정렬 (convertedAt 우선, 없으면 completedAt, 동일하면 id 내림차순)
+    const result = Array.from(map.values()).map((g) => {
+      g.items.sort((a, b) => {
+        const ta = new Date(a.convertedAt ?? a.completedAt ?? 0).getTime();
+        const tb = new Date(b.convertedAt ?? b.completedAt ?? 0).getTime();
+        if (tb !== ta) return tb - ta;
+        return b.stampBookId - a.stampBookId;
+      });
+      return g;
+    });
+
+    // ✅ 항상 스웨거 포맷으로 반환
+    return res.status(200).json({
+      status: 'SUCCESS',
+      code: 200,
+      message: '히스토리(완료+환전) 조회 성공',
+      data: result,
+    });
   } catch (err) {
     next(err);
   }
 };
+
+
+
 
 
 //   총 스탬프 수 조회
