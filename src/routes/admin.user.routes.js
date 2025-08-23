@@ -23,7 +23,7 @@ router.get("/users/search", getUserByPhone);
 
 router.post(
   "/users/:userId/stamps",
-  verifyActionToken("ADD_STAMP", { required: false, strictCafe: false }),
+  verifyActionToken("ADD_STAMP", { required: true, strictCafe: true }),
   addStampToUser
 );
 
