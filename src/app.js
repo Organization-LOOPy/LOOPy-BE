@@ -1,3 +1,4 @@
+// app.js
 import express from "express";
 import cors from "cors";
 import swaggerUi from "swagger-ui-express";
@@ -33,39 +34,36 @@ import metricsRouter from "./routes/metrics.route.js";
 
 const app = express();
 
-setupSwagger(app);
-app.use(morganMiddleware);
-
+// CORS — 라우터/인증보다 먼저
 const corsOptions = {
   origin: [
-    "http://localhost:5173", // 프론트엔드 로컬 환경
-    "https://loo-py.xyz", // 프론트엔드 배포 환경
+    "http://localhost:5173",      // 프론트 로컬
+    "https://loo-py.xyz",         // 프론트 배포
     "http://13.209.89.251:3000",
     "http://localhost:3000",
     "https://loopyxyz.duckdns.org",
   ],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization", "x-access-token"],
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  // 커스텀 헤더 허용 (대소문자 모두 포함)
+  allowedHeaders: ["Content-Type", "Authorization", "X-Action-Token", "x-action-token", "x-access-token"],
   exposedHeaders: ["x-access-token", "Content-Encoding"],
 };
-const register = new client.Registry();
-client.collectDefaultMetrics({ register });
-
-app.use(responseHandler);
 app.use(cors(corsOptions));
+app.options("*", cors(corsOptions)); // 프리플라이트 빠른 응답
+
+// Swagger & 공통 미들웨어
+setupSwagger(app);
+app.use(morganMiddleware);
+app.use(responseHandler);
 app.use(express.json());
 
 app.use(passport.initialize());
-app.use("/metrics", metricsRouter);
-
-app.get("/", (req, res) =>
-  res.send("루피 백엔드 작동 중!, cicd파이프라인 확인")
-);
-app.get("/health", (req, res) => {
-  res.status(200).send("ok");
-});
 
 // Prometheus metrics
+const register = new client.Registry();
+client.collectDefaultMetrics({ register });
+app.use("/metrics", metricsRouter);
 app.get("/metrics", async (req, res) => {
   try {
     res.set("Content-Type", register.contentType);
@@ -75,8 +73,11 @@ app.get("/metrics", async (req, res) => {
   }
 });
 
-// 고객용
+// 헬스체크
+app.get("/", (req, res) => res.send("루피 백엔드 작동 중!, cicd파이프라인 확인"));
+app.get("/health", (req, res) => res.status(200).send("ok"));
 
+// 고객용
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
 app.use("/api/v1", reviewRouter);
@@ -103,6 +104,7 @@ app.use("/api/v1/owner/cafes", adminNotificationRouter);
 // 페이지GET
 app.use("/api/v1/pages", customerPageRouter);
 
-app.use(errorHandler); // 전역 예외 처리 미들웨어
+// 전역 에러 핸들러
+app.use(errorHandler);
 
 export default app;

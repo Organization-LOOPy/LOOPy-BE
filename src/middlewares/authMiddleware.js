@@ -1,13 +1,20 @@
+// middlewares/authMiddleware.js
 import passport from '../config/passport.js';
 
 const build = (roles = []) => (req, res, next) => {
+  // 프리플라이트(OPTIONS)는 인증 패스
+  if (req.method === 'OPTIONS') return next();
+
   passport.authenticate('jwt', { session: false }, (err, user) => {
     if (err) return next(err);
     if (!user) {
       return res.error({ errorCode: 'UNAUTHORIZED', reason: '인증 필요', data: null }, 401);
     }
 
-    const roleFromUser = user.currentRole ?? user.role ?? (Array.isArray(user.roles) ? user.roles[0] : undefined);
+    const roleFromUser =
+      user.currentRole ??
+      user.role ??
+      (Array.isArray(user.roles) ? user.roles[0] : undefined);
 
     if (roles.length && !roles.includes(roleFromUser)) {
       return res.error({ errorCode: 'FORBIDDEN', reason: '권한 없음', data: null }, 403);
@@ -15,7 +22,7 @@ const build = (roles = []) => (req, res, next) => {
 
     req.user = user;
     next();
-  })(req, res, next); 
+  })(req, res, next);
 };
 
 /**
@@ -24,6 +31,7 @@ const build = (roles = []) => (req, res, next) => {
  *  - 새 스타일: authenticateJWT(['OWNER'])   -> 역할 체크 포함 미들웨어 반환
  */
 export function authenticateJWT(arg1, arg2, arg3) {
+  // (미들웨어 직접 호출 형태 지원)
   if (arg1 && typeof arg1 === 'object' && 'headers' in arg1 && typeof arg2 === 'object' && typeof arg3 === 'function') {
     return build([])(arg1, arg2, arg3);
   }
