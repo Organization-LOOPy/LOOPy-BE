@@ -122,8 +122,23 @@ export const getUserByPhone = async (req, res, next) => {
     });
 
     // 3) (카페 기준) 집계
-    const cafeStampCount = await prisma.stamp.count({ where: { stampBook: { userId: user.id, cafeId } } });
-    const cafeStampBookCount = await prisma.stampBook.count({ where: { userId: user.id, cafeId } });
+    // 3) (내 카페 기준) 집계 — ‘진행 중’ 스탬프북 개수만
+    const [cafeStampCount, cafeStampBookCount] = await Promise.all([
+      prisma.stamp.count({
+        where: { stampBook: { userId: user.id, cafeId } },
+      }),
+      prisma.stampBook.count({
+        where: {
+          userId: user.id,
+          cafeId,
+          convertedAt: null,
+          expiredAt: null,
+          isCompleted: false,
+          status: 'active',
+        },
+      }),
+    ]);
+
 
     // 4) 카페 참여중 챌린지
     const today = new Date();
