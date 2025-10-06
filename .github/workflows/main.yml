@@ -33,7 +33,7 @@ jobs:
       - name: Update code and deploy
         run: |
           ssh loopy-server '
-            cd /opt/loopy-be
+            cd /opt/loopy-be/LOOPy-BE
             
             echo "Pulling latest code..."
             git pull origin main
