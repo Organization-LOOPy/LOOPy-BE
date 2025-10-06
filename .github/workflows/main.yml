@@ -22,7 +22,7 @@ jobs:
           cat >>~/.ssh/config <<END
           Host loopy-server
             HostName ${{ secrets.EC2_HOST }}
-            User ubuntu
+            User ec2-user
             IdentityFile ~/.ssh/id_rsa
             StrictHostKeyChecking no
           END
