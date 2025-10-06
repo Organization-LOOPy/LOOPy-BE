@@ -26,6 +26,9 @@ jobs:
             IdentityFile ~/.ssh/id_rsa
             StrictHostKeyChecking no
           END
+      - name: Test SSH Connection
+        run: |
+          ssh -vvv loopy-server 'echo "✅ SSH connection successful!"'
 
       - name: Update code and deploy
         run: |
