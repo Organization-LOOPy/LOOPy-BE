@@ -46,7 +46,11 @@ jobs:
             docker build --no-cache -t loopy-be:${{ github.sha }} .
             
             echo "Starting new container..."
-            docker run -d -p 3000:3000 --name loopy-app --env-file .env loopy-be:${{ github.sha }}
+            docker run -d -p 3000:3000 \
+              --name loopy-app \
+              --env-file /opt/loopy-be/LOOPy-BE/.env \
+              -v /opt/loopy-be/LOOPy-BE/src/credentials:/app/src/credentials \
+              loopy-be:${{ github.sha }}
             
             echo "Waiting for container to start..."
             sleep 15
