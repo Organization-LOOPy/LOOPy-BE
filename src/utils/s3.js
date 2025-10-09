@@ -53,6 +53,12 @@ export const uploadToS3 = async (file, folder) => {
     throw new Error(`Unsupported content type: ${file.mimetype}`);
   }
 
+  console.log("🚀 S3 Upload Debug:", {
+  bucket,
+  region,
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID?.slice(0, 4) + "...",
+});
+
   const orig = file.originalname || 'upload.bin';
   const ext = (path.extname(orig) || '').toLowerCase() || '.bin';
   const safeName = `${crypto.randomUUID()}${ext}`;
