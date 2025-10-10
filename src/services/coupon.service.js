@@ -1,6 +1,6 @@
 // coupon.service.js
-import prisma from '../../prisma/client.js';
-import { CouponStatus } from '@prisma/client';
+import pkg from '@prisma/client';
+const { PrismaClient, CouponStatus } = pkg;
 
 import {
   CouponMissingDiscountValueError,
