@@ -97,14 +97,28 @@ function getWindowStartIso(lastWatermarkIso, now = new Date()) {
   return start.toISOString().slice(0, 19).replace('T', ' ');
 }
 
+const safeGetTime = (value) => {
+  if (!value) return null;
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? time : null;
+};
+
+const normalizeExpiresAt = (value) => {
+  if (!value || value === 'null' || value === 'undefined') {
+    return '만료일 없음';
+  }
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed) ? value : '만료일 없음';
+};
+
 // 각 테이블 증분 + 업로드
-async function exportTable(conn, cfg, state) {
+export async function exportTable(conn, cfg, state) {
   const tableState = state.tables[cfg.name] || {};
   const windowStart = getWindowStartIso(tableState.lastWatermark);
 
-  // 증분 윈도우 조건: created_at / updated_at 중 하나라도 windowStart 이후
+  // 증분 윈도우 조건
   const where = `
-    WHERE ( ${cfg.createdAt} >= ? OR ${cfg.updatedAt} >= ? )
+    WHERE (${cfg.createdAt} >= ? OR ${cfg.updatedAt} >= ?)
   `;
 
   const sql = `
@@ -123,26 +137,48 @@ async function exportTable(conn, cfg, state) {
     return false;
   }
 
+    // 쿠폰 테이블이라면 expires_at 컬럼만 변환
+  if (
+    cfg.name === 'coupon_templates' ||
+    cfg.s3Prefix === 'coupon_templates' ||
+    cfg.name === 'user_coupons' ||
+    cfg.s3Prefix === 'user_coupons'
+  ) {
+    for (const row of rows) {
+      if ('expiresAt' in row) {
+        row.expiresAt = normalizeExpiresAt(row.expiresAt);
+      }
+    }
+  }
+
   // dt는 KST 기준 일자 파티션
   const dt = toKstDateKey();
   const now = Date.now();
   const key = `analytics/${cfg.s3Prefix}/dt=${dt}/${cfg.s3Prefix}_${now}.csv`;
 
+  // 변환된 rows로 업로드
   const uploaded = await putCsvToS3(key, rows);
 
-  // 새 워터마크: 이번 배치의 max(updatedAt, createdAt)
+  // 워터마크 계산
   if (uploaded) {
     let maxIso = tableState.lastWatermark || '1970-01-01 00:00:00';
+
     for (const r of rows) {
-      const ca = new Date(r[cfg.createdAtAlias]).getTime();
-      const ua = new Date(r[cfg.updatedAtAlias]).getTime();
-      const m = Math.max(ca || 0, ua || 0);
-      if (m > new Date(maxIso).getTime()) {
+      const ca = safeGetTime(r[cfg.createdAtAlias]);
+      const ua = safeGetTime(r[cfg.updatedAtAlias]);
+      const m = Math.max(
+        ca ?? Number.NEGATIVE_INFINITY,
+        ua ?? Number.NEGATIVE_INFINITY
+      );
+
+      if (Number.isFinite(m) && m > new Date(maxIso).getTime()) {
         maxIso = new Date(m).toISOString().slice(0, 19).replace('T', ' ');
       }
     }
+
     state.tables[cfg.name] = { lastWatermark: maxIso };
   }
+
   return uploaded;
 }
 
@@ -210,6 +246,7 @@ export async function exportIncremental() {
           'uc.id AS userCouponId',
           'uc.template_id AS templateId',
           'ct.cafe_id AS cafeId',
+          'ct.expires_at AS expiresAt',
           'uc.issued_at AS issuedAt',
           'uc.redeemed_at AS redeemedAt',
           // 워터마크 계산용(열 이름 alias 고정)
