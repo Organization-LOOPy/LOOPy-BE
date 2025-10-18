@@ -15,10 +15,7 @@ export const getBookmarkedCafesService = async (userId) => {
       include: { 
         cafe: {
           include: {
-            photos: {       
-              take: 1,
-              orderBy: { createdAt: 'asc' },
-            },
+            photos: { take: 1, orderBy: { createdAt: 'asc' },},
           },
         },
       },
@@ -46,9 +43,7 @@ export const getBookmarkedCafesService = async (userId) => {
 
 // 북마크한 카페 추가 
 export const addBookmarkService = async (userId, cafeId) => {
-  if (!cafeId) {
-    throw new BadRequestError('카페 ID가 필요합니다.');
-  }
+  if (!cafeId) throw new BadRequestError('카페 ID가 필요합니다.');
 
   try {
     const cafe = await prisma.cafe.findUnique({ where: { id: Number(cafeId) } });
@@ -66,10 +61,7 @@ export const addBookmarkService = async (userId, cafeId) => {
     if (existing) throw new BookmarkAlreadyExistsError({ cafeId });
 
     await prisma.userBookmark.create({
-      data: {
-        userId: Number(userId),
-        cafeId: Number(cafeId),
-      },
+      data: {userId: Number(userId), cafeId: Number(cafeId),},
     });
 
     return { cafeId: cafeId.toString() };

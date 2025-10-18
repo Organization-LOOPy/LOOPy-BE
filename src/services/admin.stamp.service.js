@@ -17,8 +17,8 @@ export const uploadStampImagesService = async (userId, files) => {
   const MAX_TOTAL_IMAGES = 4;
 
   const defaultStampImages = [
-    'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_1.png',
-    'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_2.png',
+    'https://loopy-cafe-bucket.s3.ap-northeast-2.amazonaws.com/stamps/Loopy_stamp1.svg',
+    'https://loopy-cafe-bucket.s3.ap-northeast-2.amazonaws.com/stamps/Loopy_stamp2.svg',
   ];
 
   return await prisma.$transaction(async (tx) => {

@@ -1,6 +1,7 @@
 import prisma from '../../prisma/client.js';
 import { getCurrentPointByUserIdService } from './point.service.js';
 import { UserNotFoundError, UserIdError } from '../errors/customErrors.js';
+
 const getLoopyLevel = (count) => {
   if (count <= 3) return { level: 1, label: '호기심 많은 탐색가' };
   if (count <= 9) return { level: 2, label: '차곡차곡 쌓는 수집가' };
@@ -9,9 +10,7 @@ const getLoopyLevel = (count) => {
 };
 
 export const getHomeInfo = async (userId) => {
-  if (!userId || isNaN(Number(userId))) {
-    throw new UserIdError();
-  }
+  if (!userId || isNaN(Number(userId))) throw new UserIdError();
 
   const numericUserId = Number(userId);
 
@@ -36,9 +35,7 @@ export const getHomeInfo = async (userId) => {
       isActive: true,
       startDate: { lte: endOfMonth },
       endDate: { gte: startOfMonth },
-      participants: {
-        some: { userId: numericUserId },
-      },
+      participants: {some: { userId: numericUserId },},
     },
   });
 
