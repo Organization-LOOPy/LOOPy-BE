@@ -355,8 +355,6 @@ export class ChallengeUnavailableError extends CustomError {
   }
 }
 
-//
-
 export class StampbookNotFoundError extends CustomError {
   constructor(message = "Not Found") {
     super(message);
