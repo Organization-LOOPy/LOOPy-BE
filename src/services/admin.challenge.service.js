@@ -37,10 +37,7 @@ export const joinChallengeService = async (cafeId, challengeId) => {
     }
 
     const existing = await prisma.challengeAvailableCafe.findFirst({
-      where: {
-        cafeId: cafeIdNum,
-        challengeId: challengeNum
-      },
+      where: { cafeId: cafeIdNum, challengeId: challengeNum},
     });
     if (existing) throw new ChallengeAlreadyJoinedError();
   
@@ -77,11 +74,7 @@ export const getPastChallengesByCafe = async (cafeId) => {
           }
         }
       },
-      include: {
-        participants: {
-          where: { joinedCafeId: Number(cafeId) }
-        }
-      }
+      include: { participants: {where: { joinedCafeId: Number(cafeId) }}}
     });
   
     return challenges.map((challenge) => {

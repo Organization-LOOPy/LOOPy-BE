@@ -27,8 +27,8 @@ const ensureDefaultStampImages = async (tx, cafeId) => {
   const urls = defaultStampImages.length > 0
     ? defaultStampImages
     : [
-        'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_1.png',
-        'https://loopy-bucket.s3.ap-northeast-2.amazonaws.com/cafes/stamps/default/%EA%B8%B0%EB%B3%B8%EC%8A%A4%ED%83%AC%ED%94%84_2.png',
+        'https://loopy-cafe-bucket.s3.ap-northeast-2.amazonaws.com/stamps/Loopy_stamp1.svg',
+        'https://loopy-cafe-bucket.s3.ap-northeast-2.amazonaws.com/stamps/Loopy_stamp2.svg',
       ];
 
   await tx.stampImage.createMany({
@@ -110,6 +110,7 @@ const storeFilterList = [
   "애견 동반",
   "24시간 운영",
 ];
+
 const extractSelected = (filterObj = {}) => {
   return Object.entries(filterObj)
     .filter(([_, value]) => value === true)
@@ -255,10 +256,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
   if (!cafe) throw new CafeNotExistError();
 
   const existingMenu = await prisma.cafeMenu.findFirst({
-    where: {
-      cafeId: cafe.id,
-      name: menuData.name,
-    },
+    where: { cafeId: cafe.id,name: menuData.name, },
   });
 
   if (existingMenu) {
@@ -297,7 +295,7 @@ export const addCafeMenu = async (userId, menuData, file) => {
 export const addCafePhotos = async (cafeId, photoDataArray) => {
   if (!Array.isArray(photoDataArray) || photoDataArray.length === 0) {
     throw new InvalidPhotoUrlsError(
-      "사진 데이터가 비어 있거나 배열이 아닙니다."
+      "사진 데이터가 비어 있거나 사진 배열이 아닙니다."
     );
   }
 

@@ -40,6 +40,7 @@ const corsOptions = {
     "http://13.209.89.251:3000",
     "http://localhost:3000",
     "https://loopyxyz.duckdns.org",
+    "https://loopy-cafe-serv.duckdns.org",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
