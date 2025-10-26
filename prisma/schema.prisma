@@ -27,13 +27,10 @@ model User {
   notifications         Notification[]
   pointTransactions     PointTransaction[]
   reviews               Review[]
-  stampBooks            StampBook[]
   userAgreements        UserAgreement?
   bookmarks             UserBookmark[]
-  cafeNotifications     UserCafeNotification[]
   coupons               UserCoupon[]
   userPreferences       UserPreference?
-  roles                 UserRole[]
   verificationCodes     VerificationCode[]
 
   @@map("users")
@@ -43,7 +40,6 @@ model UserRole {
   id     Int      @id @default(autoincrement())
   userId Int
   role   RoleType
-  user   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, role])
   @@map("user_role")
@@ -100,13 +96,12 @@ model UserAgreement {
 }
 
 model UserBookmark {
-  id        Int       @id @default(autoincrement())
-  userId    Int       @map("user_id")
-  cafeId    Int       @map("cafe_id")
-  createdAt DateTime  @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt @map("updated_at")
-  cafe      Cafe      @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  cafeId    Int      @map("cafe_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  cafe      Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, cafeId])
   @@index([cafeId], map: "user_bookmarks_cafe_id_fkey")
@@ -144,7 +139,7 @@ model ChallengeParticipant {
   updatedAt    DateTime                   @updatedAt @map("updated_at")
   joinedCafeId Int?                       @map("joined_cafe_id")
   challenge    Challenge                  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
-  joinedCafe   Cafe?                      @relation("CafeToJoinedChallengeParticipants", fields: [joinedCafeId], references: [id], onDelete: Cascade)
+  joinedCafe   Cafe?                      @relation("CafeToJoinedChallengeParticipants", fields: [joinedCafeId], references: [id])
   user         User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, challengeId])
@@ -193,33 +188,29 @@ model Badge {
 }
 
 model StampBook {
-  id                 Int                @id @default(autoincrement())
-  userId             Int                @map("user_id")
-  cafeId             Int                @map("cafe_id")
-  currentCount       Int                @default(0) @map("current_count")
-  goalCount          Int                @map("goal_count")
-  rewardDetail       String             @map("reward_detail") @db.VarChar(255)
-  startedAt          DateTime           @map("started_at")
-  lastVisitedAt      DateTime?          @map("last_visited_at")
-  expiresAt          DateTime           @map("expires_at")
-  extendedAt         DateTime?          @map("extended_at")
-  expiredAt          DateTime?          @map("expired_at")
-  completedAt        DateTime?          @map("completed_at")
-  convertedAt        DateTime?          @map("converted_at")
-  status             StampBookStatus
-  isCompleted        Boolean            @default(false) @map("is_completed")
-  isConverted        Boolean            @default(false) @map("is_converted")
-  createdAt          DateTime           @default(now()) @map("created_at")
-  updatedAt          DateTime           @updatedAt @map("updated_at")
-  round              Int                @default(1) @map("round")
-  selectedRewardMeta Json?              @map("selected_reward_meta")
-  selectedRewardType RewardType?        @map("selected_reward_type")
-  pointTransactions  PointTransaction[]
-  cafe               Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stamps             Stamp[]
+  id                Int                @id @default(autoincrement())
+  userId            Int                @map("user_id")
+  cafeId            Int                @map("cafe_id")
+  currentCount      Int                @default(0) @map("current_count")
+  goalCount         Int                @default(10) @map("goal_count")
+  rewardDetail      String?            @map("reward_detail") @db.VarChar(255)
+  startedAt         DateTime           @map("started_at")
+  lastVisitedAt     DateTime?          @map("last_visited_at")
+  expiresAt         DateTime           @map("expires_at")
+  extendedAt        DateTime?          @map("extended_at")
+  expiredAt         DateTime?          @map("expired_at")
+  completedAt       DateTime?          @map("completed_at")
+  convertedAt       DateTime?          @map("converted_at")
+  status            StampBookStatus
+  isCompleted       Boolean            @default(false) @map("is_completed")
+  isConverted       Boolean            @default(false) @map("is_converted")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime?          @updatedAt @map("updated_at")
+  round             Int                @default(1) @map("round")
+  pointTransactions PointTransaction[]
+  cafe              Cafe               @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  stamps            Stamp[]
 
-  @@unique([userId, cafeId, round])
   @@index([cafeId], map: "stamp_books_cafe_id_fkey")
   @@map("stamp_books")
 }
@@ -267,7 +258,6 @@ model StampImage {
   cafeId    Int      @map("cafe_id")
   imageUrl  String   @map("image_url") @db.Text
   createdAt DateTime @default(now()) @map("created_at")
-  createdBy Int?     @map("created_by")
   cafe      Cafe     @relation(fields: [cafeId], references: [id], onDelete: Cascade)
 
   @@index([cafeId], map: "stamp_images_cafe_id_fkey")
@@ -282,7 +272,7 @@ model PointTransaction {
   type        PointTransactionType
   description String               @db.VarChar(255)
   createdAt   DateTime             @default(now()) @map("created_at")
-  stampBook   StampBook?           @relation(fields: [stampBookId], references: [id], onDelete: Cascade)
+  stampBook   StampBook?           @relation(fields: [stampBookId], references: [id])
   user        User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([stampBookId], map: "point_transactions_stamp_book_id_fkey")
@@ -291,34 +281,34 @@ model PointTransaction {
 }
 
 model Cafe {
-  id                            Int                       @id @default(autoincrement())
-  name                          String                    @db.VarChar(255)
-  address                       String                    @db.VarChar(500)
+  id                            Int                      @id @default(autoincrement())
+  name                          String                   @db.VarChar(255)
+  address                       String                   @db.VarChar(500)
   latitude                      Float
   longitude                     Float
-  ownerName                     String                    @map("owner_name") @db.VarChar(100)
-  businessHours                 Json?                     @map("business_hours")
-  phone                         String?                   @db.VarChar(20)
-  websiteUrl                    String?                   @map("website_url") @db.Text
-  description                   String?                   @db.Text
-  storeFilters                  Json?                     @map("store_filters")
-  takeOutFilters                Json?                     @map("take_out_filters")
-  menuFilters                   Json?                     @map("menu_filters")
+  ownerName                     String                   @map("owner_name") @db.VarChar(100)
+  businessHours                 Json?                    @map("business_hours")
+  phone                         String?                  @db.VarChar(20)
+  websiteUrl                    String?                  @map("website_url") @db.Text
+  description                   String?                  @db.Text
+  storeFilters                  Json?                    @map("store_filters")
+  takeOutFilters                Json?                    @map("take_out_filters")
+  menuFilters                   Json?                    @map("menu_filters")
   keywords                      Json?
-  status                        CafeStatus                @default(inactive)
-  createdAt                     DateTime                  @default(now()) @map("created_at")
-  updatedAt                     DateTime?                 @updatedAt @map("updated_at")
-  ownerId                       Int                       @unique @map("owner_id")
-  region1DepthName              String                    @map("region_1depth_name") @db.VarChar(50)
-  region2DepthName              String                    @map("region_2depth_name") @db.VarChar(50)
-  region3DepthName              String                    @map("region_3depth_name") @db.VarChar(50)
-  breakTime                     String?                   @map("break_time") @db.VarChar(20)
-  businessHourType              cafes_business_hour_type? @default(SAME_ALL_DAYS) @map("business_hour_type")
+  status                        CafeStatus               @default(inactive)
+  createdAt                     DateTime                 @default(now()) @map("created_at")
+  updatedAt                     DateTime?                @updatedAt @map("updated_at")
+  ownerId                       Int                      @unique @map("owner_id")
+  region1DepthName              String                   @map("region_1depth_name") @db.VarChar(50)
+  region2DepthName              String                   @map("region_2depth_name") @db.VarChar(50)
+  region3DepthName              String                   @map("region_3depth_name") @db.VarChar(50)
+  businessHourType              String?                  @map("business_hour_type") @db.VarChar(50)
+  breakTime                     String?                  @map("break_time") @db.VarChar(20)
   menu                          CafeMenu[]
   photos                        CafePhoto[]
-  owner                         User                      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  owner                         User                     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
   challengeAvailable            ChallengeAvailableCafe[]
-  challengeParticipantsJoinedAt ChallengeParticipant[]    @relation("CafeToJoinedChallengeParticipants")
+  challengeParticipantsJoinedAt ChallengeParticipant[]   @relation("CafeToJoinedChallengeParticipants")
   CouponTemplate                CouponTemplate[]
   notifications                 Notification[]
   reviews                       Review[]
@@ -326,7 +316,6 @@ model Cafe {
   stampImages                   StampImage[]
   stampPolicies                 StampPolicy?
   bookmarkedBy                  UserBookmark[]
-  userNotifications             UserCafeNotification[]
 
   @@map("cafes")
 }
@@ -366,6 +355,7 @@ model Review {
   id        Int       @id @default(autoincrement())
   userId    Int       @map("user_id")
   cafeId    Int       @map("cafe_id")
+  title     String    @db.VarChar(255)
   content   String    @db.Text
   images    Json?
   createdAt DateTime  @default(now()) @map("created_at")
@@ -387,27 +377,12 @@ model Notification {
   content   String           @db.Text
   isRead    Boolean          @default(false) @map("is_read")
   createdAt DateTime         @default(now()) @map("created_at")
-  cafe      Cafe?            @relation(fields: [cafeId], references: [id], onDelete: Cascade)
+  cafe      Cafe?            @relation(fields: [cafeId], references: [id])
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([cafeId], map: "notifications_cafe_id_fkey")
   @@index([userId], map: "notifications_user_id_fkey")
   @@map("notifications")
-}
-
-model UserCafeNotification {
-  userId    Int @map("user_id")
-  cafeId    Int @map("cafe_id")
-  
-  @@id([userId, cafeId])
-  
-  createdAt DateTime @default(now()) @map("created_at")
-  updatedAt DateTime? @updatedAt @map("updated_at")
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  cafe Cafe @relation(fields: [cafeId], references: [id], onDelete: Cascade)
-  @@index([cafeId], map: "user_cafe_notifications_cafe_id_fkey")
-  @@map("user_cafe_notifications")
 }
 
 model CouponTemplate {
@@ -418,12 +393,9 @@ model CouponTemplate {
   createdAt        DateTime              @default(now()) @map("created_at")
   applicableMenuId Int?                  @map("applicable_menu_id")
   discountValue    Int?                  @map("discount_value")
-  expiredAt        DateTime?             @map("expired_at")
+  expiredAt        DateTime              @map("expired_at")
   discountType     coupon_templates_type @map("type")
-  validDays        Int?                  @map("valid_days")
-  endDate          DateTime?             @map("end_date")
-  startDate        DateTime?             @map("start_date")
-  usageCondition   String?               @map("usage_condition")
+  validDays        Int                   @map("valid_days")
   applicableMenu   CafeMenu?             @relation(fields: [applicableMenuId], references: [id])
   cafe             Cafe                  @relation(fields: [cafeId], references: [id], onDelete: Cascade)
   userCoupons      UserCoupon[]
@@ -440,7 +412,7 @@ model UserCoupon {
   acquisitionType  CouponAcquisitionType @map("acquisition_type")
   status           CouponStatus          @default(active)
   issuedAt         DateTime              @default(now()) @map("issued_at")
-  expiredAt        DateTime?             @map("expired_at")
+  expiredAt        DateTime              @map("expired_at")
   usedAt           DateTime?             @map("used_at")
   createdAt        DateTime              @default(now()) @map("created_at")
   updatedAt        DateTime?             @updatedAt @map("updated_at")
@@ -450,6 +422,14 @@ model UserCoupon {
   @@index([couponTemplateId], map: "user_coupons_coupon_template_id_fkey")
   @@index([userId], map: "user_coupons_user_id_fkey")
   @@map("user_coupons")
+}
+
+model user_cafe_notification {
+  user_id Int
+  cafe_id Int
+
+  @@unique([user_id, cafe_id])
+  @@index([cafe_id], map: "user_cafe_notification_cafe_id_fkey")
 }
 
 enum RoleType {
@@ -517,12 +497,6 @@ enum RewardType {
 
 enum coupon_templates_type {
   DISCOUNT
-  FREE_ITEM
+  FREE_DRINK
   SIZE_UP
-}
-
-enum cafes_business_hour_type {
-  SAME_ALL_DAYS
-  WEEKDAY_WEEKEND
-  EACH_DAY_DIFFERENT
 }
