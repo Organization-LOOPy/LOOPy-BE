@@ -1,7 +1,7 @@
 // hash.js
 import bcrypt from 'bcryptjs';
 
-const plainPassword = '1234';
+const plainPassword = 'loopy1234!';
 const saltRounds = 10;
 
 bcrypt.hash(plainPassword, saltRounds, (err, hash) => {
