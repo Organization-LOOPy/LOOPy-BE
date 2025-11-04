@@ -110,11 +110,12 @@ export const updateNicknameService = async (userId, nickname) => {
 
 // 선호 키워드 설정 
 export const updateUserPreferencesService = async (userId, preferredKeywords = []) => {
-  const allKeywords = [...STORE_KEYWORDS, ...TAKEOUT_KEYWORDS, ...MENU_KEYWORDS];
   
   const STORE_KEYWORDS = ['노트북', '1인석', '단체석', '주차 가능', '예약 가능', '와이파이 제공', '애견 동반', '24시간 운영'];
   const TAKEOUT_KEYWORDS = ['텀블러 할인', '포장 할인'];
   const MENU_KEYWORDS = ['비건', '저당/무가당', '글루텐프리', '디카페인'];
+
+  const allKeywords = [...STORE_KEYWORDS, ...TAKEOUT_KEYWORDS, ...MENU_KEYWORDS];
 
   // 유효 키워드만 필터링
   const allValidKeywords = [...STORE_KEYWORDS, ...TAKEOUT_KEYWORDS, ...MENU_KEYWORDS];
