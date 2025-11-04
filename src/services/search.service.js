@@ -282,7 +282,7 @@ export const cafeSearchService = {
       hasMore: false,
     };
   }
-  const allCafes = await prisma.cafes.findMany({
+  const allCafes = await prisma.cafe.findMany({
     where: { status: "active" },
     orderBy: { created_at: "desc" },
     take: 50, // 또는 페이지네이션 지원
