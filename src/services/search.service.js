@@ -269,31 +269,32 @@ export const cafeSearchService = {
 
     // 1) 처음 리스팅: preference 임베딩 Top-K 추천 (+ user_preference 지역 적용)
     if (isInitialRequest) {
-      console.log(isInitialRequest);
+  const pref = await preferenceTopK(userId, { topK: 15 });
+  const cafeIds = pref?.cafeIds ?? [];
 
-      const pref = await preferenceTopK(userId, { topK: 15 });
-      const cafeIds = pref?.cafeIds ?? [];
-      if (cafeIds.length === 0) {
-        return {
-          fromNLP: true,
-          message: null,
-          data: [],
-          nextCursor: null,
-          hasMore: false,
-        };
-      }
-      let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
-
-      return {
-        fromNLP: true,
-        message: null,
-        data: filterResponseData(
-          applyDistanceAndSort(rows, refinedX, refinedY)
-        ),
-        nextCursor: null,
-        hasMore: false,
-      };
-    }
+  if (cafeIds.length > 0) {
+    const rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
+    return {
+      fromNLP: true,
+      message: null,
+      data: filterResponseData(applyDistanceAndSort(rows, refinedX, refinedY)),
+      nextCursor: null,
+      hasMore: false,
+    };
+  }
+  const allCafes = await prisma.cafes.findMany({
+    where: { status: "active" },
+    orderBy: { created_at: "desc" },
+    take: 50, // 또는 페이지네이션 지원
+  });
+  return {
+    fromNLP: false,
+    message: "전체 카페 리스트를 불러왔습니다.",
+    data: applyDistanceAndSort(allCafes, refinedX, refinedY),
+    nextCursor: null,
+    hasMore: allCafes.length >= 50,
+  };
+}
 
     // 2) 검색: 지역 미지정이면 전국, 지정 시 해당 지역만 (RDB 하드 검색 우선)
     const whereConditions = { AND: [] };
