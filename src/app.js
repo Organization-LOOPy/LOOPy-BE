@@ -31,6 +31,7 @@ import adminNotificationRouter from "./routes/admin.notification.routes.js";
 import metricsRouter from "./routes/metrics.route.js";
 
 const app = express();
+app.set("trust proxy", 1);
 
 // CORS 설정
 const corsOptions = {
