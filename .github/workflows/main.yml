@@ -26,9 +26,11 @@ jobs:
             IdentityFile ~/.ssh/id_rsa
             StrictHostKeyChecking no
           END
+
       - name: Test SSH Connection
         run: |
-          ssh -vvv loopy-server 'echo "✅ SSH connection successful!"'
+          # ✅ 여기만 수정됨 — SSH 연결 대기 문제 방지
+          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 -vvv loopy-server 'echo "✅ SSH connection successful!"'
 
       - name: Update code and deploy
         run: |
