@@ -54,7 +54,6 @@ export const getChallengeDetail = async (req, res, next) => {
 
 /* -------------------------------------
  * 3️⃣ 챌린지 참여
- * (Swagger 명세에는 없지만 SUCCESS 포맷 통일)
  * ----------------------------------- */
 export const participateInChallenge = async (req, res, next) => {
   try {
@@ -78,7 +77,6 @@ export const participateInChallenge = async (req, res, next) => {
 
 /* -------------------------------------
  * 4️⃣ 챌린지 참여 가능 매장 목록 조회
- * (Swagger 예시는 없지만 SUCCESS 포맷 통일)
  * ----------------------------------- */
 export const getAvailableStoresForChallenge = async (req, res, next) => {
   try {
