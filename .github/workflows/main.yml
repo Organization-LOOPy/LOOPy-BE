@@ -29,8 +29,8 @@ jobs:
 
       - name: Test SSH Connection
         run: |
-          # ✅ 여기만 수정됨 — SSH 연결 대기 문제 방지
-          ssh -o StrictHostKeyChecking=no -o ConnectTimeout=20 -vvv loopy-server 'echo "✅ SSH connection successful!"'
+          # ✅ SSH 연결 대기 문제 방지
+          ssh -o StrictHostKeyChecking=no -o ServerAliveInterval=30 -o ServerAliveCountMax=3 -o ConnectTimeout=60 -vvv loopy-server 'echo "✅ SSH connection successful!"'
 
       - name: Update code and deploy
         run: |
