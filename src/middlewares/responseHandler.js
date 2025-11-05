@@ -1,4 +1,9 @@
 export const responseHandler = (req, res, next) => {
+  // 챌린지 API 경로는 포맷 적용하지 않고 그대로 통과
+  if (req.originalUrl.startsWith("/api/v1/challenges")) {
+    return next();
+  }
+
   res.success = (data) => {
     return res.json({
       resultType: "SUCCESS",
@@ -28,7 +33,6 @@ export const responseHandler = (req, res, next) => {
   };
 
   next();
-
 };
 
 export default responseHandler;
