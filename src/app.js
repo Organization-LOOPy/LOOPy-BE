@@ -40,8 +40,7 @@ const corsOptions = {
     "https://loo-py.xyz",         // 프론트 배포
     "http://13.209.89.251:3000",
     "http://localhost:3000",
-    "https://loopyxyz.duckdns.org",
-    "https://loopy-cafe-serv.duckdns.org",
+    "https://loopy-biz.xyz",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
