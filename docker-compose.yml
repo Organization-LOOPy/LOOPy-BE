@@ -12,14 +12,8 @@ services:
     environment:
       - NODE_ENV=production
     volumes:
-      - ./logs:/app/logs # 로그 디렉토리 마운트
+      - ./logs:/app/logs
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
     networks:
       - loopy-be-network
 
@@ -30,13 +24,20 @@ services:
       - "443:443"
     volumes:
       - ./loopy.conf:/etc/nginx/conf.d/loopy.conf
-      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
     depends_on:
       - app
     restart: unless-stopped
     networks:
       - loopy-be-network
-  
+
+  certbot:
+    image: certbot/certbot
+    volumes:
+      - ./certbot/conf:/etc/letsencrypt
+      - ./certbot/www:/var/www/certbot
+
 networks:
   loopy-be-network:
     driver: bridge
