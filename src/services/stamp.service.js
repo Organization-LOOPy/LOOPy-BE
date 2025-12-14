@@ -214,72 +214,77 @@ export const getStampBookDetailService = async (userId, stampBookId) => {
   
 // 3. 스탬프북 환전
 export const convertStampToPointService = async (userId, stampBookId) => {
-    if (isNaN(stampBookId)) {
-      throw new BadRequestError("유효하지 않은 스탬프북 ID입니다.");
-    }
-  
-    const stampBook = await prisma.stampBook.findUnique({
-      where: { id: stampBookId },
-      include: {
-        stamps: true,
-        cafe: { select: { id: true, name: true } },
+  if (isNaN(stampBookId)) {
+    throw new BadRequestError("유효하지 않은 스탬프북 ID입니다.");
+  }
+
+  const stampBook = await prisma.stampBook.findUnique({
+    where: { id: stampBookId },
+    include: {
+      stamps: true,
+      cafe: { select: { id: true, name: true } },
+    },
+  });
+
+  // 유효성 검증
+  if (!stampBook)
+    throw new StampbookNotFoundError("존재하지 않는 스탬프북입니다.");
+  if (stampBook.userId !== userId)
+    throw new ForbiddenError("본인의 스탬프북만 환전할 수 있습니다.");
+  if (stampBook.isConverted || stampBook.status === "converted")
+    throw new BadRequestError("이미 환전(종료)된 스탬프북입니다.");
+
+  // ✅ 소멸 임박 조건 제거 → 단순히 active 상태면 환전 가능
+  if (stampBook.status !== "active")
+    throw new BadRequestError("활성 상태의 스탬프북만 환전할 수 있습니다.");
+
+  const stampCount = stampBook.stamps.length;
+  if (stampCount === 0)
+    throw new BadRequestError("환전 가능한 스탬프가 없습니다.");
+
+  // 환전 처리
+  const POINT_PER_STAMP = 2;
+  const pointAmount = stampCount * POINT_PER_STAMP;
+  const now = new Date();
+
+  await prisma.$transaction([
+    // 포인트 적립 내역 생성
+    prisma.pointTransaction.create({
+      data: {
+        userId,
+        stampBookId,
+        point: pointAmount,
+        type: "earned",
+        description: "스탬프 환전",
       },
-    });
-  
-    // 유효성 검증
-    if (!stampBook)
-      throw new StampbookNotFoundError("존재하지 않는 스탬프북입니다.");
-    if (stampBook.userId !== userId)
-      throw new ForbiddenError("본인의 스탬프북만 환전할 수 있습니다.");
-    if (stampBook.isConverted || stampBook.status === "converted")
-      throw new BadRequestError("이미 환전(종료)된 스탬프북입니다.");
-  
-    const stampCount = stampBook.stamps.length;
-    if (stampCount === 0)
-      throw new BadRequestError("환전 가능한 스탬프가 없습니다.");
-  
-    // 환전 처리
-    const POINT_PER_STAMP = 2;
-    const pointAmount = stampCount * POINT_PER_STAMP;
-    const now = new Date();
-  
-    await prisma.$transaction([
-      // 포인트 적립 내역 생성
-      prisma.pointTransaction.create({
-        data: {
-          userId,
-          stampBookId,
-          point: pointAmount,
-          type: "earned",
-          description: "스탬프 환전",
-        },
-      }),
-      // 스탬프북 상태 업데이트
-      prisma.stampBook.update({
-        where: { id: stampBookId },
-        data: {
-          convertedAt: now,
-          isConverted: true,
-          status: "converted",
-          currentCount: 0,
-        },
-      }),
-      // 기존 스탬프 삭제
-      prisma.stamp.deleteMany({ where: { stampBookId } }),
-    ]);
-  
-    // 결과 반환
-    return {
-      stampBookId,
-      cafeId: stampBook.cafe.id,
-      cafeName: stampBook.cafe.name,
-      stampCount,
-      pointPerStamp: POINT_PER_STAMP,
-      pointAmount,
-      remainingStampCount: 0,
-      convertedAt: now.toISOString(),
-    };
+    }),
+    // 스탬프북 상태 업데이트
+    prisma.stampBook.update({
+      where: { id: stampBookId },
+      data: {
+        convertedAt: now,
+        isConverted: true,
+        status: "converted",
+        currentCount: 0,
+      },
+    }),
+    // 기존 스탬프 삭제
+    prisma.stamp.deleteMany({ where: { stampBookId } }),
+  ]);
+
+  // 결과 반환
+  return {
+    stampBookId,
+    cafeId: stampBook.cafe.id,
+    cafeName: stampBook.cafe.name,
+    stampCount,
+    pointPerStamp: POINT_PER_STAMP,
+    pointAmount,
+    remainingStampCount: 0,
+    convertedAt: now.toISOString(),
+  };
 };
+
   
 // 4. 스탬프북 연장 처리
 export const extendStampBookService = async (userId, stampBookId) => {
