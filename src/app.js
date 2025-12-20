@@ -50,7 +50,6 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
-app.use('/api/verification', verificationRouter);
 
 // Swagger & 공통 미들웨어
 setupSwagger(app);
@@ -75,7 +74,7 @@ app.get("/metrics", async (req, res) => {
 // 헬스체크
 app.get("/", (req, res) => res.send("루피 백엔드 작동 중!, cicd파이프라인 확인"));
 app.get("/health", (req, res) => res.status(200).send("ok"));
-
+app.use('/api/verification', verificationRouter);
 // 고객용
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
