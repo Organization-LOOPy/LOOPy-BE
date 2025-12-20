@@ -10,6 +10,7 @@ import { setupSwagger } from "./config/swagger.js";
 import passport from "./config/passport.js";
 
 // Routers
+import verificationRouter from './routes/verificationRouter.js';
 import authRouter from "./routes/auth.routes.js";
 import searchRouter from "./routes/search.routes.js";
 import cafeRouter from "./routes/cafe.routes.js";
@@ -49,6 +50,7 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
+app.use('/api/verification', verificationRouter);
 
 // Swagger & 공통 미들웨어
 setupSwagger(app);
