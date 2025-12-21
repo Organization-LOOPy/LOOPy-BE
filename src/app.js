@@ -54,8 +54,11 @@ app.options(/.*/, cors(corsOptions));
 // Swagger & 공통 미들웨어
 setupSwagger(app);
 app.use(morganMiddleware);
-app.use(responseHandler);
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(responseHandler);
 app.use(passport.initialize());
 
 // Prometheus metrics

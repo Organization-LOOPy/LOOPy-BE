@@ -6,7 +6,7 @@ import {
   VerificationCodeMissingError,
   InvalidVerificationCodeError,
   VerificationCodeExpiredError,
-} from '../errors/CustomErrors.js';
+} from '../errors/customErrors.js';
 
 const EXPIRE_MINUTES = 5;
 
