@@ -1,5 +1,5 @@
 import nodemailer from 'nodemailer';
-import { EmailSendFailedError } from "../errors/CustomErrors.js";
+import { EmailSendFailedError } from "../errors/customErrors.js";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -23,8 +23,7 @@ console.log('✅ SMTP 연결 성공');
       from: '"LOOPy" <no-reply@loopy.app>',
       to: email,
       subject: "[LOOPy] 이메일 인증 코드",
-      text: `
-아래 인증 코드를 입력해주세요.
+      text: `아래 인증 코드를 입력해주세요.
 
 인증 코드: ${code}
 
