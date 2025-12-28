@@ -3,82 +3,90 @@ import prisma from "../../prisma/client.js";
 
 export const cafeSearchRepository = {
   async findCafeByInfos(whereConditions, cursor, userId, take = 15) {
-    // ✅ whereConditions가 null/undefined일 때 빈 객체로 처리
-    const baseWhere = whereConditions || {};
-    
+    // 1. 기본 where 절 구성 (상태가 active인 것만 조회)
+    // 외부에서 들어오는 whereConditions가 스키마의 필드명(camelCase)을 따르는지 확인이 필요합니다.
     const whereClause = {
-      ...baseWhere,
+      status: "active",
+      ...(whereConditions || {}),
     };
 
-    // cursor가 문자열이고 유효할 때만 추가
+    // 2. 커서 기반 페이지네이션 처리
     if (cursor && typeof cursor === "string" && cursor.trim() !== "") {
-      whereClause.id = { gt: parseInt(cursor) };
+      const cursorId = parseInt(cursor);
+      if (!isNaN(cursorId)) {
+        whereClause.id = { gt: cursorId };
+      }
     }
 
-    const cafeList = await prisma.cafe.findMany({
-      where: whereClause,
-      select: {
-        id: true,
-        name: true,
-        address: true,
-        keywords: true,
-        latitude: true,
-        longitude: true,
-        region1DepthName: true,
-        region2DepthName: true,
-        region3DepthName: true,
-        storeFilters: true,
-        takeOutFilters: true,
-        menuFilters: true,
-        createdAt: true,
-        photos: {
-          orderBy: { displayOrder: "asc" },
-          take: 1,
-          select: {
-            id: true,
-            photoUrl: true,
+    try {
+      const cafeList = await prisma.cafe.findMany({
+        where: whereClause,
+        select: {
+          id: true,
+          name: true,
+          address: true,
+          keywords: true,
+          latitude: true,
+          longitude: true,
+          region1DepthName: true,
+          region2DepthName: true,
+          region3DepthName: true,
+          storeFilters: true,
+          takeOutFilters: true,
+          menuFilters: true,
+          createdAt: true, // ✅ 스키마 필드명 일치 확인
+          photos: {
+            orderBy: { displayOrder: "asc" },
+            take: 1,
+            select: {
+              id: true,
+              photoUrl: true,
+            },
+          },
+          bookmarkedBy: userId
+            ? {
+                where: { userId: userId },
+                select: { id: true },
+              }
+            : false,
+          stampBooks: {
+            where: {
+              userId: userId,
+              expiresAt: { gte: new Date() },
+            },
+            select: { id: true },
           },
         },
-        bookmarkedBy: userId
-          ? {
-              where: { userId: userId },
-              select: { id: true },
-            }
-          : false,
-
-        stampBooks: {
-          where: {
-            userId: userId,
-            expiresAt: { gte: new Date() },
-          },
-          select: { id: true },
+        orderBy: {
+          createdAt: "desc", // ✅ 에러 원인 수정: created_at -> createdAt
         },
-      },
-      orderBy: {
-        createdAt: "desc",  // ✅✅✅ 여기가 핵심! created_at → createdAt
-      },
-      take: take + 1,
-    });
+        take: take + 1,
+      });
 
-    // nextCursor 계산
-    const hasMore = cafeList.length > take;
-    const cafes = hasMore ? cafeList.slice(0, -1) : cafeList;
-    const nextCursor =
-      hasMore && cafes.length > 0
-        ? cafes[cafes.length - 1].id.toString()
-        : null;
+      // 차후 페이지 유무 계산
+      const hasMore = cafeList.length > take;
+      const cafes = hasMore ? cafeList.slice(0, -1) : cafeList;
+      const nextCursor =
+        hasMore && cafes.length > 0
+          ? cafes[cafes.length - 1].id.toString()
+          : null;
 
-    return {
-      cafes,
-      nextCursor,
-      hasMore,
-    };
+      return {
+        cafes,
+        nextCursor,
+        hasMore,
+      };
+    } catch (error) {
+      logger.error(`findCafeByInfos Repository Error: ${error.message}`);
+      throw error; // 서비스 단으로 에러를 던져 500 응답 처리
+    }
   },
 
   async findCafeByIds(cafeIds, userId) {
     return await prisma.cafe.findMany({
       where: {
         id: { in: cafeIds },
+        status: "active",
       },
       select: {
         id: true,
@@ -91,9 +99,9 @@ export const cafeSearchRepository = {
         region2DepthName: true,
         region3DepthName: true,
         createdAt: true,
-        storeFilters: true,  // ✅ 추가: 필터 정보도 반환
-        takeOutFilters: true, // ✅ 추가
-        menuFilters: true,    // ✅ 추가
+        storeFilters: true,
+        takeOutFilters: true,
+        menuFilters: true,
         photos: {
           orderBy: { displayOrder: "asc" },
           take: 1,
@@ -127,10 +135,10 @@ export const cafeMapRepository = {
     takeOutFilters,
     userId,
   }) {
+    // 1. 기본 필터 조건 (위치 및 상태)
     const whereConditions = {
+      status: "active",
       AND: [
-        { status: "active" },
-        // 대략적인 범위로 먼저 필터링 (DB 쿼리 최적화)
         {
           latitude: {
             gte: centerY - latRange,
@@ -143,74 +151,66 @@ export const cafeMapRepository = {
             lte: centerX + lonRange,
           },
         },
-        ...(region1 ? [{ region1DepthName: region1 }] : []),
-        ...(region2 ? [{ region2DepthName: region2 }] : []),
       ],
     };
 
-    // 스토어 필터 조건 추가
-    Object.keys(storeFilters).forEach((filter) => {
-      whereConditions.AND.push({
-        storeFilters: {
-          path: `$."${filter}"`,
-          equals: true,
-        },
-      });
-    });
+    // 2. 지역명 조건 추가 (존재할 때만)
+    if (region1) whereConditions.AND.push({ region1DepthName: region1 });
+    if (region2) whereConditions.AND.push({ region2DepthName: region2 });
+    if (region3) whereConditions.AND.push({ region3DepthName: region3 });
 
-    // 메뉴 필터 조건 추가
-    Object.keys(menuFilters).forEach((filter) => {
-      whereConditions.AND.push({
-        menuFilters: {
-          path: `$."${filter}"`,
-          equals: true,
-        },
-      });
-    });
+    // 3. JSON 필터 조건 추가 (MySQL JSON_CONTAINS 방식에 대응하는 Prisma 문법)
+    const addJsonFilters = (filterObj, fieldName) => {
+      if (filterObj && Object.keys(filterObj).length > 0) {
+        Object.keys(filterObj).forEach((key) => {
+          if (filterObj[key] === true) {
+            whereConditions.AND.push({
+              [fieldName]: {
+                path: `$.${key}`,
+                equals: true,
+              },
+            });
+          }
+        });
+      }
+    };
 
-    // 테이크아웃 필터 조건 추가
-    Object.keys(takeOutFilters).forEach((filter) => {
-      whereConditions.AND.push({
-        takeOutFilters: {
-          path: `$."${filter}"`,
-          equals: true,
-        },
-      });
-    });
+    addJsonFilters(storeFilters, "storeFilters");
+    addJsonFilters(menuFilters, "menuFilters");
+    addJsonFilters(takeOutFilters, "takeOutFilters");
 
-    // DB에서 카페 데이터 조회 (북마크 정보 포함)
-    const cafes = await prisma.cafe.findMany({
-      where: whereConditions,
-      select: {
-        id: true,
-        name: true,
-        latitude: true,
-        longitude: true,
-        stampBooks: {
-          where: {
-            userId: userId,
-            expiresAt: { gte: new Date() },
+    try {
+      const cafes = await prisma.cafe.findMany({
+        where: whereConditions,
+        select: {
+          id: true,
+          name: true,
+          latitude: true,
+          longitude: true,
+          stampBooks: {
+            where: {
+              userId: userId,
+              expiresAt: { gte: new Date() },
+            },
+            select: { id: true },
           },
-          select: { id: true },
+          bookmarkedBy: userId
+            ? {
+                where: { userId: userId },
+                select: { id: true },
+              }
+            : false,
         },
-        bookmarkedBy: userId
-          ? {
-              where: { userId: userId },
-              select: { id: true },
-            }
-          : false,
-      },
-    });
+      });
 
-    return cafes.map((cafe) => {
-      const isStamped =
-        Array.isArray(cafe.stampBooks) && cafe.stampBooks.length > 0;
-
-      return {
+      return cafes.map((cafe) => ({
         ...cafe,
-        isStamped,
-        stampBooks: undefined, // 응답에서 제거
-      };
-    });
+        isStamped: Array.isArray(cafe.stampBooks) && cafe.stampBooks.length > 0,
+        stampBooks: undefined,
+      }));
+    } catch (error) {
+      logger.error(`findCafesInArea Repository Error: ${error.message}`);
+      throw error;
+    }
   },
 };
