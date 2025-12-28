@@ -34,9 +34,9 @@ function hasAnyKeys(o) {
 // 지역 필터링 전처리
 function buildRegionCondition(region1, region2, region3) {
   const cond = {};
-  if (region1) cond.region1DepthName = region1.trim(); // camelCase
-  if (region2) cond.region2DepthName = region2.trim(); // camelCase
-  if (region3) cond.region3DepthName = region3.trim(); // camelCase
+  if (region1) cond.region1DepthName = region1.trim();
+  if (region2) cond.region2DepthName = region2.trim();
+  if (region3) cond.region3DepthName = region3.trim();
   return cond;
 }
 
@@ -264,74 +264,94 @@ export const cafeSearchService = {
       selectedMenuFilters.length > 0 ||
       selectedTakeOutFilters.length > 0;
     const hasRegionFilter = hasAnyKeys(explicitRegionCond);
-    const isInitialRequest =
-      !hasSearchQuery && !hasAnyFilter && !hasRegionFilter;
+
+    // ✅ 수정: region은 initial 판단에서 제외
+    const isInitialRequest = !hasSearchQuery && !hasAnyFilter;
 
     // 1) 처음 리스팅: preference 임베딩 Top-K 추천 (+ user_preference 지역 적용)
-    if (isInitialRequest) {
-  const pref = await preferenceTopK(userId, { topK: 15 });
-  const cafeIds = pref?.cafeIds ?? [];
+    if (isInitialRequest && !hasRegionFilter) {
+      console.log("=== Initial Request (Preference-based) ===");
 
-  if (cafeIds.length > 0) {
-    const rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
-    return {
-      fromNLP: true,
-      message: null,
-      data: filterResponseData(applyDistanceAndSort(rows, refinedX, refinedY)),
-      nextCursor: null,
-      hasMore: false,
-    };
-  }
-  const allCafes = await prisma.cafe.findMany({
-    where: { status: "active" },
-    orderBy: { created_at: "desc" },
-    take: 50, // 또는 페이지네이션 지원
-  });
-  return {
-    fromNLP: false,
-    message: "전체 카페 리스트를 불러왔습니다.",
-    data: applyDistanceAndSort(allCafes, refinedX, refinedY),
-    nextCursor: null,
-    hasMore: allCafes.length >= 50,
-  };
-}
+      const pref = await preferenceTopK(userId, { topK: 15 });
+      const cafeIds = pref?.cafeIds ?? [];
+      if (cafeIds.length === 0) {
+        return {
+          fromNLP: true,
+          message: null,
+          data: [],
+          nextCursor: null,
+          hasMore: false,
+        };
+      }
+      let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
+
+      return {
+        fromNLP: true,
+        message: null,
+        data: filterResponseData(
+          applyDistanceAndSort(rows, refinedX, refinedY)
+        ),
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
 
     // 2) 검색: 지역 미지정이면 전국, 지정 시 해당 지역만 (RDB 하드 검색 우선)
-    const whereConditions = { AND: [] };
-    if (hasRegionFilter) {
-      // 각 지역 조건을 개별적으로 추가
-      Object.entries(explicitRegionCond).forEach(([key, value]) => {
-        whereConditions.AND.push({ [key]: value });
+
+    // ✅ 핵심 수정: whereConditions 생성 로직 개선
+    let whereConditions = null;
+
+    // 조건이 하나라도 있을 때만 whereConditions 생성
+    if (hasRegionFilter || hasSearchQuery || hasAnyFilter) {
+      const andConditions = [];
+
+      // 지역 조건 추가
+      if (hasRegionFilter) {
+        Object.entries(explicitRegionCond).forEach(([key, value]) => {
+          andConditions.push({ [key]: value });
+        });
+      }
+
+      // 검색어 조건 추가
+      if (hasSearchQuery) {
+        andConditions.push({ name: { contains: query } });
+      }
+
+      // 스토어 필터 조건 추가
+      selectedStoreFilters.forEach((f) => {
+        andConditions.push({
+          storeFilters: {
+            path: `$."${f}"`,
+            equals: true,
+          },
+        });
       });
+
+      // 메뉴 필터 조건 추가
+      selectedMenuFilters.forEach((f) => {
+        andConditions.push({
+          menuFilters: {
+            path: `$."${f}"`,
+            equals: true,
+          },
+        });
+      });
+
+      // 테이크아웃 필터 조건 추가
+      selectedTakeOutFilters.forEach((f) => {
+        andConditions.push({
+          takeOutFilters: {
+            path: `$."${f}"`,
+            equals: true,
+          },
+        });
+      });
+
+      // ✅ AND 배열에 조건이 있을 때만 whereConditions 설정
+      if (andConditions.length > 0) {
+        whereConditions = { AND: andConditions };
+      }
     }
-    if (hasSearchQuery) whereConditions.AND.push({ name: { contains: query } });
-
-    selectedStoreFilters.forEach((f) =>
-      whereConditions.AND.push({
-        storeFilters: {
-          path: `$."${f}"`,
-          equals: true,
-        },
-      })
-    );
-
-    selectedMenuFilters.forEach((f) =>
-      whereConditions.AND.push({
-        menuFilters: {
-          path: `$."${f}"`,
-          equals: true,
-        },
-      })
-    );
-
-    selectedTakeOutFilters.forEach((f) =>
-      whereConditions.AND.push({
-        takeOutFilters: {
-          path: `$."${f}"`,
-          equals: true,
-        },
-      })
-    );
 
     console.log("=== 필터 변환 디버깅 ===");
     console.log("원본 storeFilters:", storeFilters);
@@ -346,12 +366,18 @@ export const cafeSearchService = {
       JSON.stringify(whereConditions, null, 2)
     );
 
-    const hardResults = await cafeSearchRepository.findCafeByInfos(
-      whereConditions,
-      cursor,
-      userId
-    );
-    const hardRows = hardResults?.cafes ?? [];
+    // ✅ whereConditions가 null이 아닐 때만 RDB 검색 실행
+    let hardRows = [];
+    let hardResults = null;
+
+    if (whereConditions !== null) {
+      hardResults = await cafeSearchRepository.findCafeByInfos(
+        whereConditions,
+        cursor,
+        userId
+      );
+      hardRows = hardResults?.cafes ?? [];
+    }
 
     if (hardRows.length > 0) {
       const sortedData = applyDistanceAndSort(hardRows, refinedX, refinedY);
@@ -368,7 +394,7 @@ export const cafeSearchService = {
       };
     }
 
-    console.log(whereConditions);
+    console.log("=== RDB 검색 결과 없음, Fallback 시작 ===");
 
     // 3) RDB 결과 없음 → 임베딩 폴백(Top-15). 검색어 없고 필터만 있어도 폴백.
     const filterQuery =
@@ -382,6 +408,7 @@ export const cafeSearchService = {
     const embeddingQuery = hasSearchQuery ? query : filterQuery;
 
     let fallbackRows = [];
+    
     function addDistanceWithoutSort(rows, x, y) {
       return rows.map((cafe) => {
         const distance = getDistanceInMeters(
@@ -402,12 +429,13 @@ export const cafeSearchService = {
       return orderedIds.map((id) => cafeMap.get(id)).filter(Boolean);
     };
 
-    // fallback 로직에서 유사도 순서 유지하는 전체 수정:
+    // fallback 로직에서 유사도 순서 유지
     if (embeddingQuery) {
       const nlpRes = await nlpSearch(embeddingQuery);
       const fallbackIds = Array.isArray(nlpRes?.cafeIds)
         ? nlpRes.cafeIds.slice(0, 15)
         : [];
+      
       if (fallbackIds.length > 0) {
         let rows = await cafeSearchRepository.findCafeByIds(
           fallbackIds,
@@ -456,13 +484,12 @@ export const cafeSearchService = {
       return {
         fromNLP: true,
         message: "검색 결과가 없어 유사 카페를 추천합니다.",
-        data: filterResponseData(fallbackRows), // applyDistanceAndSort 제거!
+        data: filterResponseData(fallbackRows),
         nextCursor: null,
         hasMore: false,
       };
     }
 
-    // 폴백도 없으면 빈 결과
     return {
       fromNLP: true,
       message: "검색 결과가 없습니다.",
@@ -488,18 +515,16 @@ export const cafeSearchService = {
       isBookmarked: bookmark,
     };
 
-    // x, y가 모두 제공된 경우에만 거리 계산
     if (x != null && y != null) {
       const xNum = parseFloat(x);
       const yNum = parseFloat(y);
 
-      // 유효한 숫자인지 확인
       if (!isNaN(xNum) && !isNaN(yNum)) {
         cafeDetails.distance = getDistanceInMeters(
           parseFloat(cafe.latitude),
           parseFloat(cafe.longitude),
-          yNum, // 사용자 위도
-          xNum // 사용자 경도
+          yNum,
+          xNum
         );
       }
     }
@@ -534,7 +559,6 @@ export const mapSearchService = {
     };
   },
 
-  // 영문 키를 한글로 변환하는 함수
   convertFiltersToKorean(filters, type) {
     const mappings = this.getFilterMappings();
     const converted = {};
@@ -569,7 +593,6 @@ export const mapSearchService = {
     const parsedMenuFilters = parseFiltersFromQuery(menuFilters);
     const parsedTakeOutFilters = parseFiltersFromQuery(takeOutFilters);
 
-    // 영문 키를 한글로 변환
     const convertedStoreFilters = this.convertFiltersToKorean(
       parsedStoreFilters,
       "store"
@@ -587,8 +610,8 @@ export const mapSearchService = {
     const refinedRegion2 = region2?.trim() || null;
     const refinedRegion3 = region3?.trim() || null;
 
-    const safetyMargin = 2; // 1.5배 여유 공간
-    const minRadius = 200; // 최소 200m 보장
+    const safetyMargin = 2;
+    const minRadius = 200;
     const effectiveRadius = Math.max(
       zoomConfig.radius * safetyMargin,
       minRadius
@@ -598,7 +621,6 @@ export const mapSearchService = {
     const lonRange =
       effectiveRadius / (111000 * Math.cos((refinedY * Math.PI) / 180));
 
-    // 검색 조건 구성
     const searchParams = {
       centerX: refinedX,
       centerY: refinedY,
@@ -607,16 +629,14 @@ export const mapSearchService = {
       region1: refinedRegion1,
       region2: refinedRegion2,
       region3: refinedRegion3,
-      storeFilters: convertedStoreFilters, // 변환된 필터 사용
-      menuFilters: convertedMenuFilters, // 변환된 필터 사용
-      takeOutFilters: convertedTakeOutFilters, // 변환된 필터 사용
+      storeFilters: convertedStoreFilters,
+      menuFilters: convertedMenuFilters,
+      takeOutFilters: convertedTakeOutFilters,
       userId,
     };
 
-    // Repository에서 카페 데이터 조회
     const allCafes = await cafeMapRepository.findCafesInArea(searchParams);
 
-    // 정확한 거리 계산 및 필터링
     const cafesWithDistance = allCafes.map((cafe) => ({
       ...cafe,
       distance: getDistanceInMeters(
@@ -627,18 +647,14 @@ export const mapSearchService = {
       ),
     }));
 
-    // 반경 내의 카페만 필터링
     const cafesInRadius = cafesWithDistance.filter(
       (cafe) => cafe.distance <= zoomConfig.radius
     );
 
-    // 거리순으로 정렬
     cafesInRadius.sort((a, b) => a.distance - b.distance);
 
-    // 줌 레벨에 따른 최대 개수 제한
     const limitedCafes = cafesInRadius.slice(0, zoomConfig.maxResults);
 
-    // distance 필드는 응답에서 제거 (필요시 유지 가능)
     const finalCafes = limitedCafes.map(({ distance, ...cafe }) => cafe);
 
     return {
@@ -651,19 +667,17 @@ export const mapSearchService = {
   },
 
   getZoomConfig(zoomLevel) {
-    // 줌 레벨별 고정 반지름 설정
     const radiusConfig = {
-      1: 106, // L1 ≈ 106 m
-      2: 213, // L2 ≈ 213 m
-      3: 426, // L3 ≈ 426 m
-      4: 851, // L4 ≈ 851 m
-      5: 1702, // L5 ≈ 1,702 m
-      6: 3404, // L6 ≈ 3,404 m
-      7: 6808, // L7 ≈ 6,808 m
-      8: 13616, // L8 ≈ 13,616 m
+      1: 106,
+      2: 213,
+      3: 426,
+      4: 851,
+      5: 1702,
+      6: 3404,
+      7: 6808,
+      8: 13616,
     };
 
-    // 줌 레벨별 최대 결과 수 설정
     const maxResultsConfig = {
       1: 30,
       2: 40,
@@ -675,17 +689,15 @@ export const mapSearchService = {
       8: 120,
     };
 
-    // 기본값 설정 (범위를 벗어난 줌 레벨의 경우)
-    const radius = radiusConfig[zoomLevel] || 1000; // 기본 1km
+    const radius = radiusConfig[zoomLevel] || 1000;
     const maxResults = maxResultsConfig[zoomLevel] || 100;
 
-    // 카카오 지도 축척 계산 (참조용)
     const scale = 1 / Math.pow(2, zoomLevel - 3);
 
     return {
       maxResults,
-      radius: radius,
-      scale: scale,
+      radius,
+      scale,
     };
   },
 };
