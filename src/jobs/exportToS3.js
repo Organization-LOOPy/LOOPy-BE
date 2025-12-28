@@ -161,7 +161,7 @@ export async function exportTable(conn, cfg, state) {
 
   // 워터마크 계산
   if (uploaded) {
-    let maxIso = tableState.lastWatermark || '1970-01-01 00:00:00';
+    let maxIso = tableState.lastWatermark || '2026-01-01 00:00:00';
 
     for (const r of rows) {
       const ca = safeGetTime(r[cfg.createdAtAlias]);

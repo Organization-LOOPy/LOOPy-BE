@@ -10,6 +10,7 @@ import { setupSwagger } from "./config/swagger.js";
 import passport from "./config/passport.js";
 
 // Routers
+import verificationRouter from './routes/verificationRouter.js';
 import authRouter from "./routes/auth.routes.js";
 import searchRouter from "./routes/search.routes.js";
 import cafeRouter from "./routes/cafe.routes.js";
@@ -33,6 +34,7 @@ import metricsRouter from "./routes/metrics.route.js";
 console.log("🚩 [Check 1] 모든 모듈 Import 완료");
 
 const app = express();
+app.set("trust proxy", 1);
 
 // CORS 설정
 const corsOptions = {
@@ -41,8 +43,7 @@ const corsOptions = {
     "https://loo-py.xyz",         // 프론트 배포
     "http://13.209.89.251:3000",
     "http://localhost:3000",
-    "https://loopyxyz.duckdns.org",
-    "https://loopy-cafe-serv.duckdns.org",
+    "https://loopy-biz.xyz",
   ],
   credentials: true,
   methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
@@ -59,10 +60,13 @@ setupSwagger(app);
 console.log("🚩 [Check 4] Swagger 설정 완료");
 
 app.use(morganMiddleware);
-app.use(responseHandler);
+
 app.use(express.json());
 
-console.log("🚩 [Check 5] Passport 초기화 시작...");
+app.use(express.urlencoded({ extended: true }));
+
+app.use(responseHandler);
+
 app.use(passport.initialize());
 console.log("🚩 [Check 6] Passport 초기화 완료");
 
@@ -82,7 +86,7 @@ app.get("/metrics", async (req, res) => {
 // 헬스체크
 app.get("/", (req, res) => res.send("루피 백엔드 작동 중!, cicd파이프라인 확인"));
 app.get("/health", (req, res) => res.status(200).send("ok"));
-
+app.use('/api/verification', verificationRouter);
 // 고객용
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);

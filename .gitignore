@@ -1,8 +1,10 @@
 node_modules/
-
+certbot/
 logs/
 umc.pem
+loopy.pem
 
+.git
 .env
 .env.local
 .env.*.local

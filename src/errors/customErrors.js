@@ -688,6 +688,38 @@ export class UserPreferenceNotFoundError extends Error {
   }
 }
 
+// 이메일 인증 관련
+
+export class EmailMissingError extends CustomError {
+  constructor() {
+    super("email이 필요합니다.", "EMAIL_MISSING", 400);
+  }
+}
+
+export class VerificationCodeMissingError extends CustomError {
+  constructor() {
+    super("인증 코드가 필요합니다.", "VERIFICATION_CODE_MISSING", 400);
+  }
+}
+
+export class InvalidVerificationCodeError extends CustomError {
+  constructor() {
+    super("인증 코드가 올바르지 않습니다.", "INVALID_VERIFICATION_CODE", 400);
+  }
+}
+
+export class VerificationCodeExpiredError extends CustomError {
+  constructor() {
+    super("인증 코드가 만료되었습니다.", "VERIFICATION_CODE_EXPIRED", 400);
+  }
+}
+
+export class EmailSendFailedError extends CustomError {
+  constructor() {
+    super("이메일 전송에 실패했습니다.", "EMAIL_SEND_FAILED", 500);
+  }
+}
+
 
 //url 앞자리로 에러코드 쓰기, error파일 안에 다 올리기(도메인 별로)
 export default CustomError;
