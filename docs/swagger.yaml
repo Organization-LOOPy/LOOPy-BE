@@ -35,6 +35,96 @@ paths:
                   success:
                     type: string
                     example: 루피 백엔드 작동 중!
+
+  /api/verification/email/request:
+    post:
+      summary: 인증 이메일 요청
+      description: |
+        입력한 이메일로 인증 코드를 발송합니다.
+        인증 코드는 서버에서 자동 생성되며 5분간 유효합니다.
+      tags:
+        - Email Verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailRequest"
+      responses:
+        "200":
+          description: 인증 이메일 전송 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                success: true
+                message: 인증 이메일을 전송했습니다.
+        "400":
+          description: 잘못된 요청
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                emailMissing:
+                  summary: 이메일 누락
+                  value:
+                    success: false
+                    message: 이메일이 필요합니다.
+        "500":
+          description: 서버 오류
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /api/verification/email/verify:
+    post:
+      summary: 이메일 인증 코드 검증
+      description: |
+        이메일로 받은 인증 코드를 검증합니다.
+        인증 코드가 일치하고 만료되지 않은 경우 인증이 완료됩니다.
+      tags:
+        - Email Verification
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmailVerificationRequest"
+      responses:
+        "200":
+          description: 이메일 인증 성공
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+              example:
+                success: true
+                message: 이메일 인증이 완료되었습니다.
+        "400":
+          description: 인증 실패
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+              examples:
+                codeMissing:
+                  summary: 인증 코드 누락
+                  value:
+                    success: false
+                    message: 인증 코드가 필요합니다.
+                invalidCode:
+                  summary: 잘못된 인증 코드
+                  value:
+                    success: false
+                    message: 인증 코드가 올바르지 않습니다.
+                expiredCode:
+                  summary: 인증 코드 만료
+                  value:
+                    success: false
+                    message: 인증 코드가 만료되었습니다.
   
   /api/v1/users/me/verify-phone:
     post:
@@ -6326,6 +6416,50 @@ components:
       scheme: bearer
       bearerFormat: JWT
   schemas:
+    EmailRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+
+    EmailVerificationRequest:
+      type: object
+      required:
+        - email
+        - code
+      properties:
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        code:
+          type: string
+          example: "123456"
+
+    SuccessResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        message:
+          type: string
+          example: 요청이 성공적으로 처리되었습니다.
+
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: 에러 메시지
+          
     UserProfile:
       type: object
       properties:
