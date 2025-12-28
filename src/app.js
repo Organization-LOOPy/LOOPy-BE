@@ -31,6 +31,8 @@ import adminChallengeRouter from "./routes/admin.challenge.routes.js";
 import adminNotificationRouter from "./routes/admin.notification.routes.js";
 import metricsRouter from "./routes/metrics.route.js";
 
+console.log("🚩 [Check 1] 모든 모듈 Import 완료");
+
 const app = express();
 app.set("trust proxy", 1);
 
@@ -50,16 +52,23 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
+console.log("🚩 [Check 2] CORS 설정 완료");
 
 // Swagger & 공통 미들웨어
+console.log("🚩 [Check 3] Swagger 설정 시작...");
 setupSwagger(app);
+console.log("🚩 [Check 4] Swagger 설정 완료");
+
 app.use(morganMiddleware);
 
 app.use(express.json());
+
 app.use(express.urlencoded({ extended: true }));
 
 app.use(responseHandler);
+
 app.use(passport.initialize());
+console.log("🚩 [Check 6] Passport 초기화 완료");
 
 // Prometheus metrics
 const register = new client.Registry();
@@ -104,5 +113,7 @@ app.use("/api/v1/pages", customerPageRouter);
 
 // 전역 에러 핸들러
 app.use(errorHandler);
+
+console.log("🚩 [Check 7] 모든 라우터 및 미들웨어 로드 완료 (app.js 끝)");
 
 export default app;
