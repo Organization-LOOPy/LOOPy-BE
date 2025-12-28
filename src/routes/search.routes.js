@@ -6,13 +6,22 @@ import {
   getCafeMapData,
   cafeDetail,
 } from "../controllers/seach.controller.js";
+import {  searchKeywordCounter  } from "../routes/metrics.route.js";
 
 const router = express.Router();
 
 router.use(authenticateJWT);
 //router.use(test);
 
-router.post("/list", cafeSearch); // 검색 + 카테고리필터
+router.post("/list", (req, res, next) => {
+  const keyword = req.body?.keyword;
+
+  if (keyword) {
+    searchKeywordCounter.inc({ keyword });
+  }
+
+  return cafeSearch(req, res, next);
+});
 
 router.get("/map", getCafeMapData); // 지도 마커 데이터
 
