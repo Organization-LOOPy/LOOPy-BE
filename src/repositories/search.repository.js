@@ -3,12 +3,11 @@ import prisma from "../../prisma/client.js";
 
 export const cafeSearchRepository = {
   async findCafeByInfos(whereConditions, cursor, userId, take = 15) {
-    // ✅ 수정: whereConditions가 undefined일 때 빈 객체로 처리
+    // ✅ whereConditions가 null/undefined일 때 빈 객체로 처리
     const baseWhere = whereConditions || {};
     
     const whereClause = {
       ...baseWhere,
-      // status는 항상 포함되어야 하므로 여기서 추가하지 않음
     };
 
     // cursor가 문자열이고 유효할 때만 추가
@@ -56,7 +55,7 @@ export const cafeSearchRepository = {
         },
       },
       orderBy: {
-        createdAt: "desc",  // ✅ 수정: asc → desc (최신순)
+        createdAt: "desc",  // ✅✅✅ 여기가 핵심! created_at → createdAt
       },
       take: take + 1,
     });
@@ -92,6 +91,9 @@ export const cafeSearchRepository = {
         region2DepthName: true,
         region3DepthName: true,
         createdAt: true,
+        storeFilters: true,  // ✅ 추가: 필터 정보도 반환
+        takeOutFilters: true, // ✅ 추가
+        menuFilters: true,    // ✅ 추가
         photos: {
           orderBy: { displayOrder: "asc" },
           take: 1,
@@ -150,7 +152,7 @@ export const cafeMapRepository = {
     Object.keys(storeFilters).forEach((filter) => {
       whereConditions.AND.push({
         storeFilters: {
-          path: `$."${filter}"`, // 키를 따옴표로 감싸기
+          path: `$."${filter}"`,
           equals: true,
         },
       });
@@ -160,7 +162,7 @@ export const cafeMapRepository = {
     Object.keys(menuFilters).forEach((filter) => {
       whereConditions.AND.push({
         menuFilters: {
-          path: `$."${filter}"`, // 키를 따옴표로 감싸기
+          path: `$."${filter}"`,
           equals: true,
         },
       });
@@ -170,7 +172,7 @@ export const cafeMapRepository = {
     Object.keys(takeOutFilters).forEach((filter) => {
       whereConditions.AND.push({
         takeOutFilters: {
-          path: `$."${filter}"`, // 키를 따옴표로 감싸기
+          path: `$."${filter}"`,
           equals: true,
         },
       });
