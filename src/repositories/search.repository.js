@@ -3,13 +3,7 @@ import prisma from "../../prisma/client.js";
 
 export const cafeSearchRepository = {
   async findCafeByInfos(whereConditions, cursor, userId, take = 15) {
-    // ✅ 수정: whereConditions가 undefined일 때 빈 객체로 처리
-    const baseWhere = whereConditions || {};
-    
-    const whereClause = {
-      ...baseWhere,
-      // status는 항상 포함되어야 하므로 여기서 추가하지 않음
-    };
+    const whereClause = { ...whereConditions };
 
     // cursor가 문자열이고 유효할 때만 추가
     if (cursor && typeof cursor === "string" && cursor.trim() !== "") {
@@ -56,7 +50,7 @@ export const cafeSearchRepository = {
         },
       },
       orderBy: {
-        createdAt: "desc",  // ✅ 수정: asc → desc (최신순)
+        createdAt: "asc",
       },
       take: take + 1,
     });
