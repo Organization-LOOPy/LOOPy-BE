@@ -3,18 +3,41 @@ import prisma from "../../prisma/client.js";
 
 export const cafeSearchRepository = {
   async findCafeByInfos(whereConditions, cursor, userId, take = 15) {
-    // 1. 기본 where 절 구성 (상태가 active인 것만 조회)
-    // 외부에서 들어오는 whereConditions가 스키마의 필드명(camelCase)을 따르는지 확인이 필요합니다.
-    const whereClause = {
-      status: "active",
-      ...(whereConditions || {}),
-    };
+    // ✅ 수정: status를 whereConditions 구조에 맞게 포함
+    let whereClause;
+    
+    if (whereConditions && whereConditions.AND) {
+      // AND 배열이 있으면 status도 AND에 추가
+      whereClause = {
+        AND: [
+          { status: "active" },
+          ...whereConditions.AND
+        ]
+      };
+    } else if (whereConditions) {
+      // AND 없이 단순 조건이면 status 추가
+      whereClause = {
+        status: "active",
+        ...whereConditions
+      };
+    } else {
+      // 조건이 없으면 status만
+      whereClause = {
+        status: "active"
+      };
+    }
 
-    // 2. 커서 기반 페이지네이션 처리
+    // cursor 처리
     if (cursor && typeof cursor === "string" && cursor.trim() !== "") {
       const cursorId = parseInt(cursor);
       if (!isNaN(cursorId)) {
-        whereClause.id = { gt: cursorId };
+        if (whereClause.AND) {
+          // AND 구조일 때는 AND 배열에 추가
+          whereClause.AND.push({ id: { gt: cursorId } });
+        } else {
+          // 단순 구조일 때는 직접 추가
+          whereClause.id = { gt: cursorId };
+        }
       }
     }
 
@@ -34,7 +57,7 @@ export const cafeSearchRepository = {
           storeFilters: true,
           takeOutFilters: true,
           menuFilters: true,
-          createdAt: true, // ✅ 스키마 필드명 일치 확인
+          createdAt: true,
           photos: {
             orderBy: { displayOrder: "asc" },
             take: 1,
@@ -58,7 +81,7 @@ export const cafeSearchRepository = {
           },
         },
         orderBy: {
-          createdAt: "desc", // ✅ 에러 원인 수정: created_at -> createdAt
+          createdAt: "desc",
         },
         take: take + 1,
       });
@@ -78,7 +101,7 @@ export const cafeSearchRepository = {
       };
     } catch (error) {
       logger.error(`findCafeByInfos Repository Error: ${error.message}`);
-      throw error; // 서비스 단으로 에러를 던져 500 응답 처리
+      throw error;
     }
   },
 
