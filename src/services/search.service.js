@@ -296,7 +296,11 @@ export const cafeSearchService = {
     console.log("selectedTakeOutFilters:", selectedTakeOutFilters);
 
     // ✅ 수정: region은 initial 판단에서 제외
-    const isInitialRequest = !hasSearchQuery && !hasAnyFilter;
+    const isInitialRequest =
+      !hasSearchQuery && !hasAnyFilter && !hasRegionFilter;
+
+    const isRegionOnly =
+      hasRegionFilter && !hasSearchQuery && !hasAnyFilter;
 
     // 1) 처음 리스팅: preference 임베딩 Top-K 추천 (+ user_preference 지역 적용)
     if (isInitialRequest && !hasRegionFilter) {
@@ -410,6 +414,8 @@ export const cafeSearchService = {
       console.log("=== ⚠️ whereConditions가 null이라 RDB 검색 스킵 ===");
     }
 
+
+
     if (hardRows.length > 0) {
       const sortedData = applyDistanceAndSort(hardRows, refinedX, refinedY);
 
@@ -425,8 +431,29 @@ export const cafeSearchService = {
         hasMore: hardResults?.hasMore ?? false,
       };
     }
+    if (isRegionOnly) {
+      const sortedData = applyDistanceAndSort(hardRows, refinedX, refinedY);
+    
+      return {
+        fromNLP: false,
+        message: null,
+        data: filterResponseData(sortedData),
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
 
     console.log("=== 🔄 RDB 검색 결과 없음, Fallback 시작 ===");
+
+    if (!hasSearchQuery && !hasAnyFilter) {
+      return {
+        fromNLP: false,
+        message: null,
+        data: [],
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
 
     // 3) RDB 결과 없음 → 임베딩 폴백(Top-15). 검색어 없고 필터만 있어도 폴백.
     const filterQuery =
