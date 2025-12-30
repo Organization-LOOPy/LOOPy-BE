@@ -1,23 +1,21 @@
-version: "3.8"
-
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-    ports:
-      - "3000:3000"
     env_file:
       - .env
     environment:
       - NODE_ENV=production
     volumes:
       - ./logs:/app/logs
+    expose:
+      - "3000"
     restart: unless-stopped
     networks:
       - loopy-be-network
 
-  nginx: 
+  nginx:
     image: nginx:alpine
     ports:
       - "80:80"
@@ -34,6 +32,7 @@ services:
 
   certbot:
     image: certbot/certbot
+    entrypoint: ""
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
