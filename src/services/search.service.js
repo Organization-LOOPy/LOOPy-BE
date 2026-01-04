@@ -736,7 +736,7 @@ export const mapSearchService = {
     }));
 
     const cafesInRadius = cafesWithDistance.filter(
-      (cafe) => cafe.distance <= effectiveRadius
+      (cafe) => cafe.distance <= zoomConfig.radius
     );
 
     cafesInRadius.sort((a, b) => a.distance - b.distance);
