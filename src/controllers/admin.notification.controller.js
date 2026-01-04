@@ -20,21 +20,23 @@ export const sendNotificationToCustomers = async (req, res, next) => {
       return res.fail('알림 메시지는 최대 500자까지 입력 가능합니다.', 400);
     }
 
-    // 2) 권한 확인(사장님이고, 본인 카페인지)
+    // 2) 권한 확인 (사장님인지)
     if (!req.user?.roles?.includes('OWNER')) {
       return res.fail('권한 없음', 403);
     }
-    if (!req.user?.cafeId || req.user.cafeId !== cafeId) {
-      return res.fail('본인 카페에만 알림을 보낼 수 있습니다.', 403);
-    }
 
-    // 3) 카페 존재 확인 (상태까지 보려면 status: 'active' 조건 추가)
+    // 3) 카페 존재 + 소유권 확인
     const cafe = await prisma.cafe.findUnique({
       where: { id: cafeId },
-      select: { id: true, name: true },
+      select: { id: true, name: true, ownerId: true },
     });
+
     if (!cafe) {
       return res.fail('해당 카페를 찾을 수 없습니다.', 404);
+    }
+
+    if (Number(cafe.ownerId) !== Number(req.user.id)) {
+      return res.fail('본인 카페에만 알림을 보낼 수 있습니다.', 403);
     }
 
     // 4) 알림 수신 허용 고객(이 카페 관련 사용자만 대상으로 하면 조인 사용)
