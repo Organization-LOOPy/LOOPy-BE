@@ -32,10 +32,14 @@ services:
 
   certbot:
     image: certbot/certbot
-    entrypoint: ""
+    entrypoint: ["sh", "-c"]
+    command: ["sleep infinity"]
     volumes:
       - ./certbot/conf:/etc/letsencrypt
       - ./certbot/www:/var/www/certbot
+    restart: unless-stopped
+    networks:
+      - loopy-be-network
 
 networks:
   loopy-be-network:

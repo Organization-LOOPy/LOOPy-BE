@@ -303,22 +303,33 @@ export const cafeSearchService = {
       hasRegionFilter && !hasSearchQuery && !hasAnyFilter;
 
     // 1) 처음 리스팅: preference 임베딩 Top-K 추천 (+ user_preference 지역 적용)
+    // 1️⃣ 초기 진입: preference → 없으면 nearby RDB fallback
     if (isInitialRequest && !hasRegionFilter) {
-      console.log("=== ⭐ Initial Request (Preference-based) ===");
-
       const pref = await preferenceTopK(userId, { topK: 15 });
       const cafeIds = pref?.cafeIds ?? [];
+
+      // 🔥 preference 없는 유저 fallback
       if (cafeIds.length === 0) {
+        const rows = await cafeSearchRepository.findCafeByInfos(
+          { status: "active" }, // 조건 없이 active 전체
+          null,
+          userId,
+          15
+        );
+
         return {
-          fromNLP: true,
+          fromNLP: false,
           message: null,
-          data: [],
-          nextCursor: null,
-          hasMore: false,
+          data: filterResponseData(
+            applyDistanceAndSort(rows.cafes ?? [], refinedX, refinedY)
+          ),
+          nextCursor: rows.nextCursor,
+          hasMore: rows.hasMore,
         };
       }
-      let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
 
+      // 기존 preference 로직
+      let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
       return {
         fromNLP: true,
         message: null,
