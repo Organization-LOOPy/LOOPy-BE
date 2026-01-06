@@ -132,6 +132,22 @@ export const cafeSearchService = {
     region3,
     userId
   ) {
+    // ✅ 디버깅: 함수 시작
+    console.log("=== 🔍 findCafeList 시작 ===");
+    console.log("입력 파라미터:", {
+      cursor,
+      x,
+      y,
+      searchQuery,
+      storeFilters,
+      takeOutFilters,
+      menuFilters,
+      region1,
+      region2,
+      region3,
+      userId,
+    });
+
     // x, y 필수
     const refinedX = parseFloat(x);
     const refinedY = parseFloat(y);
@@ -265,26 +281,55 @@ export const cafeSearchService = {
       selectedTakeOutFilters.length > 0;
     const hasRegionFilter = hasAnyKeys(explicitRegionCond);
 
+    // ✅ 디버깅: 지역 파라미터
+    console.log("=== 🗺️ 지역 파라미터 디버깅 ===");
+    console.log("받은 원본 값:", { region1, region2, region3 });
+    console.log("buildRegionCondition 결과:", explicitRegionCond);
+    console.log("hasRegionFilter:", hasRegionFilter);
+
+    // ✅ 디버깅: 필터 상태
+    console.log("=== 🔧 필터 상태 ===");
+    console.log("hasSearchQuery:", hasSearchQuery, "query:", query);
+    console.log("hasAnyFilter:", hasAnyFilter);
+    console.log("selectedStoreFilters:", selectedStoreFilters);
+    console.log("selectedMenuFilters:", selectedMenuFilters);
+    console.log("selectedTakeOutFilters:", selectedTakeOutFilters);
+
     // ✅ 수정: region은 initial 판단에서 제외
-    const isInitialRequest = !hasSearchQuery && !hasAnyFilter;
+    const isInitialRequest =
+      !hasSearchQuery && !hasAnyFilter && !hasRegionFilter;
+
+    const isRegionOnly =
+      hasRegionFilter && !hasSearchQuery && !hasAnyFilter;
 
     // 1) 처음 리스팅: preference 임베딩 Top-K 추천 (+ user_preference 지역 적용)
+    // 1️⃣ 초기 진입: preference → 없으면 nearby RDB fallback
     if (isInitialRequest && !hasRegionFilter) {
-      console.log("=== Initial Request (Preference-based) ===");
-
       const pref = await preferenceTopK(userId, { topK: 15 });
       const cafeIds = pref?.cafeIds ?? [];
+
+      // 🔥 preference 없는 유저 fallback
       if (cafeIds.length === 0) {
+        const rows = await cafeSearchRepository.findCafeByInfos(
+          { status: "active" }, // 조건 없이 active 전체
+          null,
+          userId,
+          15
+        );
+
         return {
-          fromNLP: true,
+          fromNLP: false,
           message: null,
-          data: [],
-          nextCursor: null,
-          hasMore: false,
+          data: filterResponseData(
+            applyDistanceAndSort(rows.cafes ?? [], refinedX, refinedY)
+          ),
+          nextCursor: rows.nextCursor,
+          hasMore: rows.hasMore,
         };
       }
-      let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
 
+      // 기존 preference 로직
+      let rows = await cafeSearchRepository.findCafeByIds(cafeIds, userId);
       return {
         fromNLP: true,
         message: null,
@@ -353,35 +398,39 @@ export const cafeSearchService = {
       }
     }
 
-    console.log("=== 필터 변환 디버깅 ===");
-    console.log("원본 storeFilters:", storeFilters);
-    console.log("변환된 storeFilters:", convertedStoreFilters);
-    console.log("선택된 storeFilters:", selectedStoreFilters);
-    console.log("=== 지역 필터 디버깅 ===");
-    console.log("받은 지역 파라미터:", { region1, region2, region3 });
-    console.log("buildRegionCondition 결과:", explicitRegionCond);
-    console.log("hasRegionFilter:", hasRegionFilter);
-    console.log(
-      "최종 whereConditions:",
-      JSON.stringify(whereConditions, null, 2)
-    );
+    // ✅ 디버깅: whereConditions
+    console.log("=== 📋 whereConditions 생성 ===");
+    console.log("whereConditions:", JSON.stringify(whereConditions, null, 2));
 
     // ✅ whereConditions가 null이 아닐 때만 RDB 검색 실행
     let hardRows = [];
     let hardResults = null;
 
     if (whereConditions !== null) {
+      console.log("=== 🔍 RDB 검색 실행 ===");
+      
       hardResults = await cafeSearchRepository.findCafeByInfos(
         whereConditions,
         cursor,
         userId
       );
       hardRows = hardResults?.cafes ?? [];
+      
+      console.log("=== ✅ RDB 검색 완료 ===");
+      console.log("조회된 카페 수:", hardRows.length);
+      if (hardRows.length > 0) {
+        console.log("카페 목록:", hardRows.map(c => ({ id: c.id, name: c.name, region: `${c.region1DepthName} ${c.region2DepthName} ${c.region3DepthName}` })));
+      }
+    } else {
+      console.log("=== ⚠️ whereConditions가 null이라 RDB 검색 스킵 ===");
     }
+
+
 
     if (hardRows.length > 0) {
       const sortedData = applyDistanceAndSort(hardRows, refinedX, refinedY);
 
+      console.log("=== ✅ 검색 성공 - RDB 결과 반환 ===");
       return {
         fromNLP: false,
         message: null,
@@ -393,8 +442,29 @@ export const cafeSearchService = {
         hasMore: hardResults?.hasMore ?? false,
       };
     }
+    if (isRegionOnly) {
+      const sortedData = applyDistanceAndSort(hardRows, refinedX, refinedY);
+    
+      return {
+        fromNLP: false,
+        message: null,
+        data: filterResponseData(sortedData),
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
 
-    console.log("=== RDB 검색 결과 없음, Fallback 시작 ===");
+    console.log("=== 🔄 RDB 검색 결과 없음, Fallback 시작 ===");
+
+    if (!hasSearchQuery && !hasAnyFilter) {
+      return {
+        fromNLP: false,
+        message: null,
+        data: [],
+        nextCursor: null,
+        hasMore: false,
+      };
+    }
 
     // 3) RDB 결과 없음 → 임베딩 폴백(Top-15). 검색어 없고 필터만 있어도 폴백.
     const filterQuery =
@@ -406,6 +476,9 @@ export const cafeSearchService = {
           )
         : "";
     const embeddingQuery = hasSearchQuery ? query : filterQuery;
+
+    console.log("=== 🤖 Fallback 임베딩 쿼리 ===");
+    console.log("embeddingQuery:", embeddingQuery);
 
     let fallbackRows = [];
     
@@ -436,17 +509,26 @@ export const cafeSearchService = {
         ? nlpRes.cafeIds.slice(0, 15)
         : [];
       
+      console.log("=== 🎯 NLP 검색 결과 ===");
+      console.log("fallbackIds:", fallbackIds);
+      
       if (fallbackIds.length > 0) {
         let rows = await cafeSearchRepository.findCafeByIds(
           fallbackIds,
           userId
         );
 
+        console.log("=== 📍 Fallback 카페 조회 완료 ===");
+        console.log("조회된 카페 수:", rows.length);
+
         // 🔥 유사도 순서 유지
         rows = sortByOriginalOrder(rows, fallbackIds);
 
         // 지역 필터 적용
         if (hasRegionFilter) {
+          console.log("=== 🗺️ 지역 필터 적용 (Fallback) ===");
+          const beforeFilter = rows.length;
+          
           rows = rows.filter((c) => {
             if (
               explicitRegionCond.region1DepthName &&
@@ -465,6 +547,8 @@ export const cafeSearchService = {
               return false;
             return true;
           });
+          
+          console.log(`지역 필터 적용: ${beforeFilter}개 → ${rows.length}개`);
         }
 
         // 선택된 필터 적용
@@ -475,12 +559,15 @@ export const cafeSearchService = {
           selectedTakeOutFilters
         );
 
+        console.log("=== 🔧 필터 적용 후 카페 수:", rows.length, "===");
+
         // 🔥 거리만 계산하고 정렬하지 않음 (유사도 순서 유지)
         fallbackRows = addDistanceWithoutSort(rows, refinedX, refinedY);
       }
     }
 
     if (fallbackRows.length > 0) {
+      console.log("=== ✅ Fallback 성공 ===");
       return {
         fromNLP: true,
         message: "검색 결과가 없어 유사 카페를 추천합니다.",
@@ -490,6 +577,7 @@ export const cafeSearchService = {
       };
     }
 
+    console.log("=== ❌ 검색 결과 없음 ===");
     return {
       fromNLP: true,
       message: "검색 결과가 없습니다.",
@@ -648,7 +736,7 @@ export const mapSearchService = {
     }));
 
     const cafesInRadius = cafesWithDistance.filter(
-      (cafe) => cafe.distance <= zoomConfig.radius
+      (cafe) => cafe.distance <= effectiveRadius
     );
 
     cafesInRadius.sort((a, b) => a.distance - b.distance);
