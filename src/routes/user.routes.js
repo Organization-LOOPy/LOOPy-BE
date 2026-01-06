@@ -36,10 +36,11 @@ router.use(authenticateJWT);
 
 // 사용자 계정
 router.patch('/me/inactive', deactivateUser);
+router.get("/isDummyPhone", checkDummyPhoneController);
 router.patch('/me/activate', reactivateUser);
 router.get('/me', getMyInfo);
 router.patch('/me/nickname', updateNickname);
-// router.get("/isDummyPhone", checkDummyPhoneController);
+router.get("/isDummyPhone", checkDummyPhoneController);
 // router.patch("/me/save-phone", savePhoneNumberAfterVerificationController);
 
 
