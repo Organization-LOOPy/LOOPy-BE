@@ -7,7 +7,11 @@ const bucket = process.env.AWS_S3_BUCKET;
 const cloudFrontUrl = process.env.CLOUDFRONT_URL?.replace(/\/+$/, '') || null;
 
 const s3 = new S3Client({
-  region
+  region,
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
+  },
 });
 
 // 간단 MIME 화이트리스트
@@ -48,6 +52,12 @@ export const uploadToS3 = async (file, folder) => {
   if (!allowedMime.has(file.mimetype)) {
     throw new Error(`Unsupported content type: ${file.mimetype}`);
   }
+
+  console.log("🚀 S3 Upload Debug:", {
+  bucket,
+  region,
+  accessKeyId: process.env.AWS_ACCESS_KEY_ID?.slice(0, 4) + "...",
+});
 
   const orig = file.originalname || 'upload.bin';
   const ext = (path.extname(orig) || '').toLowerCase() || '.bin';
