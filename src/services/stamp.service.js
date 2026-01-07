@@ -6,6 +6,7 @@ import {
   BadRequestError,
   ForbiddenError,
   StampbookNotFoundError,
+  StampNotEligibleError,
 } from "../errors/customErrors.js";
 
 import { toStartOfDayKST } from "../utils/date.utils.js";
