@@ -48,6 +48,9 @@ jobs:
             echo "🛑 Stopping containers..."
             docker compose down
 
+            echo "🔨 Build without cache..."
+            docker compose build --no-cache
+
             echo "🚀 Deploying with docker compose..."
             docker compose up -d --build
 
