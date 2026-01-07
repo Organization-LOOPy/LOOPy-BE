@@ -18,6 +18,8 @@ COPY --chown=nodejs:nodejs package.json pnpm-lock.yaml ./
 USER nodejs
 RUN pnpm install --frozen-lockfile
 
+RUN pnpm exec prisma generate
+
 # 나머지 소스 복사
 COPY --chown=nodejs:nodejs . .
 
