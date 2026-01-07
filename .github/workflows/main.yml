@@ -45,6 +45,9 @@ jobs:
             echo "📥 Pulling latest code..."
             git pull origin main
 
+            echo "🛑 Stopping containers..."
+            docker compose down
+
             echo "🚀 Deploying with docker compose..."
             docker compose up -d --build
 
