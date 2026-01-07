@@ -371,12 +371,76 @@ export const addStampToUser = async (req, res, next) => {
       });
 
       // (6) 목표 도달 시 완료 처리
+      // (6) 목표 도달 시 완료 처리 + 쿠폰 발급 + 다음 스탬프북 생성
       if (!updatedBook.isCompleted && updatedBook.currentCount >= updatedBook.goalCount) {
-        updatedBook = await tx.stampBook.update({
-          where: { id: book.id },
-          data: { isCompleted: true, completedAt: now, status: 'completed' },
-          select: { id: true, currentCount: true, goalCount: true, isCompleted: true, status: true },
+        // 6-1) 스탬프 정책 조회
+        const policy = await tx.stampPolicy.findUnique({ where: { cafeId } });
+        if (!policy) {
+          throw Object.assign(new Error('STAMP_POLICY_NOT_FOUND'), { code: 'STAMP_POLICY_NOT_FOUND' });
+        }
+
+        const now = new Date();
+        const couponExpiredAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        // 6-2) 쿠폰 템플릿 생성
+        const couponTemplate = await tx.couponTemplate.create({
+          data: {
+            cafeId,
+            name: policy.rewardDescription || '스탬프 리워드 쿠폰',
+            discountType: policy.rewardType,
+            discountValue: policy.discountAmount ?? 0,
+            applicableMenuId: policy.menuId ?? null,
+            isActive: true,
+            expiredAt: policy.hasExpiry ? policy.rewardExpiresAt : couponExpiredAt,
+          },
         });
+
+        // 6-3) 사용자 쿠폰 발급
+        await tx.userCoupon.create({
+          data: {
+            userId,
+            couponTemplateId: couponTemplate.id,
+            acquisitionType: 'stamp',
+            status: 'active',
+            issuedAt: now,
+            expiredAt: couponExpiredAt,
+          },
+        });
+
+        // 6-4) 스탬프북 완료 처리
+        await tx.stampBook.update({
+          where: { id: book.id },
+          data: {
+            isCompleted: true,
+            completedAt: now,
+            status: 'completed',
+          },
+        });
+
+        // 6-5) 다음 스탬프북 생성 (자동 라운드 증가)
+        await tx.stampBook.create({
+          data: {
+            userId,
+            cafeId,
+            currentCount: 0,
+            goalCount: book.goalCount,
+            isCompleted: false,
+            isConverted: false,
+            startedAt: now,
+            status: 'active',
+            expiresAt: new Date(now.getTime() + EXPIRE_DAYS * 24 * 60 * 60 * 1000),
+            rewardDetail: book.rewardDetail,
+            selectedRewardType: book.selectedRewardType,
+            selectedRewardMeta: book.selectedRewardMeta,
+            round: book.round + 1,
+          },
+        });
+
+        updatedBook = {
+          ...updatedBook,
+          isCompleted: true,
+          status: 'completed',
+        };
       }
     });
 
