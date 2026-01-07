@@ -205,31 +205,31 @@ export const updateFcmTokenService = async (userId, fcmToken) => {
 };
 
 // 전화번호 인증 토큰 확인 후 저장 
-// export const savePhoneNumberAfterVerificationService = async (userId, phoneNumber) => {
-//   const parsedUserId = Number(userId);
-//   if (!parsedUserId || !phoneNumber) {
-//     throw new BadRequestError("userId 또는 phoneNumber가 누락되었습니다.");
-//   }
+export const savePhoneNumberAfterVerificationService = async (userId, phoneNumber) => {
+  const parsedUserId = Number(userId);
+  if (!parsedUserId || !phoneNumber) {
+    throw new BadRequestError("userId 또는 phoneNumber가 누락되었습니다.");
+  }
 
-//   const existing = await prisma.user.findUnique({
-//     where: { phoneNumber },
-//   });
+  const existing = await prisma.user.findUnique({
+    where: { phoneNumber },
+  });
 
-//   if (existing && existing.id !== parsedUserId) {
-//     throw new DuplicateUserError({ phoneNumber });
-//   }
+  if (existing && existing.id !== parsedUserId) {
+    throw new DuplicateUserError({ phoneNumber });
+  }
 
-//   const updatedUser = await prisma.user.update({
-//     where: { id: parsedUserId },
-//     data: { phoneNumber },
-//   });
+  const updatedUser = await prisma.user.update({
+    where: { id: parsedUserId },
+    data: { phoneNumber },
+  });
 
-//   return {
-//     message: "전화번호 등록 완료",
-//     userId: updatedUser.id.toString(),
-//     phoneNumber: updatedUser.phoneNumber,
-//   };
-// };
+  return {
+    message: "전화번호 등록 완료",
+    userId: updatedUser.id.toString(),
+    phoneNumber: updatedUser.phoneNumber,
+  };
+};
 
 
 // 사장 카페 임시 생성  

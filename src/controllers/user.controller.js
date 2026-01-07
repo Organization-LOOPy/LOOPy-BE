@@ -8,7 +8,7 @@ import {
   updatePreferredAreaService,
   updateKakaoAlertService,
   updateFcmTokenService,
-  //savePhoneNumberAfterVerificationService,
+  savePhoneNumberAfterVerificationService,
   makeOwnerCafe,
   deleteMyAccountService,
   getUserPreferencesService,
@@ -138,43 +138,43 @@ export const updateFcmToken = async (req, res, next) => {
   }
 };
 
-// export const savePhoneNumberAfterVerification = async (req, res, next) => {
-//   try {
-//     const { idToken, userId } = req.body;
+export const savePhoneNumberAfterVerification = async (req, res, next) => {
+  try {
+    const { idToken, userId } = req.body;
 
-//     if (!idToken || !userId) {
-//       throw new BadRequestError("idToken 또는 userId가 필요합니다.");
-//     }
+    if (!idToken || !userId) {
+      throw new BadRequestError("idToken 또는 userId가 필요합니다.");
+    }
 
-//     const phoneNumber = await verifyPhoneNumber(idToken);
+    const phoneNumber = await verifyPhoneNumber(idToken);
 
-//     const result = await savePhoneNumberAfterVerificationService(
-//       userId,
-//       phoneNumber
-//     );
+    const result = await savePhoneNumberAfterVerificationService(
+      userId,
+      phoneNumber
+    );
 
-//     return res.success(result);
-//   } catch (err) {
-//     next(err);
-//   }
-// };
+    return res.success(result);
+  } catch (err) {
+    next(err);
+  }
+};
 
-// export const notifyPhoneVerification = async (req, res, next) => {
-//   try {
-//     const { phoneNumber } = req.body;
+export const notifyPhoneVerification = async (req, res, next) => {
+  try {
+    const { phoneNumber } = req.body;
 
-//     if (!phoneNumber) {
-//       throw new NotFoundPhoneError();
-//     }
+    if (!phoneNumber) {
+      throw new NotFoundPhoneError();
+    }
 
-//     return res.success({
-//       message: "전화번호 인증 확인됨",
-//       phoneNumber,
-//     });
-//   } catch (err) {
-//     next(err);
-//   }
-// };
+    return res.success({
+      message: "전화번호 인증 확인됨",
+      phoneNumber,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
 
 export const saveUserAgreements = async (req, res, next) => {
   try {
@@ -252,18 +252,18 @@ export const checkDummyPhoneController = async (req, res, next) => {
   }
 };
 
-// export const savePhoneNumberAfterVerificationController = async (req, res, next) => {
-//   try {
-//     const userId = req.user.id;
-//     const { phoneNumber } = req.body;
-//     console.log("[BODY]", req.body);
-// console.log("[USER]", req.user);
+export const savePhoneNumberAfterVerificationController = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const { phoneNumber } = req.body;
+    console.log("[BODY]", req.body);
+console.log("[USER]", req.user);
 
 
-//     const result = await savePhoneNumberAfterVerificationService(userId, phoneNumber);
+    const result = await savePhoneNumberAfterVerificationService(userId, phoneNumber);
 
-//     res.status(200).json(result);
-//   } catch (error) {
-//     next(error);
-//   }
-// };
+    res.status(200).json(result);
+  } catch (error) {
+    next(error);
+  }
+};
