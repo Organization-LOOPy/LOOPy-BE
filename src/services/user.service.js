@@ -16,19 +16,30 @@ import { STORE_KEYWORDS, TAKEOUT_KEYWORDS, MENU_KEYWORDS, ALL_KEYWORDS } from '.
 
 // 탈퇴(사용자 휴면 계정으로 전환)
 export const deactivateUserService = async (userId) => {
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      status: 'inactive',
-      inactivedAt: new Date(),
-    },
-  });
+  // const updatedUser = await prisma.user.update({
+  //   where: { id: userId },
+  //   data: {
+  //     status: 'inactive',
+  //     inactivedAt: new Date(),
+  //   },
+  // });
 
-  return {
-    id: updatedUser.id.toString(),
-    status: updatedUser.status,
-    inactivedAt: updatedUser.inactivedAt,
-  };
+  // return {
+  //   id: updatedUser.id.toString(),
+  //   status: updatedUser.status,
+  //   inactivedAt: updatedUser.inactivedAt,
+  // };
+  return await prisma.$transaction(async (tx) => {
+    await tx.user.delete({
+      where: { id: userId },
+    });
+
+    return {
+      message: cafe
+        ? "사장 계정 및 카페 관련 데이터 삭제 완료"
+        : "일반 유저 계정 삭제 완료",
+    };
+  });
 };
 
 // 사장 탈퇴(바로 탈퇴 처리)
