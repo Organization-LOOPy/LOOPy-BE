@@ -302,50 +302,97 @@ export const getMyChallengeListService = async (userId) => {
     }));
 };
 
-// 챌린지 완료 처리
 export const completeChallengeService = async (userId, challengeId) => {
   const now = new Date();
 
-  const participant = await prisma.challengeParticipant.findUnique({
-    where: { userId_challengeId: { userId, challengeId: Number(challengeId) } },
-  });
-  if (!participant) throw new BadRequestError("챌린지 참여 정보가 없습니다.");
-
-  if (participant.completedAt)
-    throw new BadRequestError("이미 완료된 챌린지입니다.");
-
-  const challenge = await prisma.challenge.findUnique({
-    where: { id: Number(challengeId) },
-  });
-  if (!challenge || !challenge.isActive || challenge.endDate < now)
-    throw new BadRequestError("챌린지를 완료할 수 없습니다.");
-
-  await prisma.challengeParticipant.update({
-    where: { userId_challengeId: { userId, challengeId: Number(challengeId) } },
-    data: { completedAt: now, status: "completed" },
-  });
-
-  const template = await prisma.couponTemplate.findFirst({
-    where: { isActive: true, expiredAt: { gte: now } },
-    orderBy: { expiredAt: "asc" },
-  });
-
-  let coupon = null;
-  if (template) {
-    coupon = await prisma.userCoupon.create({
-      data: {
-        userId,
-        couponTemplateId: template.id,
-        acquisitionType: "promotion",
-        expiredAt: new Date(
-          now.getTime() + template.validDays * 24 * 60 * 60 * 1000
-        ),
-      },
+  return await prisma.$transaction(async (tx) => {
+    // 1️⃣ 참여 정보
+    const participant = await tx.challengeParticipant.findUnique({
+      where: { userId_challengeId: { userId, challengeId: Number(challengeId) } },
     });
-  }
+    if (!participant) throw new BadRequestError("챌린지 참여 정보가 없습니다.");
+    if (participant.completedAt)
+      throw new BadRequestError("이미 완료된 챌린지입니다.");
 
-  return {
-    message: "챌린지 완료 처리 성공",
-    couponId: coupon?.id || null,
-  };
+    // 2️⃣ 챌린지 유효성
+    const challenge = await tx.challenge.findUnique({
+      where: { id: Number(challengeId) },
+    });
+    if (!challenge || !challenge.isActive || challenge.endDate < now)
+      throw new BadRequestError("챌린지를 완료할 수 없습니다.");
+
+    // 3️⃣ 완료 처리
+    await tx.challengeParticipant.update({
+      where: { userId_challengeId: { userId, challengeId: Number(challengeId) } },
+      data: { completedAt: now, status: "completed" },
+    });
+
+    // 4️⃣ 완료한 챌린지 개수
+    const completedCount = await tx.challengeParticipant.count({
+      where: { userId, completedAt: { not: null } },
+    });
+
+    // 5️⃣ 마일스톤 보상 계산
+    let milestoneRewarded = 0;
+    let couponId = null;
+
+    if (completedCount === 3) {
+      milestoneRewarded = 500;
+
+      // (5-1) 포인트 지급
+      await tx.pointTransaction.create({
+        data: {
+          userId,
+          point: milestoneRewarded,
+          type: "earned",
+          description: "챌린지 3회 완료 보상",
+        },
+      });
+
+      // (5-2) 쿠폰 발급 (기존 방식 유지)
+      const template = await tx.couponTemplate.findFirst({
+        where: { isActive: true, expiredAt: { gte: now } },
+        orderBy: { expiredAt: "asc" },
+      });
+
+      if (template) {
+        const coupon = await tx.userCoupon.create({
+          data: {
+            userId,
+            couponTemplateId: template.id,
+            acquisitionType: "promotion",
+            expiredAt: new Date(
+              now.getTime() + template.validDays * 24 * 60 * 60 * 1000
+            ),
+          },
+        });
+        couponId = coupon.id;
+      }
+    }
+
+    // 6️⃣ 기본 응답
+    const baseResponse = {
+      status: "SUCCESS",
+      code: 200,
+      message: "챌린지 인증 완료",
+      data: {
+        completedAt: now.toISOString(),
+        completedCount,
+        milestoneRewarded,
+      },
+    };
+
+    // 7️⃣ 3회 달성 시 추가 응답
+    if (completedCount === 3) {
+      return {
+        ...baseResponse,
+        success: {
+          message: "챌린지 마일스톤 달성",
+          couponId,
+        },
+      };
+    }
+
+    return baseResponse;
+  });
 };
