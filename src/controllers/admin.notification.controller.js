@@ -52,7 +52,6 @@ export const sendNotificationToCustomers = async (req, res, next) => {
     // (B) 이 카페 ‘즐겨찾기/구독(예: UserCafeNotification)’ 한 사용자만
     const users = await prisma.user.findMany({
       where: {
-        allowKakaoAlert: true,
         cafeNotifications: { some: { cafeId } },
       },
       select: { id: true },
