@@ -16,20 +16,16 @@ import { STORE_KEYWORDS, TAKEOUT_KEYWORDS, MENU_KEYWORDS, ALL_KEYWORDS } from '.
 
 // 탈퇴(사용자 휴면 계정으로 전환)
 export const deactivateUserService = async (userId) => {
-  // const updatedUser = await prisma.user.update({
-  //   where: { id: userId },
-  //   data: {
-  //     status: 'inactive',
-  //     inactivedAt: new Date(),
-  //   },
-  // });
-
-  // return {
-  //   id: updatedUser.id.toString(),
-  //   status: updatedUser.status,
-  //   inactivedAt: updatedUser.inactivedAt,
-  // };
   return await prisma.$transaction(async (tx) => {
+
+    // 1. 사장인지 확인 (카페 보유 여부)
+    const cafe = await tx.cafe.findFirst({
+      where: { ownerId: userId },
+      select: { id: true },
+    });
+
+    if (cafe) {
+    }
     await tx.user.delete({
       where: { id: userId },
     });
