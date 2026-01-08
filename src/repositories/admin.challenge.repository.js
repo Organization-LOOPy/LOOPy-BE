@@ -74,14 +74,18 @@ export const getChallengeDetailByCafe = async (cafeId, challengeId) => {
   return await prisma.challenge.findFirst({
     where: {
       id: Number(challengeId),
-      availableCafes: {
-        some: { cafeId: Number(cafeId) } // ← 숫자로 변환
-      }
+      participants: {
+        some: {
+          joinedCafeId: Number(cafeId),
+        },
+      },
     },
     include: {
       participants: {
-        where: { joinedCafeId: Number(cafeId) } // ← 숫자로 변환
-      }
-    }
+        where: {
+          joinedCafeId: Number(cafeId),
+        },
+      },
+    },
   });
 };

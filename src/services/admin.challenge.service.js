@@ -99,10 +99,19 @@ export const getPastChallengesByCafe = async (cafeId) => {
 export const getChallengeDetailService = async (cafeId, challengeId) => {
   const challenge = await getChallengeDetailByCafe(cafeId, challengeId);
 
-  if (!challenge) throw new ChallengeNotFoundError(challengeId);
+  if (!challenge) {
+    throw new ChallengeNotFoundError(challengeId);
+  }
 
-  const participantCount = challenge.participants.length;
-  const completedCount = challenge.participants.filter(p => p.status === 'completed').length;
+  const uniqueUserIds = new Set(
+    challenge.participants.map(p => p.userId)
+  );
+
+  const completedUserIds = new Set(
+    challenge.participants
+      .filter(p => p.status === 'completed')
+      .map(p => p.userId)
+  );
 
   return {
     id: challenge.id,
@@ -113,8 +122,8 @@ export const getChallengeDetailService = async (cafeId, challengeId) => {
     endDate: challenge.endDate.toISOString().split('T')[0],
     rewardDetail: challenge.goalDescription,
     rewardPoint: challenge.rewardPoint,
-    participantCount,
-    completedCount
+    participantCount: uniqueUserIds.size, 
+    completedCount: completedUserIds.size, 
   };
 };
 
@@ -122,14 +131,21 @@ export const getChallengeDetailService = async (cafeId, challengeId) => {
 export const getChallengeStatisticsService = async (cafeId) => {
   const cafeIdNum = Number(cafeId);
 
-  // 1. 내 카페가 참여한 챌린지 ID 목록
-  const participatedChallenges = await prisma.challengeParticipant.findMany({
-    where: {  joinedCafeId: cafeIdNum },
-    select: { challengeId: true },
+  const participants = await prisma.challengeParticipant.findMany({
+    where: {
+      joinedCafeId: cafeIdNum,
+    },
+    select: {
+      challengeId: true,
+      userId: true,
+      status: true,
+      challenge: {
+        select: { goalCount: true },
+      },
+    },
   });
 
-  const challengeIds = participatedChallenges.map(p => p.challengeId);
-  if (challengeIds.length === 0) {
+  if (participants.length === 0) {
     return {
       participatedChallengeCount: 0,
       totalParticipantCount: 0,
@@ -138,42 +154,35 @@ export const getChallengeStatisticsService = async (cafeId) => {
     };
   }
 
-  // 2. 병렬 처리
-  const [participants, completed, progress] = await Promise.all([
-    prisma.challengeParticipant.findMany({
-      where: {
-        challengeId: { in: challengeIds },
-        joinedCafeId: cafeIdNum,
-      },
-      select: { userId: true },
-      distinct: ['userId'],
-    }),
+  const uniqueChallengeIds = new Set(
+    participants.map(p => p.challengeId)
+  );
 
-    prisma.challengeParticipant.findMany({
-      where: {
-        challengeId: { in: challengeIds },
-        joinedCafeId: cafeIdNum,
-        status: 'completed',
-      },
-      select: { userId: true },
-      distinct: ['userId'],
-    }),
+  const uniqueUserIds = new Set(
+    participants.map(p => p.userId)
+  );
 
-    prisma.challengeParticipant.findMany({
-      where: {
-        challengeId: { in: challengeIds },
-        joinedCafeId: cafeIdNum,
-      },
-      select: { challenge: { select: { goalCount: true } } },
-    }),
-  ]);
+  const completedUserIds = new Set(
+    participants
+      .filter(p => p.status === 'completed')
+      .map(p => p.userId)
+  );
 
-  const totalSales = progress.reduce((sum, p) => sum + p.challenge.goalCount, 0);
+  const challengeGoalMap = new Map();
+  for (const p of participants) {
+    if (!challengeGoalMap.has(p.challengeId)) {
+      challengeGoalMap.set(p.challengeId, p.challenge.goalCount);
+    }
+  }
+
+  const challengeRelatedSalesCount = Array
+    .from(challengeGoalMap.values())
+    .reduce((sum, v) => sum + v, 0);
 
   return {
-    participatedChallengeCount: challengeIds.length,
-    totalParticipantCount: participants.length,
-    completedUserCount: completed.length,
-    challengeRelatedSalesCount: totalSales,
+    participatedChallengeCount: uniqueChallengeIds.size,
+    totalParticipantCount: uniqueUserIds.size,
+    completedUserCount: completedUserIds.size,
+    challengeRelatedSalesCount,
   };
 };
