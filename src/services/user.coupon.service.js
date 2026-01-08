@@ -6,6 +6,35 @@ import {
   InvalidCouponStatusError
 } from '../errors/customErrors.js';
 
+const mapUserCoupon = (c) => {
+  const couponTemplate = c.couponTemplate ?? {};
+  const cafe = couponTemplate.cafe ?? {};
+  const photos = cafe.photos ?? [];
+
+  const discountType = couponTemplate.discountType;
+  const menuName = couponTemplate.applicableMenu?.name ?? null;
+
+  let couponName = couponTemplate.name ?? '';
+
+  if (discountType === 'FREE_ITEM') {
+    couponName = menuName
+      ? `${menuName} 무료 쿠폰`
+      : '무료 음료 쿠폰';
+  }
+
+  return {
+    ...c,
+    couponTemplate: {
+      ...couponTemplate,
+      name: couponName,
+    },
+    cafeId: cafe.id ?? null,
+    cafeName: cafe.name ?? null,
+    cafeImage: photos[0]?.photoUrl ?? null,
+    usageCondition: couponTemplate.usageCondition ?? null,
+  };
+};
+
 export const userCouponService = {
   async getUserCoupons(userId, status) {
     const commonInclude = {
@@ -27,21 +56,17 @@ export const userCouponService = {
           discountType: true,
           discountValue: true,
           applicableMenuId: true,
-
           applicableMenu: {
             select: {
               id: true,
               name: true,
             },
           },
-
           startDate: true,
           endDate: true,
         },
       },
     };
-  
-
 
     if (status === 'usable') {
       const coupons = await prisma.userCoupon.findMany({
@@ -52,38 +77,19 @@ export const userCouponService = {
         include: commonInclude,
       });
 
-      return coupons.map((c) => ({
-        ...c,
-        cafeId: c.couponTemplate?.cafe?.id ?? null,
-        cafeName: c.couponTemplate?.cafe?.name ?? null,
-        cafeImage: c.couponTemplate?.cafe?.photos?.[0]?.photoUrl ?? null,
-        usageCondition: c.couponTemplate?.usageCondition ?? null,
-      }));
+      return coupons.map(mapUserCoupon);
     }
 
     if (status === 'past') {
       const coupons = await prisma.userCoupon.findMany({
         where: {
           userId,
-          OR: [
-            { status: 'used' },
-          ],
+          status: 'used',
         },
         include: commonInclude,
       });
 
-      return coupons.map((c) => ({
-        ...c,
-        cafeId: c.couponTemplate?.cafe?.id ?? null,
-        cafeName: c.couponTemplate?.cafe?.name ?? null,
-        cafeImage: c.couponTemplate?.cafe?.photos?.[0]?.photoUrl ?? null,
-        usageCondition: c.couponTemplate?.usageCondition ?? null,
-
-        menuName:
-          c.couponTemplate?.discountType === 'FREE_DRINK'
-            ? c.couponTemplate?.applicableMenu?.name ?? null
-            : null,
-      }));
+      return coupons.map(mapUserCoupon);
     }
 
     throw new InvalidCouponStatusError(status);
@@ -91,10 +97,16 @@ export const userCouponService = {
 
   async useUserCoupon(userId, userCouponId) {
     const userCoupon = await prisma.userCoupon.findFirst({
-      where: { id: userCouponId, userId },
+      where: {
+        id: userCouponId,
+        userId,
+      },
     });
 
-    if (!userCoupon) throw new UserCouponNotFoundError(userCouponId);
+    if (!userCoupon) {
+      throw new UserCouponNotFoundError(userCouponId);
+    }
+
     if (userCoupon.status !== 'active') {
       throw new UserCouponAlreadyUsedOrExpiredError(userCouponId);
     }
