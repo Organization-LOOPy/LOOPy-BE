@@ -35,14 +35,23 @@ export const deactivateUserService = async (userId) => {
 export const deleteMyAccountService = async (userId) => {
   return await prisma.$transaction(async (tx) => {
 
-    const cafe = await tx.cafe.findUnique({
+    // 1. 사장인지 확인 (카페 보유 여부)
+    const cafe = await tx.cafe.findFirst({
       where: { ownerId: userId },
       select: { id: true },
     });
-     
-    await tx.user.delete({ where: { id: userId } });
 
-    return { message: "사장 계정 및 관련 데이터 삭제 완료" };
+    if (cafe) {
+    }
+    await tx.user.delete({
+      where: { id: userId },
+    });
+
+    return {
+      message: cafe
+        ? "사장 계정 및 카페 관련 데이터 삭제 완료"
+        : "일반 유저 계정 삭제 완료",
+    };
   });
 };
 

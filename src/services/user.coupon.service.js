@@ -27,6 +27,14 @@ export const userCouponService = {
           discountType: true,
           discountValue: true,
           applicableMenuId: true,
+
+          applicableMenu: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+
           startDate: true,
           endDate: true,
         },
@@ -70,6 +78,11 @@ export const userCouponService = {
         cafeName: c.couponTemplate?.cafe?.name ?? null,
         cafeImage: c.couponTemplate?.cafe?.photos?.[0]?.photoUrl ?? null,
         usageCondition: c.couponTemplate?.usageCondition ?? null,
+
+        menuName:
+          c.couponTemplate?.discountType === 'FREE_DRINK'
+            ? c.couponTemplate?.applicableMenu?.name ?? null
+            : null,
       }));
     }
 
