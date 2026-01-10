@@ -91,6 +91,10 @@ export const cafeService = {
         usageCondition: c.usageCondition,
 
         expiredAt: c.endDate,
+
+        startDate: c.startDate,
+        endDate: c.endDate,
+        validDays: c.validDays,
         userCoupons: c.userCoupons,
         isIssued: c.userCoupons.length > 0,
       })),
