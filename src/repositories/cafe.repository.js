@@ -46,6 +46,9 @@ export const cafeRepository = {
             usageCondition: true,
             createdAt: true,
             expiredAt: true,
+            startDate: true,
+            endDate: true,
+            validDays: true,
             userCoupons: {
               where: { userId },
               select: { id: true },

@@ -90,12 +90,7 @@ export const cafeService = {
         applicableMenu: c.applicableMenu,
         usageCondition: c.usageCondition,
 
-        startDate: c.startDate,
-        endDate: c.endDate,
-        validDays: c.validDays,
-        // templateExpiredAt: c.expiredAt,
-
-        // expiredAt: c.expiredAt,
+        expiredAt: c.endDate,
         userCoupons: c.userCoupons,
         isIssued: c.userCoupons.length > 0,
       })),
