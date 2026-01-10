@@ -42,10 +42,7 @@ router.patch('/myCafe', updateCafe);
 router.get('/photos', getMyCafePhoto);
 router.delete('/photos/:photoId', deleteMyCafePhoto);
 router.get('/myCafe/menus', getMyCafeMenus);
-router.get('/photos/first', (req, res, next) => {
-  console.log('🔥 adminCafeRouter /photos/first hit');
-  next();
-}, getFirstCafePhotoController);
+router.get('/photos/first', getFirstCafePhotoController);
 router.delete("/menus/:menuId", deleteCafeMenu);
 router.get('/myCafe/info', getOwnerCafe);
 export default router;
