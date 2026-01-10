@@ -48,6 +48,8 @@ export const createCouponTemplateService = async (cafeId, data) => {
     } else if (discountType === 'FREE_DRINK') {
       name = `${menu.name} 무료`;
     }
+    const parsedStartDate = startDate ? new Date(startDate) : null;
+    const parsedEndDate = endDate ? new Date(endDate) : null;
 
     const newCoupon = await prisma.couponTemplate.create({
       data: {
@@ -57,8 +59,8 @@ export const createCouponTemplateService = async (cafeId, data) => {
         discountValue: discountType === 'DISCOUNT' ? discountValue : null,
         applicableMenuId,
         usageCondition,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
+        startDate: parsedStartDate instanceof Date && !isNaN(parsedStartDate) ? parsedStartDate : null,
+        endDate: parsedEndDate instanceof Date && !isNaN(parsedEndDate) ? parsedEndDate : null,
         validDays,
       }
     });

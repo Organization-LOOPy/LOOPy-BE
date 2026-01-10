@@ -617,9 +617,10 @@ export const handleStampCompletionService = async (userId, cafeId) => {
           applicableMenuId: stampPolicy.menuId ?? null,
           isActive: true,
           validDays: stampPolicy.hasExpiry ? null : 14,
-          expiredAt: stampPolicy.hasExpiry
-            ? stampPolicy.rewardExpiresAt
-            : expiredAt,
+          expiredAt:
+            stampPolicy.hasExpiry && stampPolicy.rewardExpiresAt
+              ? stampPolicy.rewardExpiresAt
+              : expiredAt,
         },
       }),
   
