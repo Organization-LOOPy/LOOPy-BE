@@ -73,6 +73,17 @@ export const userCouponService = {
         where: {
           userId,
           status: 'active',
+          OR: [
+            { expiredAt: null },
+            { expiredAt: { gte: now } },
+          ],
+
+          couponTemplate: {
+            OR: [
+              { endDate: null },
+              { endDate: { gte: now } },
+            ],
+          },
         },
         include: commonInclude,
       });
@@ -84,7 +95,27 @@ export const userCouponService = {
       const coupons = await prisma.userCoupon.findMany({
         where: {
           userId,
-          status: 'used',
+          OR: [
+            { status: 'used' },
+
+            {
+              AND: [
+                { status: 'active' },
+                { expiredAt: { not: null, lt: now } },
+              ],
+            },
+
+            {
+              AND: [
+                { status: 'active' },
+                {
+                  couponTemplate: {
+                    endDate: { not: null, lt: now },
+                  },
+                },
+              ],
+            },
+          ],
         },
         include: commonInclude,
       });
