@@ -37,6 +37,7 @@ const mapUserCoupon = (c) => {
 
 export const userCouponService = {
   async getUserCoupons(userId, status) {
+    const now = new Date();
     const commonInclude = {
       couponTemplate: {
         select: {
