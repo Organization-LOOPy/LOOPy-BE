@@ -143,6 +143,7 @@ model ChallengeParticipant {
   createdAt    DateTime                   @default(now()) @map("created_at")
   updatedAt    DateTime                   @updatedAt @map("updated_at")
   joinedCafeId Int?                       @map("joined_cafe_id")
+  currentCount Int                        @default(0) @map("current_count")
   challenge    Challenge                  @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   joinedCafe   Cafe?                      @relation("CafeToJoinedChallengeParticipants", fields: [joinedCafeId], references: [id], onDelete: Cascade)
   user         User                       @relation(fields: [userId], references: [id], onDelete: Cascade)
