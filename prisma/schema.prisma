@@ -13,6 +13,7 @@ model User {
   passwordHash          String?                @map("password_hash") @db.VarChar(255)
   phoneNumber           String                 @unique @map("phone_number") @db.VarChar(20)
   nickname              String                 @db.VarChar(50)
+  profileImageUrl       String?                @map("profile_image_url") @db.Text
   allowKakaoAlert       Boolean                @default(false) @map("allow_kakao_alert")
   status                UserStatus             @default(active)
   fcmToken              String?                @map("fcm_token") @db.VarChar(255)

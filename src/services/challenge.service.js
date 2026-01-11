@@ -1,12 +1,11 @@
 import pkg from "@prisma/client";
 import { getDistanceInMeters } from "../utils/geo.js";
-import { parseIntOrThrow, validateActiveChallenge } from "../utils/validation.js";
 import {
   ChallengeNotFoundError,
+  ChallengeNotActiveError,
   AlreadyParticipatedError,
   InvalidCafeParticipationError,
   BadRequestError,
-  ChallengeNotActiveError,
 } from "../errors/customErrors.js";
 
 const { PrismaClient } = pkg;
@@ -16,7 +15,6 @@ const prisma = new PrismaClient();
 export const getChallengeListService = async (userId) => {
   const today = new Date();
 
-  // 활성화 상태이면서 진행 중인 챌린지 조회
   const challenges = await prisma.challenge.findMany({
     where: {
       isActive: true,
@@ -31,37 +29,29 @@ export const getChallengeListService = async (userId) => {
       thumbnailUrl: true,
       startDate: true,
       endDate: true,
-      // 유저가 로그인한 경우에만 해당 유저의 참여 상태를 조회
       participants: userId
         ? { where: { userId }, select: { status: true } }
-        : undefined,
+        : false,
     },
   });
 
-  // 응답 데이터 가공
-  return challenges.map((challenge) => {
-    const isParticipated =
-      userId && challenge.participants?.some((p) => p.status === "in_progress");
-
-    return {
-      id: challenge.id,
-      title: challenge.title,
-      description: challenge.description,
-      thumbnailUrl: challenge.thumbnailUrl,
-      startDate: challenge.startDate,
-      endDate: challenge.endDate,
-      isParticipated: Boolean(isParticipated),
-    };
-  });
+  return challenges.map((challenge) => ({
+    id: challenge.id,
+    title: challenge.title,
+    description: challenge.description,
+    thumbnailUrl: challenge.thumbnailUrl,
+    startDate: challenge.startDate,
+    endDate: challenge.endDate,
+    isParticipated: userId
+      ? challenge.participants?.some((p) => p.status === "in_progress")
+      : false,
+  }));
 };
 
 // 2. 챌린지 상세 조회
 export const getChallengeDetailService = async (userId, challengeId) => {
-  // 챌린지 ID 검증
   const id = Number(challengeId);
-  if (isNaN(id)) throw new BadRequestError("유효하지 않은 챌린지 ID입니다.");
 
-  // 챌린지 기본 정보 + 참여 가능 매장 조회
   const challenge = await prisma.challenge.findUnique({
     where: { id },
     include: {
@@ -87,88 +77,96 @@ export const getChallengeDetailService = async (userId, challengeId) => {
     },
   });
 
-  if (!challenge) throw new ChallengeNotFoundError("해당 챌린지를 찾을 수 없습니다.");
+  if (!challenge) {
+    throw new ChallengeNotFoundError(id);
+  }
 
-  // 유저의 챌린지 참여 상태 조회
   const participation = await prisma.challengeParticipant.findUnique({
     where: { userId_challengeId: { userId, challengeId: id } },
-    include: { joinedCafe: { select: { id: true, name: true } } },
+    include: {
+      joinedCafe: { select: { id: true, name: true } },
+    },
   });
 
+  // in_progress일 때만 true
   const isParticipated = participation?.status === "in_progress";
-  const joinedCafe = participation?.joinedCafe ?? null;
 
-  // 참여 중인 경우, 현재 인증 횟수 조회 (ChallengeParticipant.currentCount 사용)
+  const joinedCafe = participation?.joinedCafe
+    ? { id: participation.joinedCafe.id, name: participation.joinedCafe.name }
+    : null;
+
+  // 현재 인증 횟수 (ChallengeParticipant.currentCount 사용)
   const joinedCount = participation?.currentCount ?? 0;
 
-  // 응답 데이터
   return {
     id: challenge.id,
     title: challenge.title,
     description: challenge.description,
     thumbnailUrl: challenge.thumbnailUrl,
-    startDate: challenge.startDate,
-    endDate: challenge.endDate,
+    startDate: challenge.startDate.toISOString().slice(0, 10),
+    endDate: challenge.endDate.toISOString().slice(0, 10),
     goalDescription: challenge.goalDescription,
     goalCount: challenge.goalCount,
     rewardPoint: challenge.rewardPoint,
     isParticipated,
     joinedCafe,
     joinedCount,
-    availableCafes: challenge.availableCafes.map(({ cafe }) => ({
-      id: cafe.id,
-      name: cafe.name,
-      address: cafe.address,
-      image: cafe.photos?.[0]?.photoUrl ?? null,
-      region1DepthName: cafe.region1DepthName,
-      region2DepthName: cafe.region2DepthName,
-      region3DepthName: cafe.region3DepthName,
+    availableCafes: challenge.availableCafes.map((entry) => ({
+      id: entry.cafe.id,
+      name: entry.cafe.name,
+      address: entry.cafe.address,
+      image: entry.cafe.photos?.[0]?.photoUrl ?? null,
+      region1DepthName: entry.cafe.region1DepthName,
+      region2DepthName: entry.cafe.region2DepthName,
+      region3DepthName: entry.cafe.region3DepthName,
     })),
   };
 };
-
 
 // 3. 챌린지 참여
 export const participateInChallengeService = async (userId, cafeId, challengeId) => {
   const now = new Date();
 
-  const parsedChallengeId = parseIntOrThrow(challengeId, "유효하지 않은 챌린지 ID입니다.");
-  const parsedCafeId = parseIntOrThrow(cafeId, "유효하지 않은 카페 ID입니다.");
   const challenge = await prisma.challenge.findUnique({
-    where: { id: parsedChallengeId },
+    where: { id: Number(challengeId) },
   });
-  validateActiveChallenge(challenge, now);
 
-  // 중복 참여 여부 확인
-  const existingParticipation = await prisma.challengeParticipant.findUnique({
-    where: { userId_challengeId: { userId, challengeId: parsedChallengeId } },
+  if (!challenge || !challenge.isActive) {
+    throw new ChallengeNotFoundError(challengeId);
+  }
+  if (challenge.startDate > now || challenge.endDate < now) {
+    throw new ChallengeNotActiveError();
+  }
+
+  const existing = await prisma.challengeParticipant.findUnique({
+    where: {
+      userId_challengeId: {
+        userId,
+        challengeId: Number(challengeId),
+      },
+    },
   });
-  if (existingParticipation) throw new AlreadyParticipatedError();
+  if (existing) throw new AlreadyParticipatedError();
 
-  // 카페 참여 가능 여부 검증
+  // cafeId가 해당 챌린지의 참여 가능 매장인지 검증
   const isValidCafe = await prisma.challengeAvailableCafe.findFirst({
     where: {
-      challengeId: parsedChallengeId,
-      cafeId: parsedCafeId,
+      challengeId: Number(challengeId),
+      cafeId: Number(cafeId),
     },
   });
   if (!isValidCafe) throw new InvalidCafeParticipationError();
 
-  // 참여 기록 생성
-  const participation = await prisma.challengeParticipant.create({
+  await prisma.challengeParticipant.create({
     data: {
       userId,
-      challengeId: parsedChallengeId,
-      joinedCafeId: parsedCafeId,
+      challengeId: Number(challengeId),
+      joinedCafeId: Number(cafeId),
       joinedAt: now,
     },
   });
 
-  return {
-    challengeId: participation.challengeId,
-    cafeId: participation.joinedCafeId,
-    joinedAt: participation.joinedAt,
-  };
+  return { message: "챌린지 참여가 완료되었습니다." };
 };
 
 // 4. 챌린지 참여 가능 매장 목록 조회
@@ -177,23 +175,17 @@ export const getAvailableStoresForChallengeService = async (
   userLat,
   userLon
 ) => {
-  // 챌린지 유효성 검사
-  const parsedChallengeId = Number(challengeId);
-  if (isNaN(parsedChallengeId)) throw new BadRequestError("유효하지 않은 챌린지 ID입니다.");
-
   const challenge = await prisma.challenge.findUnique({
-    where: { id: parsedChallengeId },
-    select: { id: true, isActive: true },
+    where: { id: Number(challengeId) },
   });
 
   if (!challenge || !challenge.isActive) {
-    throw new ChallengeNotFoundError("유효한 챌린지를 찾을 수 없습니다.");
+    throw new ChallengeNotFoundError(challengeId);
   }
 
-  // 참여 가능 매장 조회 (활성화된 매장만)
   const availableCafes = await prisma.challengeAvailableCafe.findMany({
     where: {
-      challengeId: parsedChallengeId,
+      challengeId: Number(challengeId),
       cafe: { status: "active" },
     },
     include: {
@@ -217,13 +209,9 @@ export const getAvailableStoresForChallengeService = async (
     },
   });
 
-  // 거리 계산 및 응답 데이터 변환
   return availableCafes.map(({ cafe }) => {
     const distance =
-      userLat != null &&
-      userLon != null &&
-      cafe.latitude != null &&
-      cafe.longitude != null
+      userLat && userLon && cafe.latitude && cafe.longitude
         ? getDistanceInMeters(userLat, userLon, cafe.latitude, cafe.longitude)
         : null;
 
@@ -240,12 +228,10 @@ export const getAvailableStoresForChallengeService = async (
   });
 };
 
-
-// 나의 챌린지 목록 조회
+// 5. 나의 챌린지 목록 조회
 export const getMyChallengeListService = async (userId) => {
   const today = new Date();
 
-  // 1. 사용자가 참여 중인 활성 챌린지 조회
   const myChallenges = await prisma.challengeParticipant.findMany({
     where: {
       userId,
@@ -255,36 +241,25 @@ export const getMyChallengeListService = async (userId) => {
         endDate: { gte: today },
       },
     },
-    select: {
-      challenge: {
-        select: {
-          id: true,
-          title: true,
-          thumbnailUrl: true,
-          startDate: true,
-          endDate: true,
-          tag: true, // optional
-        },
-      },
+    include: {
+      challenge: true,
     },
     orderBy: {
       challenge: { endDate: "asc" },
     },
   });
 
-  // 2. 응답 데이터 가공
-  return myChallenges
-    .filter((item) => item.challenge)
-    .map(({ challenge }) => ({
-      id: challenge.id,
-      title: challenge.title,
-      thumbnailUrl: challenge.thumbnailUrl,
-      tag: challenge.tag ?? null,
-      startDate: challenge.startDate,
-      endDate: challenge.endDate,
-    }));
+  return myChallenges.map((item) => ({
+    id: item.challenge.id,
+    title: item.challenge.title,
+    thumbnailUrl: item.challenge.thumbnailUrl,
+    tag: item.challenge.tag ?? null,
+    startDate: item.challenge.startDate,
+    endDate: item.challenge.endDate,
+  }));
 };
 
+// 6. 챌린지 완료 처리 (현재 상태 확인용 - 실제 완료는 사장님 인증으로만 가능)
 export const completeChallengeService = async (userId, challengeId) => {
   const now = new Date();
 
@@ -293,7 +268,7 @@ export const completeChallengeService = async (userId, challengeId) => {
     where: { userId_challengeId: { userId, challengeId: Number(challengeId) } },
     include: {
       challenge: {
-        select: { goalCount: true, title: true, rewardPoint: true }
+        select: { goalCount: true, title: true, rewardPoint: true, isActive: true, endDate: true }
       },
       joinedCafe: {
         select: { id: true, name: true }
@@ -301,39 +276,31 @@ export const completeChallengeService = async (userId, challengeId) => {
     }
   });
 
-  if (!participant) throw new BadRequestError("챌린지 참여 정보가 없습니다.");
+  if (!participant) {
+    throw new BadRequestError("챌린지 참여 정보가 없습니다.");
+  }
 
-  const { currentCount, challenge, joinedCafe, completedAt } = participant;
+  const { currentCount, challenge, completedAt } = participant;
   const goalCount = challenge.goalCount;
 
-  // 2️⃣ 이미 완료된 경우 - 완료 정보 반환
+  // 이미 완료된 경우
   if (completedAt) {
     return {
-      status: "COMPLETED",
       message: "이미 완료된 챌린지입니다.",
-      data: {
-        currentCount,
-        goalCount,
-        completedAt: completedAt.toISOString(),
-        challengeTitle: challenge.title,
-        rewardPoint: challenge.rewardPoint,
-      },
+      couponId: null
     };
   }
 
-  // 3️⃣ 아직 완료되지 않은 경우 - 진행 상황 및 안내 반환
+  // 챌린지 유효성 확인
+  if (!challenge.isActive || challenge.endDate < now) {
+    throw new BadRequestError("챌린지를 완료할 수 없습니다.");
+  }
+
+  // 아직 완료되지 않은 경우 - 진행 상황 안내
   const remainingCount = goalCount - currentCount;
 
   return {
-    status: "IN_PROGRESS",
     message: `챌린지 완료까지 ${remainingCount}회 남았습니다. 매장에서 인증을 받아주세요.`,
-    data: {
-      currentCount,
-      goalCount,
-      remainingCount,
-      challengeTitle: challenge.title,
-      joinedCafe: joinedCafe ? { id: joinedCafe.id, name: joinedCafe.name } : null,
-      rewardPoint: challenge.rewardPoint,
-    },
+    couponId: null
   };
 };

@@ -319,6 +319,12 @@ export const cafeReviewRepository = {
           select: {
             id: true,
             nickname: true,
+            profileImageUrl: true,
+          },
+        },
+        cafe: {
+          select: {
+            name: true,
           },
         },
       },

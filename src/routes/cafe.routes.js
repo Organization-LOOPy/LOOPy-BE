@@ -8,6 +8,12 @@ import {
 } from "../controllers/cafe.controller.js";
 
 import {
+  getChallengeList,
+  getChallengeDetail,
+  participateInChallenge,
+} from "../controllers/challenge.controller.js";
+
+import {
   isCorrectCafeId,
   isMyCoupon,
   test,
@@ -30,5 +36,10 @@ router.get("/review", getCafeReviews); //리뷰 조회
 router.post("/coupon", isMyCoupon, issueCafeCouponToUser); //쿠폰 발급
 
 router.post("/bookmark", addBookmark); // 북마크 설정
+
+// 챌린지 관련 라우트
+router.get("/challenges/available", getChallengeList); // 챌린지 목록 조회
+router.get("/challenges/:challengeId", getChallengeDetail); // 챌린지 상세 조회
+router.post("/challenges/:challengeId/join", participateInChallenge); // 챌린지 참여
 
 export default router;
