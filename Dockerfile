@@ -21,6 +21,8 @@ RUN pnpm install --frozen-lockfile
 # 나머지 소스 복사
 COPY --chown=nodejs:nodejs . .
 
+RUN pnpm exec prisma generate
+
 # 로그 디렉토리
 RUN mkdir -p /app/logs
 
@@ -34,4 +36,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:3000/health || exit 1
 
 # 마이그레이션 + 앱 실행
-CMD ["sh", "-c", "pnpm exec prisma generate && pnpm start"]
+CMD ["pnpm", "start"]

@@ -75,13 +75,13 @@ export const getChallengeDetailByCafe = async (cafeId, challengeId) => {
     where: {
       id: Number(challengeId),
       availableCafes: {
-        some: { cafeId: Number(cafeId) } // ← 숫자로 변환
-      }
+        some: { cafeId: Number(cafeId) },
+      },
     },
     include: {
       participants: {
-        where: { joinedCafeId: Number(cafeId) } // ← 숫자로 변환
-      }
-    }
+        where: { joinedCafeId: Number(cafeId) },
+      },
+    },
   });
 };

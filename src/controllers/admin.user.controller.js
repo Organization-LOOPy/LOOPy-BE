@@ -391,7 +391,9 @@ export const addStampToUser = async (req, res, next) => {
             discountValue: policy.discountAmount ?? 0,
             applicableMenuId: policy.menuId ?? null,
             isActive: true,
-            expiredAt: policy.hasExpiry ? policy.rewardExpiresAt : couponExpiredAt,
+            expiredAt: policy.hasExpiry && policy.rewardExpiresAt
+              ? policy.rewardExpiresAt
+              : couponExpiredAt,
           },
         });
 

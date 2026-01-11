@@ -8,6 +8,7 @@ import { responseHandler } from "./middlewares/responseHandler.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { setupSwagger } from "./config/swagger.js";
 import passport from "./config/passport.js";
+import { registerExpireUserCouponsCron } from './cron/expireUserCoupons.cron.js';
 
 // Routers
 import verificationRouter from './routes/verificationRouter.js';
@@ -48,6 +49,8 @@ const corsOptions = {
   allowedHeaders: ["Content-Type", "Authorization", "X-Action-Token", "x-action-token", "x-access-token"],
   exposedHeaders: ["x-access-token", "Content-Encoding"],
 };
+
+registerExpireUserCouponsCron();
 app.use(cors(corsOptions));
 app.options(/.*/, cors(corsOptions));
 

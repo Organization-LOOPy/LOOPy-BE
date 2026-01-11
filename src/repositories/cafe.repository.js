@@ -46,6 +46,9 @@ export const cafeRepository = {
             usageCondition: true,
             createdAt: true,
             expiredAt: true,
+            startDate: true,
+            endDate: true,
+            validDays: true,
             userCoupons: {
               where: { userId },
               select: { id: true },
@@ -221,13 +224,17 @@ export const cafeCouponRepository = {
   async issueCoupon(couponInfo, userId) {
     const { id, createdAt, expiredAt } = couponInfo;
 
+    const safeExpiredAt =
+      expiredAt instanceof Date && !isNaN(expiredAt)
+        ? expiredAt
+        : null;
+
     const coupon = await prisma.userCoupon.create({
       data: {
         userId,
         couponTemplateId: id,
-        expiredAt: new Date(expiredAt),
-        //사장님이 설정한 유효기간 후 만료
         acquisitionType: "promotion",
+        expiredAt: safeExpiredAt,
       },
       select: {
         id: true,

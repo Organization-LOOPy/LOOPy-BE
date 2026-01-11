@@ -16,33 +16,49 @@ import { STORE_KEYWORDS, TAKEOUT_KEYWORDS, MENU_KEYWORDS, ALL_KEYWORDS } from '.
 
 // 탈퇴(사용자 휴면 계정으로 전환)
 export const deactivateUserService = async (userId) => {
-  const updatedUser = await prisma.user.update({
-    where: { id: userId },
-    data: {
-      status: 'inactive',
-      inactivedAt: new Date(),
-    },
-  });
+  return await prisma.$transaction(async (tx) => {
 
-  return {
-    id: updatedUser.id.toString(),
-    status: updatedUser.status,
-    inactivedAt: updatedUser.inactivedAt,
-  };
+    // 1. 사장인지 확인 (카페 보유 여부)
+    const cafe = await tx.cafe.findFirst({
+      where: { ownerId: userId },
+      select: { id: true },
+    });
+
+    if (cafe) {
+    }
+    await tx.user.delete({
+      where: { id: userId },
+    });
+
+    return {
+      message: cafe
+        ? "사장 계정 및 카페 관련 데이터 삭제 완료"
+        : "일반 유저 계정 삭제 완료",
+    };
+  });
 };
 
 // 사장 탈퇴(바로 탈퇴 처리)
 export const deleteMyAccountService = async (userId) => {
   return await prisma.$transaction(async (tx) => {
 
-    const cafe = await tx.cafe.findUnique({
+    // 1. 사장인지 확인 (카페 보유 여부)
+    const cafe = await tx.cafe.findFirst({
       where: { ownerId: userId },
       select: { id: true },
     });
-     
-    await tx.user.delete({ where: { id: userId } });
 
-    return { message: "사장 계정 및 관련 데이터 삭제 완료" };
+    if (cafe) {
+    }
+    await tx.user.delete({
+      where: { id: userId },
+    });
+
+    return {
+      message: cafe
+        ? "사장 계정 및 카페 관련 데이터 삭제 완료"
+        : "일반 유저 계정 삭제 완료",
+    };
   });
 };
 
@@ -205,31 +221,31 @@ export const updateFcmTokenService = async (userId, fcmToken) => {
 };
 
 // 전화번호 인증 토큰 확인 후 저장 
-// export const savePhoneNumberAfterVerificationService = async (userId, phoneNumber) => {
-//   const parsedUserId = Number(userId);
-//   if (!parsedUserId || !phoneNumber) {
-//     throw new BadRequestError("userId 또는 phoneNumber가 누락되었습니다.");
-//   }
+export const savePhoneNumberAfterVerificationService = async (userId, phoneNumber) => {
+  const parsedUserId = Number(userId);
+  if (!parsedUserId || !phoneNumber) {
+    throw new BadRequestError("userId 또는 phoneNumber가 누락되었습니다.");
+  }
 
-//   const existing = await prisma.user.findUnique({
-//     where: { phoneNumber },
-//   });
+  const existing = await prisma.user.findUnique({
+    where: { phoneNumber },
+  });
 
-//   if (existing && existing.id !== parsedUserId) {
-//     throw new DuplicateUserError({ phoneNumber });
-//   }
+  if (existing && existing.id !== parsedUserId) {
+    throw new DuplicateUserError({ phoneNumber });
+  }
 
-//   const updatedUser = await prisma.user.update({
-//     where: { id: parsedUserId },
-//     data: { phoneNumber },
-//   });
+  const updatedUser = await prisma.user.update({
+    where: { id: parsedUserId },
+    data: { phoneNumber },
+  });
 
-//   return {
-//     message: "전화번호 등록 완료",
-//     userId: updatedUser.id.toString(),
-//     phoneNumber: updatedUser.phoneNumber,
-//   };
-// };
+  return {
+    message: "전화번호 등록 완료",
+    userId: updatedUser.id.toString(),
+    phoneNumber: updatedUser.phoneNumber,
+  };
+};
 
 
 // 사장 카페 임시 생성  

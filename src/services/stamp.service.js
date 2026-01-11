@@ -597,13 +597,17 @@ export const handleStampCompletionService = async (userId, cafeId) => {
   
     // 3️) 리워드 쿠폰 발급 관련 데이터 준비
     const now = new Date();
-    const expiredAt = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   
     const rewardTypeMap = {
       DISCOUNT: "DISCOUNT",
       FREE_DRINK: "FREE_DRINK",
       SIZE_UP: "SIZE_UP",
     };
+
+    const couponExpiredAt =
+    stampPolicy.hasExpiry && stampPolicy.rewardExpiresAt instanceof Date
+      ? stampPolicy.rewardExpiresAt
+      : new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   
     // 4️) 트랜잭션 실행 (쿠폰 발급 + 스탬프북 갱신 + 신규 생성)
     const [couponTemplate, userCoupon] = await prisma.$transaction([
@@ -617,9 +621,7 @@ export const handleStampCompletionService = async (userId, cafeId) => {
           applicableMenuId: stampPolicy.menuId ?? null,
           isActive: true,
           validDays: stampPolicy.hasExpiry ? null : 14,
-          expiredAt: stampPolicy.hasExpiry
-            ? stampPolicy.rewardExpiresAt
-            : expiredAt,
+          expiredAt: couponExpiredAt,
         },
       }),
   
@@ -630,8 +632,7 @@ export const handleStampCompletionService = async (userId, cafeId) => {
           acquisitionType: "stamp",
           status: "active",
           issuedAt: now,
-          expiredAt,
-          couponTemplateId: undefined,
+          expiredAt: couponExpiredAt,
         },
       }),
     ]);
