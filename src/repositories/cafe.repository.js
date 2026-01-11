@@ -234,25 +234,22 @@ export const cafeNotificationRepository = {
 
 export const cafeCouponRepository = {
   async issueCoupon(couponInfo, userId) {
-    const { id, createdAt, expiredAt } = couponInfo;
+    const {
+    id: couponTemplateId,
+    endDate,
+  } = couponInfo;
 
-    const safeExpiredAt =
-      expiredAt instanceof Date && !isNaN(expiredAt)
-        ? expiredAt
-        : null;
+  let safeExpiredAt = null;
 
-    if (endDate instanceof Date && !isNaN(endDate)) {
-      safeExpiredAt = endDate;
-    } else if (typeof validDays === 'number') {
-      safeExpiredAt = new Date(
-        now.getTime() + validDays * 24 * 60 * 60 * 1000
-      );
-    }
+  if (endDate instanceof Date && !isNaN(endDate)) {
+    safeExpiredAt = endDate;
+  }
+
 
     const coupon = await prisma.userCoupon.create({
       data: {
         userId,
-        couponTemplateId: id,
+        couponTemplateId,
         acquisitionType: "promotion",
         expiredAt: safeExpiredAt,
       },
@@ -274,7 +271,7 @@ export const cafeCouponRepository = {
                 photoUrl: true,
               },
             },
-            expiredAt: true,
+            endDate: true,
           },
         },
       },
