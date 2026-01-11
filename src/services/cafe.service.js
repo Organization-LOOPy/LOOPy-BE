@@ -8,6 +8,45 @@ import {
 } from "../repositories/cafe.repository.js";
 import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
+function formatBusinessHours(businessHours, businessHourType) {
+  if (!businessHours || !businessHourType) return null;
+
+  switch (businessHourType) {
+    case "SAME_ALL_DAYS":
+      return {
+        open: businessHours.open,
+        close: businessHours.close,
+      };
+
+    case "WEEKDAY_WEEKEND":
+      return {
+        weekday: {
+          open: businessHours.weekday?.open,
+          close: businessHours.weekday?.close,
+        },
+        weekend: {
+          open: businessHours.weekend?.open,
+          close: businessHours.weekend?.close,
+        },
+      };
+
+    case "DIFFERENT_EACH_DAY":
+      return (businessHours ?? []).map((dayInfo) => ({
+        day: dayInfo.day,
+        isClosed: dayInfo.isClosed,
+        ...(dayInfo.isClosed
+          ? {}
+          : {
+              openTime: dayInfo.openTime,
+              closeTime: dayInfo.closeTime,
+            }),
+      }));
+
+    default:
+      return null;
+  }
+}
+
 export const cafeService = {
   async getCafeDetails(cafeObject, cafeId, userId) {
     const cafe = await cafeRepository.findCafeDetails(cafeId, userId);
@@ -57,7 +96,10 @@ export const cafeService = {
         id: cafeobject.id,
         name: cafeobject.name,
         address: cafeobject.address,
-        businessHours: cafeobject.businessHours,
+        businessHours: formatBusinessHours(
+        cafeobject.businessHours,
+        cafeobject.businessHourType
+      ),
         businessHourType: cafeobject.businessHourType,
         breakTime: cafeobject.breakTime,
         phone: cafeobject.phone,
