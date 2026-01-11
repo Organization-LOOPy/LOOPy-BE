@@ -126,10 +126,10 @@ export const cafeService = {
         name: cafeobject.name,
         address: cafeobject.address,
         businessHours: formatBusinessHours(
-        cafeobject.businessHours,
-        cafeobject.businessHourType
-      ),
-        businessHourType: cafeobject.businessHourType,
+          cafe.businessHours,
+          cafe.businessHourType
+        ),
+        businessHourType: cafe.businessHourType,
         breakTime: cafeobject.breakTime,
         phone: cafeobject.phone,
         websiteUrl: cafeobject.websiteUrl,
