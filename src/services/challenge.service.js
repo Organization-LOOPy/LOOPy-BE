@@ -288,7 +288,6 @@ export const getMyChallengeListService = async (userId) => {
 export const completeChallengeService = async (userId, challengeId) => {
   const now = new Date();
 
-
   // 1️⃣ 참여 정보 + 챌린지 정보 조회
   const participant = await prisma.challengeParticipant.findUnique({
     where: { userId_challengeId: { userId, challengeId: Number(challengeId) } },
@@ -298,100 +297,6 @@ export const completeChallengeService = async (userId, challengeId) => {
       },
       joinedCafe: {
         select: { id: true, name: true }
-  return await prisma.$transaction(async (tx) => {
-    // 참여 정보
-    const participant = await tx.challengeParticipant.findUnique({
-      where: {
-        userId_challengeId: {
-          userId,
-          challengeId: Number(challengeId),
-        },
-      },
-    });
-
-    if (!participant) {
-      throw new BadRequestError("챌린지 참여 정보가 없습니다.");
-    }
-    if (participant.completedAt) {
-      throw new BadRequestError("이미 완료된 챌린지입니다.");
-    }
-
-    // 챌린지 유효성
-    const challenge = await tx.challenge.findUnique({
-      where: { id: Number(challengeId) },
-    });
-
-    if (!challenge || !challenge.isActive || challenge.endDate < now) {
-      throw new BadRequestError("챌린지를 완료할 수 없습니다.");
-    }
-
-    // 완료 처리
-    await tx.challengeParticipant.update({
-      where: {
-        userId_challengeId: {
-          userId,
-          challengeId: Number(challengeId),
-        },
-      },
-      data: {
-        completedAt: now,
-        status: "completed",
-      },
-    });
-
-    // 완료한 챌린지 개수
-    const completedCount = await tx.challengeParticipant.count({
-      where: { userId, completedAt: { not: null } },
-    });
-
-    // 마일스톤 보상
-    let milestoneRewarded = 0;
-    let couponId = null;
-
-    if (completedCount === 3) {
-      milestoneRewarded = 500;
-
-      // (5-1) 포인트 지급
-      await tx.pointTransaction.create({
-        data: {
-          userId,
-          point: milestoneRewarded,
-          type: "earned",
-          description: "챌린지 3회 완료 보상",
-        },
-      });
-
-      // (5-2) 쿠폰 템플릿 조회 (NULL 만료 포함)
-      const template = await tx.couponTemplate.findFirst({
-        where: {
-          isActive: true,
-          OR: [
-            { expiredAt: null },
-            { expiredAt: { gte: now } },
-          ],
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-     if (template) {
-        const couponExpiredAt =
-          typeof template.validDays === "number"
-            ? new Date(
-                now.getTime() +
-                  template.validDays * 24 * 60 * 60 * 1000
-              )
-            : null;
-
-        const coupon = await tx.userCoupon.create({
-          data: {
-            userId,
-            couponTemplateId: template.id,
-            acquisitionType: "promotion",
-            expiredAt: couponExpiredAt,
-          },
-        });
-
-        couponId = coupon.id;
       }
     }
   });
