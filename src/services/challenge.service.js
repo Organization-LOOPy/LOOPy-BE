@@ -98,25 +98,8 @@ export const getChallengeDetailService = async (userId, challengeId) => {
   const isParticipated = participation?.status === "in_progress";
   const joinedCafe = participation?.joinedCafe ?? null;
 
-  // 참여 중인 경우, 해당 기간 내 적립된 스탬프 수 계산
-  let joinedCount = 0;
-  const availableCafeIds = challenge.availableCafes.map((ac) => ac.cafe.id);
-
-  if (isParticipated && availableCafeIds.length > 0) {
-    const startDate = new Date(challenge.startDate);
-    const endDate = new Date(challenge.endDate);
-    endDate.setHours(23, 59, 59, 999);
-
-    joinedCount = await prisma.stamp.count({
-      where: {
-        stampBook: {
-          userId,
-          cafeId: { in: availableCafeIds },
-        },
-        stampedAt: { gte: startDate, lte: endDate },
-      },
-    });
-  }
+  // 참여 중인 경우, 현재 인증 횟수 조회 (ChallengeParticipant.currentCount 사용)
+  const joinedCount = participation?.currentCount ?? 0;
 
   // 응답 데이터
   return {
@@ -305,126 +288,52 @@ export const getMyChallengeListService = async (userId) => {
 export const completeChallengeService = async (userId, challengeId) => {
   const now = new Date();
 
-  return await prisma.$transaction(async (tx) => {
-    // 참여 정보
-    const participant = await tx.challengeParticipant.findUnique({
-      where: {
-        userId_challengeId: {
-          userId,
-          challengeId: Number(challengeId),
-        },
+  // 1️⃣ 참여 정보 + 챌린지 정보 조회
+  const participant = await prisma.challengeParticipant.findUnique({
+    where: { userId_challengeId: { userId, challengeId: Number(challengeId) } },
+    include: {
+      challenge: {
+        select: { goalCount: true, title: true, rewardPoint: true }
       },
-    });
-
-    if (!participant) {
-      throw new BadRequestError("챌린지 참여 정보가 없습니다.");
-    }
-    if (participant.completedAt) {
-      throw new BadRequestError("이미 완료된 챌린지입니다.");
-    }
-
-    // 챌린지 유효성
-    const challenge = await tx.challenge.findUnique({
-      where: { id: Number(challengeId) },
-    });
-
-    if (!challenge || !challenge.isActive || challenge.endDate < now) {
-      throw new BadRequestError("챌린지를 완료할 수 없습니다.");
-    }
-
-    // 완료 처리
-    await tx.challengeParticipant.update({
-      where: {
-        userId_challengeId: {
-          userId,
-          challengeId: Number(challengeId),
-        },
-      },
-      data: {
-        completedAt: now,
-        status: "completed",
-      },
-    });
-
-    // 완료한 챌린지 개수
-    const completedCount = await tx.challengeParticipant.count({
-      where: { userId, completedAt: { not: null } },
-    });
-
-    // 마일스톤 보상
-    let milestoneRewarded = 0;
-    let couponId = null;
-
-    if (completedCount === 3) {
-      milestoneRewarded = 500;
-
-      // (5-1) 포인트 지급
-      await tx.pointTransaction.create({
-        data: {
-          userId,
-          point: milestoneRewarded,
-          type: "earned",
-          description: "챌린지 3회 완료 보상",
-        },
-      });
-
-      // (5-2) 쿠폰 템플릿 조회 (NULL 만료 포함)
-      const template = await tx.couponTemplate.findFirst({
-        where: {
-          isActive: true,
-          OR: [
-            { expiredAt: null },
-            { expiredAt: { gte: now } },
-          ],
-        },
-        orderBy: { createdAt: "desc" },
-      });
-
-     if (template) {
-        const couponExpiredAt =
-          typeof template.validDays === "number"
-            ? new Date(
-                now.getTime() +
-                  template.validDays * 24 * 60 * 60 * 1000
-              )
-            : null;
-
-        const coupon = await tx.userCoupon.create({
-          data: {
-            userId,
-            couponTemplateId: template.id,
-            acquisitionType: "promotion",
-            expiredAt: couponExpiredAt,
-          },
-        });
-
-        couponId = coupon.id;
+      joinedCafe: {
+        select: { id: true, name: true }
       }
     }
+  });
 
-    // 6️⃣ 기본 응답
-    const baseResponse = {
-      status: "SUCCESS",
-      code: 200,
-      message: "챌린지 인증 완료",
+  if (!participant) throw new BadRequestError("챌린지 참여 정보가 없습니다.");
+
+  const { currentCount, challenge, joinedCafe, completedAt } = participant;
+  const goalCount = challenge.goalCount;
+
+  // 2️⃣ 이미 완료된 경우 - 완료 정보 반환
+  if (completedAt) {
+    return {
+      status: "COMPLETED",
+      message: "이미 완료된 챌린지입니다.",
       data: {
-        completedAt: now.toISOString(),
-        completedCount,
-        milestoneRewarded,
+        currentCount,
+        goalCount,
+        completedAt: completedAt.toISOString(),
+        challengeTitle: challenge.title,
+        rewardPoint: challenge.rewardPoint,
       },
     };
+  }
 
-    // 7️⃣ 3회 달성 시 추가 응답
-    if (completedCount === 3) {
-      return {
-        ...baseResponse,
-        success: {
-          message: "챌린지 마일스톤 달성",
-          couponId,
-        },
-      };
-    }
+  // 3️⃣ 아직 완료되지 않은 경우 - 진행 상황 및 안내 반환
+  const remainingCount = goalCount - currentCount;
 
-    return baseResponse;
-  });
+  return {
+    status: "IN_PROGRESS",
+    message: `챌린지 완료까지 ${remainingCount}회 남았습니다. 매장에서 인증을 받아주세요.`,
+    data: {
+      currentCount,
+      goalCount,
+      remainingCount,
+      challengeTitle: challenge.title,
+      joinedCafe: joinedCafe ? { id: joinedCafe.id, name: joinedCafe.name } : null,
+      rewardPoint: challenge.rewardPoint,
+    },
+  };
 };
