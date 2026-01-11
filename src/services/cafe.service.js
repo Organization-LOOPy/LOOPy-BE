@@ -9,46 +9,65 @@ import {
 import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
 function formatBusinessHours(businessHours, businessHourType) {
-  if (!businessHours || !businessHourType) {
-    return null;
-  }
+  if (!Array.isArray(businessHours) || !businessHourType) return null;
+
+  // 요일 정렬용
+  const dayOrder = [
+    "MONDAY",
+    "TUESDAY",
+    "WEDNESDAY",
+    "THURSDAY",
+    "FRIDAY",
+    "SATURDAY",
+    "SUNDAY",
+  ];
+
+  const sorted = [...businessHours].sort(
+    (a, b) => dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day)
+  );
 
   if (businessHourType === "SAME_ALL_DAYS") {
+    const openDay = sorted.find((d) => d.isClosed === false);
+    if (!openDay) return null;
+
     return {
-      open: businessHours.open ?? businessHours.openTime,
-      close: businessHours.close ?? businessHours.closeTime,
+      open: openDay.openTime,
+      close: openDay.closeTime,
     };
   }
 
   if (businessHourType === "WEEKDAY_WEEKEND") {
+    const weekday = sorted.filter((d) =>
+      ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"].includes(d.day)
+    );
+    const weekend = sorted.filter((d) =>
+      ["SATURDAY", "SUNDAY"].includes(d.day)
+    );
+
+    const weekdayOpen = weekday.find((d) => !d.isClosed);
+    const weekendOpen = weekend.find((d) => !d.isClosed);
+
     return {
-      weekday: {
-        open: businessHours.weekday.open ?? businessHours.weekday.openTime,
-        close: businessHours.weekday.close ?? businessHours.weekday.closeTime,
-      },
-      weekend: {
-        open: businessHours.weekend.open ?? businessHours.weekend.openTime,
-        close: businessHours.weekend.close ?? businessHours.weekend.closeTime,
-      },
+      weekday: weekdayOpen
+        ? { open: weekdayOpen.openTime, close: weekdayOpen.closeTime }
+        : null,
+      weekend: weekendOpen
+        ? { open: weekendOpen.openTime, close: weekendOpen.closeTime }
+        : null,
     };
   }
 
-  if (businessHourType === "DIFFERENT_EACH_DAY") {
-    return businessHours.map((day) => {
-      if (day.isClosed) {
-        return {
-          day: day.day,
-          isClosed: true,
-        };
-      }
-
-      return {
-        day: day.day,
-        isClosed: false,
-        openTime: day.openTime,
-        closeTime: day.closeTime,
-      };
-    });
+  if (businessHourType === "EACH_DAY_DIFFERENT") {
+    return sorted.map((d) =>
+      d.isClosed
+        ? { day: d.day, isClosed: true }
+        : {
+            day: d.day,
+            isClosed: false,
+            openTime: d.openTime,
+            closeTime: d.closeTime,
+          }
+    );
   }
 
   return null;
