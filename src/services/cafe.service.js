@@ -73,6 +73,60 @@ function formatBusinessHours(businessHours, businessHourType) {
   return null;
 }
 
+function formatBreakTimeByType(businessHours, businessHourType) {
+  if (!Array.isArray(businessHours) || !businessHourType) return null;
+
+  const getBreakString = (d) =>
+    d.breakStart && d.breakEnd ? `${d.breakStart}~${d.breakEnd}` : null;
+
+  /* ===============================
+     SAME_ALL_DAYS
+  =============================== */
+  if (businessHourType === "SAME_ALL_DAYS") {
+    const day = businessHours.find(
+      (d) => !d.isClosed && d.breakStart && d.breakEnd
+    );
+    return day ? getBreakString(day) : null;
+  }
+
+  /* ===============================
+     WEEKDAY_WEEKEND
+  =============================== */
+  if (businessHourType === "WEEKDAY_WEEKEND") {
+    const weekday = businessHours.find(
+      (d) =>
+        ["MONDAY", "TUESDAY", "WEDNESDAY", "THURSDAY", "FRIDAY"].includes(d.day) &&
+        d.breakStart &&
+        d.breakEnd
+    );
+
+    const weekend = businessHours.find(
+      (d) =>
+        ["SATURDAY", "SUNDAY"].includes(d.day) &&
+        d.breakStart &&
+        d.breakEnd
+    );
+
+    return {
+      weekday: weekday ? getBreakString(weekday) : null,
+      weekend: weekend ? getBreakString(weekend) : null,
+    };
+  }
+
+  /* ===============================
+     EACH_DAY_DIFFERENT
+  =============================== */
+  if (businessHourType === "EACH_DAY_DIFFERENT") {
+    return businessHours.map((d) => ({
+      day: d.day,
+      breakTime: d.isClosed ? null : getBreakString(d),
+    }));
+  }
+
+  return null;
+}
+
+
 export const cafeService = {
   async getCafeDetails(cafeObject, cafeId, userId) {
     const cafe = await cafeRepository.findCafeDetails(cafeId, userId);
@@ -125,7 +179,10 @@ export const cafeService = {
           cafeObject.businessHourType
         ),
         businessHourType: cafeObject.businessHourType ?? null,
-        breakTime: cafeObject.breakTime,
+        breakTime: formatBreakTimeByType(
+          cafeObject.businessHours,
+          cafeObject.businessHourType
+        ),
         phone: cafeObject.phone,
         websiteUrl: cafeObject.websiteUrl,
         description: cafeObject.description,
