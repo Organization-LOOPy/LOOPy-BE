@@ -159,9 +159,6 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
     return { breakStart, breakEnd };
   };
 
-  /* ===============================
-    SAME_ALL_DAYS
-  =============================== */
   if (
     businessHourType === "SAME_ALL_DAYS" &&
     parsedHours &&
@@ -188,9 +185,6 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
     }));
   }
 
-  /* ===============================
-    WEEKDAY_WEEKEND
-  =============================== */
   else if (
     businessHourType === "WEEKDAY_WEEKEND" &&
     parsedHours &&
@@ -226,9 +220,6 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
     ];
   }
 
-  /* ===============================
-     EACH_DAY_DIFFERENT
-  =============================== */
   else if (businessHourType === "EACH_DAY_DIFFERENT") {
     if (!Array.isArray(parsedHours)) {
       throw new InvalidBusinessHoursError(
@@ -246,9 +237,6 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
     }));
   }
 
-  /* ===============================
-     공통 검증 + 요일 정규화
-  =============================== */
   if (!Array.isArray(parsedHours)) {
     throw new InvalidBusinessHoursError("businessHours는 배열이어야 합니다.");
   }
@@ -285,10 +273,6 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
     );
   }
 
-  /* ===============================
-     DB 업데이트
-     - breakTime 컬럼은 항상 null
-  =============================== */
   const updatedCafe = await prisma.cafe.update({
     where: { id: cafe.id },
     data: {
@@ -324,6 +308,54 @@ export const updateCafeOperationInfo = async (userId, operationInfo = {}) => {
   };
 };
 
+export const addCafeMenu = async (userId, menuData, file) => {
+  const requiredFields = ["name", "price"];
+  const missing = requiredFields.filter((field) => !menuData[field]);
+
+  if (missing.length > 0) {
+    throw new InvalidMenuDataError(missing);
+  }
+
+  const cafe = await prisma.cafe.findFirst({ where: { ownerId: Number(userId) }});
+
+  if (!cafe) throw new CafeNotExistError();
+
+  const existingMenu = await prisma.cafeMenu.findFirst({
+    where: { cafeId: cafe.id,name: menuData.name, },
+  });
+
+  if (existingMenu) {
+    throw new DuplicateMenuNameError(menuData.name);
+  }
+
+  const isRep = String(menuData.isRepresentative).toLowerCase() === 'true';
+
+  if (isRep) {
+    const repCount = await prisma.cafeMenu.count({
+      where: { cafeId: cafe.id, isRepresentative: true },
+    });
+    if (repCount >= 2) throw new RepresentativeLimitExceededError();
+  }
+
+  let photoUrl = null;
+  if (file) {
+    photoUrl = await uploadToS3(file, 'cafes/menus');
+  }
+
+  const created = await prisma.cafeMenu.create({
+    data: {
+      cafeId: cafe.id,
+      name: menuData.name,
+      price: parseInt(menuData.price, 10),
+      description: menuData.description,
+      isRepresentative: isRep,
+      isSoldOut: false,
+      photoUrl,
+    },
+  });
+
+  return created;
+};
 
 export const addCafePhotos = async (cafeId, photoDataArray) => {
   if (!Array.isArray(photoDataArray) || photoDataArray.length === 0) {
