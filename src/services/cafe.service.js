@@ -9,78 +9,54 @@ import {
 import { BookmarkAlreadyExistsError } from "../errors/customErrors.js";
 
 function formatBusinessHours(businessHours, businessHourType) {
-  if (!businessHours || !businessHourType) return null;
-
-  switch (businessHourType) {
-    case "SAME_ALL_DAYS": {
-      return {
-        open:
-          businessHours.open ??
-          businessHours.openTime ??
-          businessHours.sameAllDays?.open ??
-          null,
-        close:
-          businessHours.close ??
-          businessHours.closeTime ??
-          businessHours.sameAllDays?.close ??
-          null,
-      };
-    }
-
-    case "WEEKDAY_WEEKEND": {
-      return {
-        weekday: {
-          open:
-            businessHours.weekday?.open ??
-            businessHours.weekday?.openTime ??
-            null,
-          close:
-            businessHours.weekday?.close ??
-            businessHours.weekday?.closeTime ??
-            null,
-        },
-        weekend: {
-          open:
-            businessHours.weekend?.open ??
-            businessHours.weekend?.openTime ??
-            null,
-          close:
-            businessHours.weekend?.close ??
-            businessHours.weekend?.closeTime ??
-            null,
-        },
-      };
-    }
-
-    case "DIFFERENT_EACH_DAY": {
-      return (businessHours ?? []).map((dayInfo) => ({
-        day: dayInfo.day,
-        isClosed: dayInfo.isClosed,
-        ...(dayInfo.isClosed
-          ? {}
-          : {
-              openTime:
-                dayInfo.openTime ??
-                dayInfo.open ??
-                null,
-              closeTime:
-                dayInfo.closeTime ??
-                dayInfo.close ??
-                null,
-            }),
-      }));
-    }
-
-    default:
-      return null;
+  if (!businessHours || !businessHourType) {
+    return null;
   }
+
+  if (businessHourType === "SAME_ALL_DAYS") {
+    return {
+      open: businessHours.open ?? businessHours.openTime,
+      close: businessHours.close ?? businessHours.closeTime,
+    };
+  }
+
+  if (businessHourType === "WEEKDAY_WEEKEND") {
+    return {
+      weekday: {
+        open: businessHours.weekday.open ?? businessHours.weekday.openTime,
+        close: businessHours.weekday.close ?? businessHours.weekday.closeTime,
+      },
+      weekend: {
+        open: businessHours.weekend.open ?? businessHours.weekend.openTime,
+        close: businessHours.weekend.close ?? businessHours.weekend.closeTime,
+      },
+    };
+  }
+
+  if (businessHourType === "DIFFERENT_EACH_DAY") {
+    return businessHours.map((day) => {
+      if (day.isClosed) {
+        return {
+          day: day.day,
+          isClosed: true,
+        };
+      }
+
+      return {
+        day: day.day,
+        isClosed: false,
+        openTime: day.openTime,
+        closeTime: day.closeTime,
+      };
+    });
+  }
+
+  return null;
 }
 
 export const cafeService = {
   async getCafeDetails(cafeObject, cafeId, userId) {
     const cafe = await cafeRepository.findCafeDetails(cafeId, userId);
-
-    const cafeobject = cafeObject;
 
     let stampBook = null;
     let stampPolicyMessage = null;
@@ -122,22 +98,22 @@ export const cafeService = {
 
     const cafeDetails = {
       cafe: {
-        id: cafeobject.id,
-        name: cafeobject.name,
-        address: cafeobject.address,
+        id: cafeObject.id,
+        name: cafeObject.name,
+        address: cafeObject.address,
         businessHours: formatBusinessHours(
-          cafe.businessHours,
-          cafe.businessHourType
+          cafeObject.businessHours,
+          cafeObject.businessHourType
         ),
-        businessHourType: cafe.businessHourType,
-        breakTime: cafeobject.breakTime,
-        phone: cafeobject.phone,
-        websiteUrl: cafeobject.websiteUrl,
-        description: cafeobject.description,
-        storeFilters: cafeobject.storeFilters,
-        takeOutFilters: cafeobject.takeOutFilters,
-        menuFilters: cafeobject.menuFilters,
-        keywords: cafeobject.keywords,
+        businessHourType: cafeObject.businessHourType ?? null,
+        breakTime: cafeObject.breakTime,
+        phone: cafeObject.phone,
+        websiteUrl: cafeObject.websiteUrl,
+        description: cafeObject.description,
+        storeFilters: cafeObject.storeFilters,
+        takeOutFilters: cafeObject.takeOutFilters,
+        menuFilters: cafeObject.menuFilters,
+        keywords: cafeObject.keywords,
       },
       photos: (cafe.photos ?? []).map((p) => ({
         id: p.id,

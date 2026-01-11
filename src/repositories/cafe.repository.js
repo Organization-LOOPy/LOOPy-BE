@@ -13,6 +13,17 @@ export const cafeRepository = {
       where: { id: cafeId },
       select: {
         id: true,
+        businessHours: true,
+        businessHourType: true,
+        breakTime: true,
+        phone: true,
+        websiteUrl: true,
+        description: true,
+        address: true,
+        storeFilters: true,
+        takeOutFilters: true,
+        menuFilters: true,
+        keywords: true,
 
         photos: {
           select: {
