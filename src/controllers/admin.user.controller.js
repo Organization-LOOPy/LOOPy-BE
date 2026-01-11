@@ -708,7 +708,14 @@ export const verifyChallengeForUser = async (req, res, next) => {
   const cafeId = req.user?.cafeId;
 
   try {
-    if (!cafeId) return res.error('사장님 토큰에 카페 정보가 없습니다.', 403);
+    if (!cafeId) {
+      return res.status(403).json({
+        status: "FAIL",
+        code: 403,
+        message: "사장님 토큰에 카페 정보가 없습니다.",
+        data: null
+      });
+    }
     const now = new Date();
 
     // 1) 참여 정보 + 챌린지 정보 조회
@@ -724,16 +731,42 @@ export const verifyChallengeForUser = async (req, res, next) => {
       },
     });
 
-    if (!participant) return res.error('챌린지 참여 이력이 없습니다.', 404);
-    if (participant.completedAt) return res.error('이미 완료된 챌린지입니다.', 400);
-    if (participant.joinedCafeId !== cafeId) return res.error('해당 카페에서 인증할 수 없는 챌린지입니다.', 403);
+    if (!participant) {
+      return res.status(404).json({
+        status: "FAIL",
+        code: 404,
+        message: "챌린지 참여 이력이 없습니다.",
+        data: null
+      });
+    }
+    if (participant.completedAt) {
+      return res.status(400).json({
+        status: "FAIL",
+        code: 400,
+        message: "이미 완료된 챌린지입니다.",
+        data: null
+      });
+    }
+    if (participant.joinedCafeId !== cafeId) {
+      return res.status(403).json({
+        status: "FAIL",
+        code: 403,
+        message: "해당 카페에서 인증할 수 없는 챌린지입니다.",
+        data: null
+      });
+    }
 
     const goalCount = participant.challenge.goalCount;
     const currentCount = participant.currentCount;
 
     // 이미 목표 횟수에 도달한 경우
     if (currentCount >= goalCount) {
-      return res.error('이미 목표 횟수에 도달했습니다.', 400);
+      return res.status(400).json({
+        status: "FAIL",
+        code: 400,
+        message: "이미 목표 횟수에 도달했습니다.",
+        data: null
+      });
     }
 
     const result = await prisma.$transaction(async (tx) => {
@@ -749,10 +782,9 @@ export const verifyChallengeForUser = async (req, res, next) => {
         },
       });
 
-      let milestoneRewarded = 0;
-      let couponId = null;
+      let milestoneRewarded = null;
 
-      // 3) 목표 달성 시 보상 지급
+      // 3) 목표 달성 시 (completedCount가 goalCount에 도달) 보상 지급
       if (isCompleted) {
         const rewardPoint = participant.challenge.rewardPoint || 500;
 
@@ -767,14 +799,14 @@ export const verifyChallengeForUser = async (req, res, next) => {
         });
         milestoneRewarded = rewardPoint;
 
-        // 쿠폰 발급 (활성화된 템플릿이 있는 경우)
+        // 쿠폰 발급 (해당 카페의 활성화된 템플릿이 있는 경우)
         const template = await tx.couponTemplate.findFirst({
-          where: { isActive: true, expiredAt: { gte: now } },
+          where: { cafeId, isActive: true, expiredAt: { gte: now } },
           orderBy: { expiredAt: 'asc' },
         });
 
         if (template) {
-          const coupon = await tx.userCoupon.create({
+          await tx.userCoupon.create({
             data: {
               userId,
               couponTemplateId: template.id,
@@ -782,25 +814,22 @@ export const verifyChallengeForUser = async (req, res, next) => {
               expiredAt: new Date(now.getTime() + (template.validDays || 14) * 24 * 60 * 60 * 1000),
             },
           });
-          couponId = coupon.id;
         }
       }
 
       return {
-        currentCount: newCount,
-        goalCount,
-        isCompleted,
-        completedAt: isCompleted ? now : null,
-        milestoneRewarded,
-        couponId,
+        completedAt: isCompleted ? now.toISOString() : null,
+        completedCount: newCount,
+        milestoneRewarded
       };
     });
 
-    const message = result.isCompleted
-      ? '챌린지 완료! 보상이 지급되었습니다.'
-      : `챌린지 인증 완료 (${result.currentCount}/${result.goalCount})`;
-
-    return res.success(message, result);
+    return res.status(200).json({
+      status: "SUCCESS",
+      code: 200,
+      message: "챌린지 인증 완료",
+      data: result
+    });
   } catch (err) {
     next(err);
   }

@@ -84,14 +84,14 @@ app.use('/api/verification', verificationRouter);
 // 고객용
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/users", userRouter);
+app.use("/api/v1/challenges", challengeRoutes);
 app.use("/api/v1", reviewRouter);
 app.use("/api/v1/search", searchRouter);
 app.use("/api/v1/cafes/:cafeId", cafeRouter);
 app.use("/api/v1", notificationRouter);
 app.use("/api/v1/points", pointRouter);
-app.use("/api/v1", stampRouter); 
+app.use("/api/v1", stampRouter);
 app.use("/api/v1/", usercouponRoutes);
-app.use("/api/v1/challenges", challengeRoutes);
 
 // 사장용
 app.use("/api/v1/owner/cafes", adminCafeRouter);
