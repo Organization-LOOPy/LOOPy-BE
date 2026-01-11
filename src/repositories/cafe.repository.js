@@ -5,6 +5,7 @@ import {
   FailedIssuingCouponError,
   InvalidParameterError,
 } from "../errors/customErrors.js";
+import { toKstDateTime } from "../utils/date.js";
 
 export const cafeRepository = {
   async findCafeDetails(cafeId, userId) {
@@ -228,6 +229,14 @@ export const cafeCouponRepository = {
       expiredAt instanceof Date && !isNaN(expiredAt)
         ? expiredAt
         : null;
+
+    if (endDate instanceof Date && !isNaN(endDate)) {
+      safeExpiredAt = endDate;
+    } else if (typeof validDays === 'number') {
+      safeExpiredAt = new Date(
+        now.getTime() + validDays * 24 * 60 * 60 * 1000
+      );
+    }
 
     const coupon = await prisma.userCoupon.create({
       data: {

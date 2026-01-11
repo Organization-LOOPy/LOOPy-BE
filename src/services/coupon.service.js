@@ -9,6 +9,7 @@ import {
   CouponNotFoundError,
   CafeMenuNotExistError
 } from '../errors/customErrors.js';
+import { toKstDateTime } from "../utils/date.js";
 
 // 쿠폰 템플릿 생성 서비스
 export const createCouponTemplateService = async (cafeId, data) => {
@@ -48,8 +49,13 @@ export const createCouponTemplateService = async (cafeId, data) => {
     } else if (discountType === 'FREE_DRINK') {
       name = `${menu.name} 무료`;
     }
-    const parsedStartDate = startDate ? new Date(startDate) : null;
-    const parsedEndDate = endDate ? new Date(endDate) : null;
+    const parsedStartDate = startDate
+      ? toKstDateTime(startDate, true)
+      : null;
+
+    const parsedEndDate = endDate
+      ? toKstDateTime(endDate, true)
+      : null;
 
     const newCoupon = await prisma.couponTemplate.create({
       data: {
