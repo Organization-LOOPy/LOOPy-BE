@@ -178,11 +178,12 @@ export const cafeReviewService = {
 
     const reviewDetails = actualReviews.map((review) => ({
       id: review.id,
+      title: review.cafe?.name || null,
       content: review.content,
       nickname: review.user.nickname,
       userProfileImage: review.user.profileImageUrl,
       createdAt: review.createdAt,
-      images: review.images || "",
+      images: review.images || [],
     }));
 
     const nextCursor = hasNextPage

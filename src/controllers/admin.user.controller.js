@@ -512,6 +512,7 @@ export const verifyQRToken = async (req, res, next) => {
         // ✅ userCoupons → coupons 로 수정
         coupons: {
           where: {
+            status: 'active',
             usedAt: null,
             expiredAt: { gte: now },
             // 스키마상 관계명은 couponTemplate 이 맞음
@@ -811,6 +812,7 @@ export const verifyChallengeForUser = async (req, res, next) => {
               userId,
               couponTemplateId: template.id,
               acquisitionType: 'promotion',
+              status: 'active',
               expiredAt: new Date(now.getTime() + (template.validDays || 14) * 24 * 60 * 60 * 1000),
             },
           });

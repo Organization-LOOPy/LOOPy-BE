@@ -1,4 +1,4 @@
-import { ChallengeNotActiveError } from "../errors/customErrors.js";
+import { ChallengeNotActiveError, ChallengeNotFoundError } from "../errors/customErrors.js";
 
 // 숫자형 ID 검증
 export const parseIntOrThrow = (value, errorMessage) => {
@@ -8,8 +8,8 @@ export const parseIntOrThrow = (value, errorMessage) => {
   };
   
 // 챌린지가 활성화 상태이고 진행 중인지 검증
-export const validateActiveChallenge = (challenge, now) => {
-    if (!challenge || !challenge.isActive) throw new ChallengeNotFoundError();
+export const validateActiveChallenge = (challenge, challengeId, now) => {
+    if (!challenge || !challenge.isActive) throw new ChallengeNotFoundError(challengeId);
     if (challenge.startDate > now || challenge.endDate < now)
       throw new ChallengeNotActiveError();
   };

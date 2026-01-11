@@ -78,7 +78,7 @@ export const getChallengeDetailService = async (userId, challengeId) => {
   });
 
   if (!challenge) {
-    throw new ChallengeNotFoundError("해당 챌린지를 찾을 수 없습니다.");
+    throw new ChallengeNotFoundError(id);
   }
 
   const participation = await prisma.challengeParticipant.findUnique({
@@ -132,7 +132,7 @@ export const participateInChallengeService = async (userId, cafeId, challengeId)
   });
 
   if (!challenge || !challenge.isActive) {
-    throw new ChallengeNotFoundError();
+    throw new ChallengeNotFoundError(challengeId);
   }
   if (challenge.startDate > now || challenge.endDate < now) {
     throw new ChallengeNotActiveError();
@@ -180,7 +180,7 @@ export const getAvailableStoresForChallengeService = async (
   });
 
   if (!challenge || !challenge.isActive) {
-    throw new ChallengeNotFoundError("유효한 챌린지를 찾을 수 없습니다.");
+    throw new ChallengeNotFoundError(challengeId);
   }
 
   const availableCafes = await prisma.challengeAvailableCafe.findMany({
