@@ -12,35 +12,64 @@ function formatBusinessHours(businessHours, businessHourType) {
   if (!businessHours || !businessHourType) return null;
 
   switch (businessHourType) {
-    case "SAME_ALL_DAYS":
+    case "SAME_ALL_DAYS": {
       return {
-        open: businessHours.open,
-        close: businessHours.close,
+        open:
+          businessHours.open ??
+          businessHours.openTime ??
+          businessHours.sameAllDays?.open ??
+          null,
+        close:
+          businessHours.close ??
+          businessHours.closeTime ??
+          businessHours.sameAllDays?.close ??
+          null,
       };
+    }
 
-    case "WEEKDAY_WEEKEND":
+    case "WEEKDAY_WEEKEND": {
       return {
         weekday: {
-          open: businessHours.weekday?.open,
-          close: businessHours.weekday?.close,
+          open:
+            businessHours.weekday?.open ??
+            businessHours.weekday?.openTime ??
+            null,
+          close:
+            businessHours.weekday?.close ??
+            businessHours.weekday?.closeTime ??
+            null,
         },
         weekend: {
-          open: businessHours.weekend?.open,
-          close: businessHours.weekend?.close,
+          open:
+            businessHours.weekend?.open ??
+            businessHours.weekend?.openTime ??
+            null,
+          close:
+            businessHours.weekend?.close ??
+            businessHours.weekend?.closeTime ??
+            null,
         },
       };
+    }
 
-    case "DIFFERENT_EACH_DAY":
+    case "DIFFERENT_EACH_DAY": {
       return (businessHours ?? []).map((dayInfo) => ({
         day: dayInfo.day,
         isClosed: dayInfo.isClosed,
         ...(dayInfo.isClosed
           ? {}
           : {
-              openTime: dayInfo.openTime,
-              closeTime: dayInfo.closeTime,
+              openTime:
+                dayInfo.openTime ??
+                dayInfo.open ??
+                null,
+              closeTime:
+                dayInfo.closeTime ??
+                dayInfo.close ??
+                null,
             }),
       }));
+    }
 
     default:
       return null;
