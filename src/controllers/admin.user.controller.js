@@ -699,7 +699,7 @@ export const useUserCoupon = async (req, res, next) => {
   }
 };
 
-// 챌린지 인증(이 챌린지에서만 3회 완료 시 보상)
+// 챌린지 인증 (goalCount 도달 시 완료 처리 + 보상)
 export const verifyChallengeForUser = async (req, res, next) => {
   const userId = Number(req.params.userId);
   const challengeId = Number(req.params.challengeId);
@@ -709,55 +709,97 @@ export const verifyChallengeForUser = async (req, res, next) => {
     if (!cafeId) return res.error('사장님 토큰에 카페 정보가 없습니다.', 403);
     const now = new Date();
 
+    // 1) 참여 정보 + 챌린지 정보 조회
     const participant = await prisma.challengeParticipant.findUnique({
       where: { userId_challengeId: { userId, challengeId } },
-      select: { completedAt: true, joinedCafeId: true },
+      select: {
+        completedAt: true,
+        joinedCafeId: true,
+        currentCount: true,
+        challenge: {
+          select: { goalCount: true, rewardPoint: true, title: true }
+        }
+      },
     });
 
     if (!participant) return res.error('챌린지 참여 이력이 없습니다.', 404);
     if (participant.completedAt) return res.error('이미 완료된 챌린지입니다.', 400);
     if (participant.joinedCafeId !== cafeId) return res.error('해당 카페에서 인증할 수 없는 챌린지입니다.', 403);
 
-    const result = await prisma.$transaction(async (tx) => {
-      // 1) 완료 처리
-      const updated = await tx.challengeParticipant.updateMany({
-        where: { userId, challengeId, completedAt: null, joinedCafeId: cafeId },
-        data: { completedAt: now, status: 'completed' },
-      });
-      if (updated.count === 0) throw new Error('ALREADY_COMPLETED_OR_INVALID');
+    const goalCount = participant.challenge.goalCount;
+    const currentCount = participant.currentCount;
 
-      // 2) 이 챌린지에서 완료한 횟수 집계
-      const completedCount = await tx.challengeParticipant.count({
-        where: { userId, challengeId, completedAt: { not: null } },
+    // 이미 목표 횟수에 도달한 경우
+    if (currentCount >= goalCount) {
+      return res.error('이미 목표 횟수에 도달했습니다.', 400);
+    }
+
+    const result = await prisma.$transaction(async (tx) => {
+      const newCount = currentCount + 1;
+      const isCompleted = newCount >= goalCount;
+
+      // 2) 인증 횟수 증가 (+ 완료 시 상태 변경)
+      await tx.challengeParticipant.update({
+        where: { userId_challengeId: { userId, challengeId } },
+        data: {
+          currentCount: newCount,
+          ...(isCompleted && { completedAt: now, status: 'completed' })
+        },
       });
 
       let milestoneRewarded = 0;
-      if (completedCount === 3) {
-        // 3회째면 보상 지급 (포인트 예시)
-        const rewardPoint = 500;
+      let couponId = null;
+
+      // 3) 목표 달성 시 보상 지급
+      if (isCompleted) {
+        const rewardPoint = participant.challenge.rewardPoint || 500;
+
+        // 포인트 지급
         await tx.pointTransaction.create({
           data: {
             userId,
             point: rewardPoint,
             type: 'earned',
-            description: `챌린지 ${challengeId} 3회 달성 보상`,
+            description: `챌린지 "${participant.challenge.title}" 완료 보상`,
           },
         });
         milestoneRewarded = rewardPoint;
+
+        // 쿠폰 발급 (활성화된 템플릿이 있는 경우)
+        const template = await tx.couponTemplate.findFirst({
+          where: { isActive: true, expiredAt: { gte: now } },
+          orderBy: { expiredAt: 'asc' },
+        });
+
+        if (template) {
+          const coupon = await tx.userCoupon.create({
+            data: {
+              userId,
+              couponTemplateId: template.id,
+              acquisitionType: 'promotion',
+              expiredAt: new Date(now.getTime() + (template.validDays || 14) * 24 * 60 * 60 * 1000),
+            },
+          });
+          couponId = coupon.id;
+        }
       }
 
       return {
-        completedAt: now,
-        completedCount,
+        currentCount: newCount,
+        goalCount,
+        isCompleted,
+        completedAt: isCompleted ? now : null,
         milestoneRewarded,
+        couponId,
       };
     });
 
-    return res.success('챌린지 인증 완료', result);
+    const message = result.isCompleted
+      ? '챌린지 완료! 보상이 지급되었습니다.'
+      : `챌린지 인증 완료 (${result.currentCount}/${result.goalCount})`;
+
+    return res.success(message, result);
   } catch (err) {
-    if (err.message === 'ALREADY_COMPLETED_OR_INVALID') {
-      return res.error('이미 완료되었거나 인증 조건이 맞지 않습니다.', 400);
-    }
     next(err);
   }
 };
