@@ -273,7 +273,7 @@ export const completeChallengeService = async (userId, challengeId) => {
       joinedCafe: {
         select: { id: true, name: true }
       }
-    }
+    },
   });
 
   if (!participant) {
@@ -297,10 +297,86 @@ export const completeChallengeService = async (userId, challengeId) => {
   }
 
   // 아직 완료되지 않은 경우 - 진행 상황 안내
-  const remainingCount = goalCount - currentCount;
+  if (currentCount < goalCount) {
+    const remainingCount = goalCount - currentCount;
+    return {
+      message: `챌린지 완료까지 ${remainingCount}회 남았습니다. 매장에서 인증을 받아주세요.`,
+      couponId: null
+    };
+  }
 
-  return {
-    message: `챌린지 완료까지 ${remainingCount}회 남았습니다. 매장에서 인증을 받아주세요.`,
-    couponId: null
-  };
+  // 2️⃣ 완료 조건 달성 - 트랜잭션으로 완료 처리
+  return await prisma.$transaction(async (tx) => {
+    // 완료 처리
+    await tx.challengeParticipant.update({
+      where: {
+        userId_challengeId: {
+          userId,
+          challengeId: Number(challengeId),
+        },
+      },
+      data: {
+        completedAt: now,
+        status: "completed",
+      },
+    });
+
+    // 완료한 챌린지 개수
+    const completedCount = await tx.challengeParticipant.count({
+      where: { userId, completedAt: { not: null } },
+    });
+
+    // 마일스톤 보상
+    let couponId = null;
+
+    if (completedCount === 3) {
+      // (5-1) 포인트 지급
+      await tx.pointTransaction.create({
+        data: {
+          userId,
+          point: 500,
+          type: "earned",
+          description: "챌린지 3회 완료 보상",
+        },
+      });
+
+      // (5-2) 쿠폰 템플릿 조회 (NULL 만료 포함)
+      const template = await tx.couponTemplate.findFirst({
+        where: {
+          isActive: true,
+          OR: [
+            { expiredAt: null },
+            { expiredAt: { gte: now } },
+          ],
+        },
+        orderBy: { createdAt: "desc" },
+      });
+
+      if (template) {
+        const couponExpiredAt =
+          typeof template.validDays === "number"
+            ? new Date(
+                now.getTime() +
+                  template.validDays * 24 * 60 * 60 * 1000
+              )
+            : null;
+
+        const coupon = await tx.userCoupon.create({
+          data: {
+            userId,
+            couponTemplateId: template.id,
+            acquisitionType: "promotion",
+            expiredAt: couponExpiredAt,
+          },
+        });
+
+        couponId = coupon.id;
+      }
+    }
+
+    return {
+      message: "챌린지가 완료되었습니다!",
+      couponId
+    };
+  });
 };
