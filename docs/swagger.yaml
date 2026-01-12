@@ -2544,7 +2544,7 @@ paths:
                     type: "null"
                     example: null
 
-  /api/v1/cafes/{cafeId}/challenges/available:
+  /api/v1/challenges:
     get:
       summary: 챌린지 목록 조회
       description: 현재 유효한 챌린지 목록을 조회합니다. (종료일 오름차순 정렬)
@@ -2598,7 +2598,7 @@ paths:
                           type: boolean
                           example: true
 
-  /api/v1/cafes/{cafeId}/challenges/{challengeId}:
+  /api/v1/challenges/{challengeId}:
     get:
       summary: 챌린지 상세 조회
       description: 챌린지 ID로 상세 정보를 조회합니다.
@@ -2712,7 +2712,7 @@ paths:
                               example: 이화동
 
 
-  /api/v1/cafes/{cafeId}/challenges/{challengeId}/join:
+  /api/v1/challenges/{cafeId}/{challengeId}/participate:
     post:
       tags:
         - Challenge
@@ -2807,7 +2807,7 @@ paths:
 
 
 
-  /api/v1/users/me/challenges:
+  /api/v1/challenges/my:
     get:
       summary: 나의 챌린지 목록 조회
       description: 로그인 유저가 현재 참여 중인 챌린지 목록을 조회합니다. (진행 중 상태만 반환)
@@ -2862,6 +2862,87 @@ paths:
                           format: date
                           example: 2025-08-31
                           description: 챌린지 종료일
+
+  /api/v1/challenges/{challengeId}/stores:
+    get:
+      summary: 챌린지 참여 가능 매장 목록 조회
+      description: 특정 챌린지에 참여 가능한 매장 목록을 조회합니다. 사용자 위치가 제공되면 거리 정보도 함께 반환됩니다.
+      tags: [Challenge]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: challengeId
+          required: true
+          description: 챌린지 ID
+          schema:
+            type: integer
+        - in: query
+          name: lat
+          required: false
+          description: 사용자 위도 (거리 계산용)
+          schema:
+            type: number
+            example: 37.5665
+        - in: query
+          name: lon
+          required: false
+          description: 사용자 경도 (거리 계산용)
+          schema:
+            type: number
+            example: 126.9780
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: string
+                    nullable: true
+                    example: null
+                  success:
+                    type: array
+                    description: 참여 가능한 매장 목록
+                    items:
+                      type: object
+                      properties:
+                        cafeId:
+                          type: integer
+                          example: 12
+                          description: 매장 ID
+                        name:
+                          type: string
+                          example: 카페 위니
+                          description: 매장 이름
+                        address:
+                          type: string
+                          example: 서울 서대문구 이화여대길 52
+                          description: 매장 주소
+                        image:
+                          type: string
+                          nullable: true
+                          example: https://cdn.loopy.com/cafes/12.jpg
+                          description: 매장 대표 이미지 (없으면 null)
+                        region1DepthName:
+                          type: string
+                          example: 서울특별시
+                        region2DepthName:
+                          type: string
+                          example: 서대문구
+                        region3DepthName:
+                          type: string
+                          example: 이화동
+                        distance:
+                          type: number
+                          nullable: true
+                          example: 245
+                          description: 사용자와의 거리 (미터 단위, 위치 정보 없으면 null)
 
   /api/v1/challenges/{challengeId}/complete:
     post:
