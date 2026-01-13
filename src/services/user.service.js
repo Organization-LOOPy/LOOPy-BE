@@ -221,32 +221,123 @@ export const updateFcmTokenService = async (userId, fcmToken) => {
 };
 
 // 전화번호 인증 토큰 확인 후 저장 
-export const savePhoneNumberAfterVerificationService = async (userId, phoneNumber) => {
+export const savePhoneNumberAfterVerificationService = async (
+  userId,
+  phoneNumber
+) => {
   const parsedUserId = Number(userId);
+
   if (!parsedUserId || !phoneNumber) {
     throw new BadRequestError("userId 또는 phoneNumber가 누락되었습니다.");
   }
 
-  const existing = await prisma.user.findUnique({
-    where: { phoneNumber },
+  return await prisma.$transaction(async (tx) => {
+    const currentUser = await tx.user.findUnique({
+      where: { id: parsedUserId },
+      include: {
+        kakaoAccount: true,
+        roles: true,
+      },
+    });
+
+    if (!currentUser) {
+      throw new BadRequestError("유효하지 않은 사용자입니다.");
+    }
+
+    const existingUser = await tx.user.findUnique({
+      where: { phoneNumber },
+      include: {
+        roles: true,
+      },
+    });
+
+    /**
+     * =================================================
+     * CASE 1 전화번호 이미 존재 → 계정 병합 + JWT 재발급
+     * =================================================
+     */
+    if (existingUser) {
+      const existingKakaoAccount = await tx.kakaoAccount.findUnique({
+        where: { userId: existingUser.id },
+      });
+
+      if (existingKakaoAccount) {
+        throw new KakaoAlreadyLinkedError();
+      }
+
+      if (currentUser.kakaoAccount) {
+        await tx.kakaoAccount.update({
+          where: { id: currentUser.kakaoAccount.id },
+          data: { userId: existingUser.id },
+        });
+      }
+
+      const existingRoles = existingUser.roles.map((r) => r.role);
+      const currentRoles = currentUser.roles.map((r) => r.role);
+
+      const rolesToAdd = currentRoles.filter(
+        (role) => !existingRoles.includes(role)
+      );
+
+      if (rolesToAdd.length > 0) {
+        await tx.userRole.createMany({
+          data: rolesToAdd.map((role) => ({
+            userId: existingUser.id,
+            role,
+          })),
+        });
+      }
+
+      await tx.user.update({
+        where: { id: currentUser.id },
+        data: {
+          status: "inactive",
+          inactivedAt: new Date(),
+        },
+      });
+
+      const finalRoles = [
+        ...existingRoles,
+        ...rolesToAdd,
+      ];
+
+      const currentRole = finalRoles[0];
+
+      const token = jwt.sign(
+        {
+          id: existingUser.id,
+          roles: finalRoles,
+          currentRole,
+        },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      return {
+        message: "기존 계정과 병합되었습니다.",
+        merged: true,
+        token,
+      };
+    }
+
+    /**
+     * =================================
+     * CASE 2 전화번호 최초 등록
+     * =================================
+     */
+    const updatedUser = await tx.user.update({
+      where: { id: parsedUserId },
+      data: { phoneNumber },
+    });
+
+    return {
+      message: "전화번호 등록 완료",
+      merged: false,
+      userId: updatedUser.id.toString(),
+      phoneNumber: updatedUser.phoneNumber,
+    };
   });
-
-  if (existing && existing.id !== parsedUserId) {
-    throw new DuplicateUserError({ phoneNumber });
-  }
-
-  const updatedUser = await prisma.user.update({
-    where: { id: parsedUserId },
-    data: { phoneNumber },
-  });
-
-  return {
-    message: "전화번호 등록 완료",
-    userId: updatedUser.id.toString(),
-    phoneNumber: updatedUser.phoneNumber,
-  };
 };
-
 
 // 사장 카페 임시 생성  
 export const makeOwnerCafe = async (userId, agreementData, role) => {
