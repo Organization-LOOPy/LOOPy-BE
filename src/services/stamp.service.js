@@ -610,9 +610,9 @@ export const handleStampCompletionService = async (userId, cafeId) => {
       : new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000);
   
     // 4️) 트랜잭션 실행 (쿠폰 발급 + 스탬프북 갱신 + 신규 생성)
-    const [couponTemplate, userCoupon] = await prisma.$transaction([
+    const result = await prisma.$transaction(async (tx) => {
       // (1) 쿠폰 템플릿 생성
-      prisma.couponTemplate.create({
+      const couponTemplate = await tx.couponTemplate.create({
         data: {
           cafeId,
           name: stampPolicy.rewardDescription || "스탬프 리워드 쿠폰",
@@ -623,37 +623,32 @@ export const handleStampCompletionService = async (userId, cafeId) => {
           validDays: stampPolicy.hasExpiry ? null : 14,
           expiredAt: couponExpiredAt,
         },
-      }),
-  
-      // (2) 사용자 쿠폰 발급
-      prisma.userCoupon.create({
+      });
+
+      // (2) 사용자 쿠폰 발급 (couponTemplateId 직접 연결)
+      const userCoupon = await tx.userCoupon.create({
         data: {
           userId,
+          couponTemplateId: couponTemplate.id,
           acquisitionType: "stamp",
           status: "active",
           issuedAt: now,
           expiredAt: couponExpiredAt,
         },
-      }),
-    ]);
-  
-    // 쿠폰 생성 결과를 트랜잭션 이후 수동 연결
-    await prisma.userCoupon.update({
-      where: { id: userCoupon.id },
-      data: { couponTemplateId: couponTemplate.id },
-    });
-  
-    // 5️) 기존 스탬프북 완료 처리 + 신규 스탬프북 생성
-    await prisma.$transaction([
-      prisma.stampBook.update({
+      });
+
+      // (3) 기존 스탬프북 완료 처리
+      await tx.stampBook.update({
         where: { id: stampBook.id },
         data: {
           isCompleted: true,
           completedAt: now,
           status: "completed",
         },
-      }),
-      prisma.stampBook.create({
+      });
+
+      // (4) 신규 스탬프북 생성
+      await tx.stampBook.create({
         data: {
           userId,
           cafeId,
@@ -664,13 +659,15 @@ export const handleStampCompletionService = async (userId, cafeId) => {
           rewardDetail: "스탬프 리워드 쿠폰",
           expiresAt: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
         },
-      }),
-    ]);
-  
-    // 6️) 결과 반환 (기존 구조 유지)
+      });
+
+      return { userCoupon, couponTemplate };
+    });
+
+    // 5️) 결과 반환 (기존 구조 유지)
     return {
-      ...userCoupon,
-      couponTemplate,
+      ...result.userCoupon,
+      couponTemplate: result.couponTemplate,
     };
   };
   

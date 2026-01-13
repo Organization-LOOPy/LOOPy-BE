@@ -1639,13 +1639,20 @@ paths:
                               example: 15
                             title:
                               type: string
-                              example: "최근 방문 후기"
+                              example: "루피카페"
+                              description: 카페 이름
                             content:
                               type: string
                               example: "어제 다시 방문했는데 여전히 좋네요. 스콘이 새로 나왔던데 맛있더라고요. 다음에는 친구들도 데려올 예정이에요!"
                             nickname:
                               type: string
                               example: "커피러버1"
+                            userProfileImage:
+                              type: string
+                              format: uri
+                              nullable: true
+                              example: "https://loopy-profile.s3.amazonaws.com/users/profile_1.jpg"
+                              description: 리뷰 작성자 프로필 이미지
                             createdAt:
                               type: string
                               format: date-time
@@ -1669,14 +1676,18 @@ paths:
                 success:
                   reviews:
                     - id: 15
+                      title: "루피카페"
                       content: "어제 다시 방문했는데 여전히 좋네요. 스콘이 새로 나왔던데 맛있더라고요. 다음에는 친구들도 데려올 예정이에요!"
                       nickname: "커피러버1"
+                      userProfileImage: "https://loopy-profile.s3.amazonaws.com/users/profile_1.jpg"
                       createdAt: "2025-07-29T13:22:45.000Z"
                       images:
                         - "https://review-images.com/review_10_1.jpg"
                     - id: 14
+                      title: "루피카페"
                       content: "연인과 함께 갔는데 분위기도 좋고 음료도 맛있어서 대화가 더 즐거웠어요. 창가 자리 특히 예뻐요!"
                       nickname: "커피러버1"
+                      userProfileImage: "https://loopy-profile.s3.amazonaws.com/users/profile_1.jpg"
                       createdAt: "2025-07-27T13:22:45.000Z"
                       images:
                         - "https://review-images.com/review_9_1.jpg"
@@ -1684,21 +1695,27 @@ paths:
                         - "https://review-images.com/review_9_3.jpg"
                         - "https://review-images.com/review_9_4.jpg"
                     - id: 1
+                      title: "루피카페"
                       content: "아메리카노가 정말 진하고 맛있어요. 매장도 깔끔하고 직원분들도 친절합니다."
                       nickname: "커피러버1"
+                      userProfileImage: null
                       createdAt: "2025-07-27T13:07:43.000Z"
                       images:
                         - "https://review-images.com/review1_1.jpg"
                         - "https://review-images.com/review1_2.jpg"
                     - id: 2
+                      title: "루피카페"
                       content: "공부하기 좋은 환경이에요. 와이파이도 빠르고 콘센트도 많아서 노트북 사용하기 편해요."
                       nickname: "카페매니아2"
+                      userProfileImage: "https://loopy-profile.s3.amazonaws.com/users/profile_2.jpg"
                       createdAt: "2025-07-25T13:07:43.000Z"
                       images:
                         - "https://review-images.com/review2_1.jpg"
                     - id: 13
+                      title: "루피카페"
                       content: "회사 근처라서 자주 오는데 항상 일정한 퀄리티를 유지해주셔서 고마워요. 믿고 마시는 아메리카노입니다."
                       nickname: "커피러버1"
+                      userProfileImage: "https://loopy-profile.s3.amazonaws.com/users/profile_1.jpg"
                       createdAt: "2025-07-24T13:22:45.000Z"
                       images:
                         - "https://review-images.com/review_8_1.jpg"
@@ -2588,7 +2605,7 @@ paths:
                     type: "null"
                     example: null
 
-  /api/v1/cafes/{cafeId}/challenges/available:
+  /api/v1/challenges:
     get:
       summary: 챌린지 목록 조회
       description: 현재 유효한 챌린지 목록을 조회합니다. (종료일 오름차순 정렬)
@@ -2642,7 +2659,7 @@ paths:
                           type: boolean
                           example: true
 
-  /api/v1/cafes/{cafeId}/challenges/{challengeId}:
+  /api/v1/challenges/{challengeId}:
     get:
       summary: 챌린지 상세 조회
       description: 챌린지 ID로 상세 정보를 조회합니다.
@@ -2756,7 +2773,7 @@ paths:
                               example: 이화동
 
 
-  /api/v1/cafes/{cafeId}/challenges/{challengeId}/join:
+  /api/v1/challenges/{cafeId}/{challengeId}/participate:
     post:
       tags:
         - Challenge
@@ -2851,7 +2868,7 @@ paths:
 
 
 
-  /api/v1/users/me/challenges:
+  /api/v1/challenges/my:
     get:
       summary: 나의 챌린지 목록 조회
       description: 로그인 유저가 현재 참여 중인 챌린지 목록을 조회합니다. (진행 중 상태만 반환)
@@ -2906,6 +2923,87 @@ paths:
                           format: date
                           example: 2025-08-31
                           description: 챌린지 종료일
+
+  /api/v1/challenges/{challengeId}/stores:
+    get:
+      summary: 챌린지 참여 가능 매장 목록 조회
+      description: 특정 챌린지에 참여 가능한 매장 목록을 조회합니다. 사용자 위치가 제공되면 거리 정보도 함께 반환됩니다.
+      tags: [Challenge]
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: challengeId
+          required: true
+          description: 챌린지 ID
+          schema:
+            type: integer
+        - in: query
+          name: lat
+          required: false
+          description: 사용자 위도 (거리 계산용)
+          schema:
+            type: number
+            example: 37.5665
+        - in: query
+          name: lon
+          required: false
+          description: 사용자 경도 (거리 계산용)
+          schema:
+            type: number
+            example: 126.9780
+      responses:
+        '200':
+          description: 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resultType:
+                    type: string
+                    example: SUCCESS
+                  error:
+                    type: string
+                    nullable: true
+                    example: null
+                  success:
+                    type: array
+                    description: 참여 가능한 매장 목록
+                    items:
+                      type: object
+                      properties:
+                        cafeId:
+                          type: integer
+                          example: 12
+                          description: 매장 ID
+                        name:
+                          type: string
+                          example: 카페 위니
+                          description: 매장 이름
+                        address:
+                          type: string
+                          example: 서울 서대문구 이화여대길 52
+                          description: 매장 주소
+                        image:
+                          type: string
+                          nullable: true
+                          example: https://cdn.loopy.com/cafes/12.jpg
+                          description: 매장 대표 이미지 (없으면 null)
+                        region1DepthName:
+                          type: string
+                          example: 서울특별시
+                        region2DepthName:
+                          type: string
+                          example: 서대문구
+                        region3DepthName:
+                          type: string
+                          example: 이화동
+                        distance:
+                          type: number
+                          nullable: true
+                          example: 245
+                          description: 사용자와의 거리 (미터 단위, 위치 정보 없으면 null)
 
   /api/v1/challenges/{challengeId}/complete:
     post:
@@ -3692,36 +3790,53 @@ paths:
                       format: binary
                     description: 첨부 이미지 파일 (최대 5장)
         responses:
-          '201':
+          '200':
             description: 리뷰 작성 성공
             content:
               application/json:
                 schema:
                   type: object
                   properties:
-                    message:
+                    resultType:
                       type: string
-                      example: 리뷰 작성 성공
-                    review:
+                      example: SUCCESS
+                    error:
+                      type: "null"
+                      example: null
+                    success:
                       type: object
                       properties:
-                        id:
-                          type: integer
-                          example: 123
-                        title:
+                        message:
                           type: string
-                          example: "루피카페"
-                        content:
-                          type: string
-                          example: "(테스트) 리뷰 본문입니다."
-                        userId:
-                          type: integer
-                          example: 1
-                        images:
-                          type: array
-                          items:
-                            type: string
-                          example: ["https://s3.bucket/review1.jpg"]
+                          example: 리뷰 작성 성공
+                        review:
+                          type: object
+                          properties:
+                            reviewId:
+                              type: integer
+                              example: 123
+                            cafeId:
+                              type: integer
+                              example: 1
+                            userId:
+                              type: integer
+                              example: 1
+                            title:
+                              type: string
+                              example: "루피카페"
+                              description: 카페 이름
+                            content:
+                              type: string
+                              example: "(테스트) 리뷰 본문입니다."
+                            images:
+                              type: array
+                              items:
+                                type: string
+                              example: ["https://s3.bucket/review1.jpg"]
+                            createdAt:
+                              type: string
+                              format: date-time
+                              example: "2025-08-01T08:47:04.446Z"
           '400':
             description: 잘못된 요청 (제목/본문 미입력, 유효성 실패 등)
             content:
@@ -3783,29 +3898,56 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
+                  resultType:
                     type: string
-                    example: 리뷰 수정 성공
-                  review:
+                    example: SUCCESS
+                  error:
+                    type: "null"
+                    example: null
+                  success:
                     type: object
                     properties:
-                      id:
-                        type: integer
-                        example: 123
-                      title:
+                      message:
                         type: string
-                        example: "루피카페"
-                      content:
-                        type: string
-                        example: "(수정) 리뷰 본문입니다."
-                      userId:
-                        type: integer
-                        example: 1
-                      images:
-                        type: array
-                        items:
-                          type: string
-                        example: ["https://s3.bucket/review1.jpg"]
+                        example: 리뷰 수정 성공
+                      review:
+                        type: object
+                        properties:
+                          id:
+                            type: integer
+                            example: 123
+                          userId:
+                            type: integer
+                            example: 1
+                          cafeId:
+                            type: integer
+                            example: 1
+                          content:
+                            type: string
+                            example: "(수정) 리뷰 본문입니다."
+                          images:
+                            type: array
+                            items:
+                              type: string
+                            example: ["https://s3.bucket/review1.jpg"]
+                          createdAt:
+                            type: string
+                            format: date-time
+                            example: "2025-08-01T08:47:04.446Z"
+                          updatedAt:
+                            type: string
+                            format: date-time
+                            example: "2025-08-02T10:30:00.000Z"
+                          cafe:
+                            type: object
+                            description: 리뷰가 작성된 카페 정보
+                            properties:
+                              id:
+                                type: integer
+                                example: 1
+                              name:
+                                type: string
+                                example: "루피카페"
         '403':
           description: 권한 없음
           content:
@@ -3849,9 +3991,18 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
+                  resultType:
                     type: string
-                    example: 리뷰 삭제 성공!
+                    example: SUCCESS
+                  error:
+                    type: "null"
+                    example: null
+                  success:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        example: 리뷰 삭제 성공!
         '403':
           description: 권한 없음
           content:
@@ -3898,25 +4049,34 @@ paths:
               schema:
                 type: object
                 properties:
-                  message:
+                  resultType:
                     type: string
-                    example: 내가 쓴 리뷰 목록 조회 성공
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/UserReviewSummary'
-                  pagination:
+                    example: SUCCESS
+                  error:
+                    type: "null"
+                    example: null
+                  success:
                     type: object
                     properties:
-                      page:
-                        type: integer
-                        example: 1
-                      limit:
-                        type: integer
-                        example: 10
-                      total:
-                        type: integer
-                        example: 27
+                      message:
+                        type: string
+                        example: 내가 쓴 리뷰 목록 조회 성공
+                      data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserReviewSummary'
+                      pagination:
+                        type: object
+                        properties:
+                          page:
+                            type: integer
+                            example: 1
+                          limit:
+                            type: integer
+                            example: 10
+                          total:
+                            type: integer
+                            example: 27
         '401':
           description: 인증 실패
           content:

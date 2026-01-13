@@ -26,6 +26,8 @@ import {
   removeBookmark,
 } from '../controllers/user.bookmark.controller.js';
 
+import { getMyChallengeList } from '../controllers/challenge.controller.js';
+
 
 const router = express.Router();
 
@@ -58,6 +60,9 @@ router.get( "/me/preferred-area", getPreferredAreaController);
 // 북마크
 router.get('/me/bookmarks', getBookmarkedCafes);
 router.delete('/me/bookmarks/:cafeId', removeBookmark);
+
+// 내 챌린지
+router.get('/me/challenges', getMyChallengeList);
 
 // 사용자별 QR코드
 router.get('/me/qrcode', getUserQrCode); 

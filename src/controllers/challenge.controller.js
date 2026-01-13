@@ -62,15 +62,12 @@ export const participateInChallenge = async (req, res, next) => {
     const data = await participateInChallengeService(userId, cafeId, challengeId);
 
     return res.status(200).json({
-      resultType: "SUCCESS",
-      error: null,
-      success: data,
+      message: data.message,
     });
   } catch (err) {
     return res.status(err.statusCode || 500).json({
-      resultType: "FAILURE",
-      error: err.message || "챌린지 참여 실패",
-      success: null,
+      errorCode: err.errorCode || "CHALLENGE_PARTICIPATION_FAILED",
+      reason: err.message || "챌린지 참여 실패",
     });
   }
 };
