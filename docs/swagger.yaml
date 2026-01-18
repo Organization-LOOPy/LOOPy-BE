@@ -5645,7 +5645,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
   
-  /api/v1/owner/cafe/{cafeId}/challenges/available:
+  /api/v1/owner/cafes/{cafeId}/challenges/available:
     get:
       tags:
         - Admin Challenges
@@ -5690,7 +5690,7 @@ paths:
                         isJoined:
                           type: boolean
 
-  /api/v1/owner/cafe/{cafeId}/challenges/{challengeId}/join:
+  /api/v1/owner/cafes/{cafeId}/challenges/{challengeId}/join:
     post:
       tags:
         - Admin Challenges
