@@ -3383,6 +3383,78 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 
+  /api/v1/users/me/notification/with-cafe-info:
+    get:
+      tags:
+        - Notifications
+      summary: 알림 목록 조회 (카페 정보 포함)
+      description: 로그인한 사용자의 모든 알림을 최신순으로 조회합니다. 기존 알림 목록 조회와 동일하지만 카페 이름과 메인 이미지가 포함됩니다.
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: 알림 목록 조회 성공
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 알림 목록 조회 성공
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        notificationId:
+                          type: integer
+                          example: 42
+                        cafeId:
+                          type: integer
+                          nullable: true
+                          example: 3
+                        cafeName:
+                          type: string
+                          nullable: true
+                          example: 루피커피
+                        cafeMainImage:
+                          type: string
+                          nullable: true
+                          example: https://example.com/cafe-main.jpg
+                        title:
+                          type: string
+                          example: 스탬프 적립 조건이 변경됐어요!
+                        content:
+                          oneOf:
+                            - type: string
+                              example: 8월 1일부터 스탬프는 5,000원 이상 결제 시 적립됩니다.
+                            - type: object
+                              example:
+                                conditionType: AMOUNT
+                                minAmount: 5000
+                                stampPerAmount: 1
+                                drinkCount: null
+                                stampPerCount: null
+                                rewardType: DISCOUNT
+                                discountAmount: 1500
+                                menuId: null
+                        type:
+                          type: string
+                          enum: [cafe, stamp, review]
+                        isRead:
+                          type: boolean
+                          example: false
+                        createdAt:
+                          type: string
+                          format: date-time
+                          example: 2025-07-31T13:12:00.000Z
+        '401':
+          description: 인증 실패 (JWT 누락 또는 만료)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /api/v1/notification/{notificationId}:
     get:
