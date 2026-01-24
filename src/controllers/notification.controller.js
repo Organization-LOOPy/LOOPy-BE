@@ -44,6 +44,58 @@ export const getUserNotifications = async (req, res) => {
   });
 };
 
+export const getUserNotificationsWithCafeInfo = async (req, res) => {
+  const userId = req.user.id;
+
+  const notifications = await prisma.notification.findMany({
+    where: { userId },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      title: true,
+      content: true,
+      type: true,
+      isRead: true,
+      createdAt: true,
+      cafeId: true,
+      cafe: {
+        select: {
+          name: true,
+          photos: {
+            where: { displayOrder: 0 },
+            select: { photoUrl: true },
+            take: 1,
+          },
+        },
+      },
+    },
+  });
+
+  const formatted = notifications.map((n) => {
+    let parsedContent = n.content;
+    try {
+      parsedContent = JSON.parse(n.content);
+    } catch (e) {}
+
+    return {
+      notificationId: n.id,
+      cafeId: n.cafeId ?? null,
+      cafeName: n.cafe?.name ?? null,
+      cafeMainImage: n.cafe?.photos?.[0]?.photoUrl ?? null,
+      title: n.title,
+      content: parsedContent,
+      type: n.type,
+      isRead: n.isRead,
+      createdAt: n.createdAt,
+    };
+  });
+
+  return res.success({
+    message: "알림 목록 조회 성공",
+    data: formatted,
+  });
+};
+
 export const getNotificationById = async (req, res) => {
   const userId = req.user.id;
   const notificationId = parseInt(req.params.notificationId, 10);
