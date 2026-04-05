@@ -21,25 +21,23 @@ import {
 import { authenticateJWT } from "../middlewares/authMiddleware.js";
 const router = express.Router({ mergeParams: true });
 
-router.use(authenticateJWT);
-
 router.use(isCorrectCafeId); // 카페 ID 유효성 검사
 
 router.get("/", getCafe); //카페 정보 조회
 
-router.post("/alram", getNotification);
+router.post("/alram", authenticateJWT, getNotification);
 
 //router.use(test); // 테스트용 미들웨어, 실제 배포 시 제거
 
 router.get("/review", getCafeReviews); //리뷰 조회
 
-router.post("/coupon", isMyCoupon, issueCafeCouponToUser); //쿠폰 발급
+router.post("/coupon", authenticateJWT, isMyCoupon, issueCafeCouponToUser); //쿠폰 발급
 
-router.post("/bookmark", addBookmark); // 북마크 설정
+router.post("/bookmark", authenticateJWT, addBookmark); // 북마크 설정
 
 // 챌린지 관련 라우트
 router.get("/challenges/available", getChallengeList); // 챌린지 목록 조회
 router.get("/challenges/:challengeId", getChallengeDetail); // 챌린지 상세 조회
-router.post("/challenges/:challengeId/join", participateInChallenge); // 챌린지 참여
+router.post("/challenges/:challengeId/join", authenticateJWT, participateInChallenge); // 챌린지 참여
 
 export default router;

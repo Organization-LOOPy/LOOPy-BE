@@ -589,7 +589,7 @@ export const cafeSearchService = {
 
   async getCafeDetails(cafe, userId, x, y) {
     const photos = await cafeRepository.findPhotos(cafe.id);
-    const bookmark = await cafeRepository.isBookmarked(cafe.id, userId);
+    const bookmark = userId ? await cafeRepository.isBookmarked(cafe.id, userId) : null;
     const cafeDetails = {
       id: cafe.id.toString(),
       name: cafe.name,
