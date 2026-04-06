@@ -62,7 +62,7 @@ export const cafeRepository = {
             endDate: true,
             validDays: true,
             userCoupons: {
-              where: { userId },
+              where: { userId: userId ?? 0 },
               select: { id: true },
             },
           },
@@ -83,12 +83,12 @@ export const cafeRepository = {
         },
 
         bookmarkedBy: {
-          where: { userId },
+          where: { userId: userId ?? 0 },
           select: { id: true },
         },
 
         stampBooks: {
-          where: { userId },
+          where: { userId: userId ?? 0 },
           select: {
             id: true,
             currentCount: true,
@@ -118,7 +118,7 @@ export const cafeRepository = {
           },
         },
         userNotifications: {
-          where: { userId },
+          where: { userId: userId ?? 0 },
           select: {
             userId: true,
             cafeId: true,

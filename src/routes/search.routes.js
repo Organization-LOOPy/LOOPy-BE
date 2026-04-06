@@ -1,6 +1,5 @@
 import express from "express";
 import { test, isCorrectCafeId } from "../middlewares/cafeMiddleware.js";
-import { authenticateJWT } from "../middlewares/authMiddleware.js";
 import {
   cafeSearch,
   getCafeMapData,
@@ -9,9 +8,6 @@ import {
 import {  searchKeywordCounter  } from "../routes/metrics.route.js";
 
 const router = express.Router();
-
-router.use(authenticateJWT);
-//router.use(test);
 
 router.post("/list", (req, res, next) => {
   const keyword = req.body?.keyword;

@@ -12,7 +12,7 @@ import {
 export const getCafe = async (req, res, next) => {
   try {
     const cafe = req.cafe;
-    const userId = req.user.id;
+    const userId = req.user?.id ?? null;
 
     const cafeDetails = await cafeService.getCafeDetails(cafe, cafe.id, userId);
 

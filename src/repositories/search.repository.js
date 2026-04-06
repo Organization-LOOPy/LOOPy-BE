@@ -72,13 +72,15 @@ export const cafeSearchRepository = {
                 select: { id: true },
               }
             : false,
-          stampBooks: {
-            where: {
-              userId: userId,
-              expiresAt: { gte: new Date() },
-            },
-            select: { id: true },
-          },
+          stampBooks: userId
+            ? {
+                where: {
+                  userId: userId,
+                  expiresAt: { gte: new Date() },
+                },
+                select: { id: true },
+              }
+            : false,
         },
         orderBy: {
           createdAt: "desc",
@@ -210,13 +212,15 @@ export const cafeMapRepository = {
           name: true,
           latitude: true,
           longitude: true,
-          stampBooks: {
-            where: {
-              userId: userId,
-              expiresAt: { gte: new Date() },
-            },
-            select: { id: true },
-          },
+          stampBooks: userId
+            ? {
+                where: {
+                  userId: userId,
+                  expiresAt: { gte: new Date() },
+                },
+                select: { id: true },
+              }
+            : false,
           bookmarkedBy: userId
             ? {
                 where: { userId: userId },
@@ -230,6 +234,8 @@ export const cafeMapRepository = {
         ...cafe,
         isStamped: Array.isArray(cafe.stampBooks) && cafe.stampBooks.length > 0,
         stampBooks: undefined,
+        isBookmarked: Array.isArray(cafe.bookmarkedBy) && cafe.bookmarkedBy.length > 0,
+        bookmarkedBy: undefined,
       }));
     } catch (error) {
       logger.error(`findCafesInArea Repository Error: ${error.message}`);

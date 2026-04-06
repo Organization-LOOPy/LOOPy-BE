@@ -8,7 +8,7 @@ import { searchCounter } from "../utils/metrics.js";
 
 export const cafeSearch = async (req, res, next) => {
   try {
-    const userId = req.user.id;
+    const userId = req.user?.id ?? null;
     const { x, y, searchQuery, cursor } = req.query;
     const { storeFilters, takeOutFilters, menuFilters, addressInfo } = req.body;
 
@@ -47,7 +47,7 @@ export const getCafeMapData = async (req, res, next) => {
   try {
     const { x, y, store, menu, takeout, region1, region2, region3, zoom } =
       req.query;
-    const userId = req.user.id;
+    const userId = req.user?.id ?? null;
 
     if (!x || !y) {
       throw new MissingUserCoordinate();
@@ -82,7 +82,7 @@ export const cafeDetail = async (req, res, next) => {
   try {
     const cafe = req.cafe;
     const { x, y } = req.query;
-    const userId = req.user.id;
+    const userId = req.user?.id ?? null;
 
     const cafeDetails = await cafeSearchService.getCafeDetails(
       cafe,

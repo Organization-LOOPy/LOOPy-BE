@@ -6,7 +6,9 @@ info:
 
 servers:
   - url: https://loopy-biz.xyz
-    description: 서버 배포 도메인 
+    description: 서버 배포 도메인
+  - url: http://localhost:3000
+    description: 로컬 개발 서버
 
 security:
   - bearerAuth: []
